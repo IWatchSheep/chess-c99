@@ -1,0 +1,5 @@
+# CLion and build output
+.idea/
+cmake-build-*/
+*.exe
+*.o
