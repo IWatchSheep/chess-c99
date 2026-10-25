@@ -1,0 +1,37 @@
+== E1 start position
+E1 White: zero-move pieces 6 [ a1 c1 d1 e1 f1 h1 ], legal (piece,square) pairs 20, team reach 16 squares, protection links 19, unprotected non-king pieces 2 [ a1 h1 ]
+   links: Ra1>Pa2 Bc1>Pb2 Qd1>Pc2 Nb1>Pd2 Bc1>Pd2 Qd1>Pd2 Ke1>Pd2 Qd1>Pe2 Ke1>Pe2 Bf1>Pe2 Ng1>Pe2 Ke1>Pf2 Bf1>Pg2 Rh1>Ph2 Ra1>Nb1 Qd1>Bc1 Ke1>Qd1 Ke1>Bf1 Rh1>Ng1
+E1 Black: zero-move pieces 6 [ a8 c8 d8 e8 f8 h8 ], legal (piece,square) pairs 20, team reach 16 squares, protection links 19, unprotected non-king pieces 2 [ a8 h8 ]
+   links: Ra8>Nb8 Qd8>Bc8 Ke8>Qd8 Ke8>Bf8 Rh8>Ng8 Ra8>Pa7 Bc8>Pb7 Qd8>Pc7 Nb8>Pd7 Bc8>Pd7 Qd8>Pd7 Ke8>Pd7 Qd8>Pe7 Ke8>Pe7 Bf8>Pe7 Ng8>Pe7 Ke8>Pf7 Bf8>Pg7 Rh8>Ph7
+== E2 1.e4 from the start
+   White: lost pairs 0 [ ], gained pairs 11 [ d1>h5 d1>g4 d1>f3 d1>e2 e1>e2 f1>a6 f1>b5 f1>c4 f1>d3 f1>e2 g1>e2 ], team squares denied 2 [ e4 e3 ], team squares opened 5 [ a6 b5 e5 h5 e2 ]
+   Black: lost pairs 0 [ ], gained pairs 0 [ ], team squares denied 0 [ ], team squares opened 0 [ ]
+E2 after White: zero-move pieces 3 [ a1 c1 h1 ], legal (piece,square) pairs 30, team reach 19 squares, protection links 15, unprotected non-king pieces 3 [ e4 a1 h1 ]
+   links: Ra1>Pa2 Bc1>Pb2 Qd1>Pc2 Nb1>Pd2 Bc1>Pd2 Qd1>Pd2 Ke1>Pd2 Ke1>Pf2 Bf1>Pg2 Rh1>Ph2 Ra1>Nb1 Qd1>Bc1 Ke1>Qd1 Ke1>Bf1 Rh1>Ng1
+== E3 Scholar: 1.e4 e5 2.Bc4 Nc6, candidate 3.Qh5
+   White mating moves now (if White to move): 0 [ ]
+E3 before White: zero-move pieces 4 [ e4 a1 c1 h1 ], legal (piece,square) pairs 33, team reach 21 squares, protection links 14, unprotected non-king pieces 5 [ c4 e4 g2 a1 h1 ]
+   links: Bc4>Pa2 Ra1>Pa2 Bc1>Pb2 Qd1>Pc2 Nb1>Pd2 Bc1>Pd2 Qd1>Pd2 Ke1>Pd2 Ke1>Pf2 Rh1>Ph2 Ra1>Nb1 Qd1>Bc1 Ke1>Qd1 Rh1>Ng1
+E3 before Black: zero-move pieces 4 [ c8 h8 c7 e5 ], legal (piece,square) pairs 31, team reach 19 squares, protection links 19, unprotected non-king pieces 2 [ a8 h8 ]
+   links: Ra8>Bc8 Qd8>Bc8 Ke8>Qd8 Nc6>Qd8 Ke8>Bf8 Rh8>Ng8 Ra8>Pa7 Nc6>Pa7 Bc8>Pb7 Qd8>Pc7 Bc8>Pd7 Qd8>Pd7 Ke8>Pd7 Ke8>Pf7 Bf8>Pg7 Rh8>Ph7 Pb7>Nc6 Pd7>Nc6 Nc6>Pe5
+   White: lost pairs 0 [ ], gained pairs 1 [ e1>d1 ], team squares denied 1 [ h5 ], team squares opened 7 [ h7 g6 h6 e5 f5 g5 d1 ]
+   Black: lost pairs 3 [ f7>f6 f7>f5 h7>h5 ], gained pairs 0 [ ], team squares denied 2 [ f5 h5 ], team squares opened 0 [ ]
+   after 3.Qh5, White mating moves (threat): 1 [ h5f7 ]
+   attackers of f7: White 2 [ Qh5 Bc4 ], Black defenders 1 [ Ke8 ]
+   Black replies 28: stop every mate-in-one 8 [ d8e7 d8f6 d8g5 d8h4 e8e7 g8h6 d7d5 g7g6 ], leave a mate-in-one 20 [ a8b8 f8e7 f8d6 f8c5 f8b4 f8a3 g8e7 g8f6 a7a6 a7a5 b7b6 b7b5 d7d6 g7g5 h7h6 c6b8 c6e7 c6a5 c6b4 c6d4 ]
+   after 3...g6:
+   Black: lost pairs 0 [ ], gained pairs 4 [ f8>g7 f8>h6 f7>f6 f7>f5 ], team squares denied 1 [ g6 ], team squares opened 3 [ g7 f5 h5 ]
+   White: lost pairs 1 [ h5>f7 ], gained pairs 0 [ ], team squares denied 0 [ ], team squares opened 0 [ ]
+E3 after g6 Black: zero-move pieces 4 [ c8 h8 c7 e5 ], legal (piece,square) pairs 32, team reach 19 squares, protection links 20, unprotected non-king pieces 2 [ a8 h8 ]
+   links: Ra8>Bc8 Qd8>Bc8 Ke8>Qd8 Nc6>Qd8 Ke8>Bf8 Rh8>Ng8 Ra8>Pa7 Nc6>Pa7 Bc8>Pb7 Qd8>Pc7 Bc8>Pd7 Qd8>Pd7 Ke8>Pd7 Ke8>Pf7 Rh8>Ph7 Pb7>Nc6 Pd7>Nc6 Pf7>Pg6 Ph7>Pg6 Nc6>Pe5
+   after 3...Nf6: White mating moves 1 [ h5f7 ]
+== E3b the alternative 3.Nf3 from the same position
+   White: lost pairs 5 [ f2>f4 f2>f3 d1>h5 d1>g4 d1>f3 ], gained pairs 3 [ e1>g1 h1>f1 h1>g1 ], team squares denied 3 [ h5 f4 f3 ], team squares opened 3 [ e5 g5 g1 ]
+   Black: lost pairs 0 [ ], gained pairs 0 [ ], team squares denied 0 [ ], team squares opened 0 [ ]
+   after 3.Nf3, White mating moves: 0
+E3b after Nf3 White: zero-move pieces 4 [ e4 f2 a1 c1 ], legal (piece,square) pairs 33, team reach 21 squares, protection links 17, unprotected non-king pieces 5 [ c4 e4 g2 a1 h1 ]
+   links: Pg2>Nf3 Qd1>Nf3 Bc4>Pa2 Ra1>Pa2 Bc1>Pb2 Qd1>Pc2 Nf3>Pd2 Nb1>Pd2 Bc1>Pd2 Qd1>Pd2 Ke1>Pd2 Ke1>Pf2 Nf3>Ph2 Rh1>Ph2 Ra1>Nb1 Qd1>Bc1 Ke1>Qd1
+== E4 goal squares from the E3 position (White, the other side passing)
+   goal f7: queen d1 2 moves, bishop c4 1, knight g1 3, knight b1 4
+   goal d5: queen d1 3 moves, bishop c4 1, knight g1 3, knight b1 2
+   attackers of f7 now: White 1 [ Bc4 ]; of d5: White 2 [ Bc4 Pe4 ], Black 0 [ ]

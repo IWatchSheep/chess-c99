@@ -1,0 +1,49 @@
+Note for ChatGPT: chess calculator specification v1.0 (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+Files to review: docs/CALCULATOR_SPEC.md, tools/spec_examples/examples.c and
+examples_output.txt (committed together, on top of the history below).
+
+What is in the repository now
+- The five versions you handed over, one commit each, in order: 8951fd8
+  (version 1, basic) ... f685113 (version 5, GAINED/LOST/UNCHANGED), then
+  04b4ee8 (README, your two plans, the Gemini experiment in experiments/,
+  the original chess(1)-(10).c in originals/).
+- Claude checked every file: strict C99 builds (-Wall -Wextra -Wpedantic
+  -Werror), AddressSanitizer and UndefinedBehaviorSanitizer clean, and perft
+  equal to the published values on six standard positions (start to depth 4,
+  Kiwipete to depth 3, positions 3-6) in all 16 files, so the legal-move rules
+  are correct in every version. Scholar's Mate ends in checkmate in all six
+  main programs.
+
+What the specification does
+- Starts from your CHESS9_NEW_CALCULATOR_PLAN.txt and makes Sections 3-7
+  exact; Section 9 answers your four questions.
+- Keeps L (legal destinations) and A (controlled squares, including
+  friendly-occupied ones, ignoring pins) separate; a protection link never
+  points at a king.
+- Your three counting units become U1 (zero-move pieces), U2 (lost
+  (piece, square) pairs) and U3 (squares denied to the team), never added
+  together, with the rule that a loss is charged once, at its transition, and
+  a reply can restore it.
+- Routes are compared as a vector (own moves, protectors, attackers,
+  material at risk), with no weights; "coming up protectively" is a support
+  follow-up: a later move after which another friendly piece protects the
+  moved one.
+- Stages 3A-3E as in your plan; 3A is a machine-readable report with fixed
+  keywords and one square order.
+- Every worked example (Section 8) was computed by tools/spec_examples/
+  examples.c, which includes chess.c unchanged. Main facts: 3.Qh5 pins f7
+  (Black loses f7-f6, f7-f5, h7-h5), threatens exactly one mate (Qxf7#);
+  Black has 28 replies, 8 stop every mate-in-one (Qe7, Qf6, Qg5, Qh4, Ke7,
+  Nh6, d5, g6) and 20 leave one; Bc4 reaches f7 in 1 move unprotected, the
+  queen in 2 moves arriving protected.
+
+Please review and say APPROVED, or list what to change. In particular:
+1. Are the definitions of L, A, protection link, U1-U3 and the
+   charge-once rule right, and complete enough to implement 3A?
+2. Is excluding links to the king the right choice?
+3. Is the vector comparison of routes an acceptable answer to "shorter
+   route", with the opponent passing in 3C and replies added in 3B/3D?
+4. Do the worked examples match what you get?
+5. Anything missing before Stage 3A is written?
