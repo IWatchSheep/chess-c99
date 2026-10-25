@@ -1,0 +1,62 @@
+Stage 3S results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+Two commits, in the order you asked for:
+  1. the version 5 golden transcripts and their CTest comparison, committed
+     BEFORE chess.c changed (they pass on unchanged version 5);
+  2. version 6 = Stage 3S: chess.c, tests/chess_tests.c, CMakeLists.txt,
+     README, CALCULATOR_SPEC.md v1.2.1.
+
+What 3S adds (chess.c, one block before clear_selection, plus small hooks)
+- "fen <FEN>": sets up a position after checking it; "fen" prints the
+  current FEN. Neither appears in any prompt, so every version 5 screen is
+  unchanged. The game still starts from the normal position.
+- load_fen builds the position in a scratch board and copies it only when
+  every check passes, so a refused FEN leaves the game exactly as it was.
+  Checks: 6 fields (or 4), single spaces; 8 ranks of 8 squares; piece
+  letters; side w/b; exactly one king per side; no pawn on rank 1/8; at most
+  8 pawns, 16 pieces and (8 - pawns) promoted extras per side; castling
+  field "-" or KQkq letters in order, each right needing king and rook home;
+  en passant square on the right rank, with the pawn that just moved and both
+  skipped squares empty; halfmove >= 0, move number >= 1; the side not to
+  move not in check; the king to move attacked by at most two pieces.
+  A side to move in check is ACCEPTED (tested, incl. checkmated and double
+  check).
+- board_to_fen; Board gains fullmove_number (set to 1 by reset_board,
+  incremented after Black's move by make_move; nothing prints it except
+  "fen").
+- follow_piece(before, move, square) -> STAYS / MOVED / CASTLING_ROOK /
+  CAPTURED / PROMOTED with the square and type after the move, built on
+  version 5's resolve_piece_after_move. Not used by the game yet (3A will);
+  non-static so the tests can call it.
+
+Tests (CTest, 8 tests, all pass; Linux GCC with -Werror and sanitizers)
+- unit_tests, 63 checks: 8 accepted positions (incl. side to move in check,
+  checkmated, double check with nine queens = eight promotions); 21 refusals,
+  each with its exact reason and the board unchanged afterwards; 10 FEN round
+  trips plus FENs written after 1.e4 and 1.e4 e5 2.Nf3; perft from 6 loaded
+  standard positions; 14 identity checks (castling king, both rooks each
+  side, unaffected rook, capture, en passant, promotion to N and with capture
+  to Q, the captured piece, an unaffected king); the history restarts at a
+  loaded position.
+- golden_01..07: version 5's full output on fixed scripts (game with P/N/F
+  previews; all four castlings; en passant both ways; promotion to Q/R/B/N,
+  a cancelled choice and a Black promotion; bad inputs incl. unknown command
+  and a 200-character line; restart/resign; threefold claim). Version 6
+  reproduces all seven byte for byte (Windows line endings ignored).
+  Changing one word of output makes all seven fail.
+- Unchanged: perft on the six standard positions; strict C99 build.
+
+Found and fixed by the new tests
+- A "9" in a FEN rank was reported as "unknown piece letter"; it now says
+  "a rank does not have exactly 8 squares".
+- Claude's E8 king-and-rook FEN was malformed (6k/... has 7 squares). The
+  old example loader was lenient and set up the intended position (Kg8), so
+  E8's result is unchanged; the FEN text is corrected in the spec and
+  small.c (spec 1.2.1).
+
+- ladder.c and small.c had their own lenient FEN loaders, which clash with
+  the real one; they now use chess.c's validated load_fen, and all four
+  example programs reproduce their saved outputs exactly with version 6.
+
+Please review and say APPROVED for 3S, or list what to change, before 3A.

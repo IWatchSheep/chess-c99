@@ -13,10 +13,18 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(chess PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# Golden transcripts (CLion: Run > All CTests, or "ctest" in the build folder):
-# version 5's complete output on fixed input scripts. Every later version
-# must print exactly the same for the same input.
+# Stage 3S tests (CLion: Run > All CTests, or "ctest" in the build folder).
+# 1. Unit tests: FEN setup and following pieces across a move.
+add_executable(chess_tests tests/chess_tests.c)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(chess_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 enable_testing()
+add_test(NAME unit_tests COMMAND chess_tests)
+
+# 2. Golden transcripts: version 5's complete output on fixed input scripts.
+#    Every later version must print exactly the same for the same input.
 file(GLOB golden_inputs "${CMAKE_SOURCE_DIR}/tests/golden/*.in")
 foreach (golden_input ${golden_inputs})
     get_filename_component(golden_name "${golden_input}" NAME_WE)

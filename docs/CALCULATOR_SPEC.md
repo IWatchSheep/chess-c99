@@ -5,7 +5,7 @@
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. Awaits ChatGPT's confirmation of v1.2. No code is written until it is agreed. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). **Stage 3S is implemented as version 6** and awaits review before 3A. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -234,7 +234,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 **E7 — the build-up ladder** (`ladder.c`, `ladder_output.txt`). White Ke1, Qd1, Bc4; Black Ke8 and Pf7, then Black's pieces added one at a time; White plays Qh5 and Qxf7 with Black passing (**hypothetical (pass)**: a board investigation, not a legal game). Black king's legal squares before Qxf7 / after Qxf7: Pf7 only 4 / 1 (not mate, escape d8); + Pd7 3 / 1 (not mate); + Qd8 2 / 0 (**checkmate**); + Bf8 1 / 0 (checkmate). Black's own queen on d8 is the blocker that makes the mate; Bf8 is not needed.
 
-**E8 — practice boards** (`small.c`, `small_output.txt`). King and queen vs king (`7k/8/5K2/8/8/8/8/Q7 w`): no mate in 1 ply, forced mate within 3 plies (2 White moves; 50 positions searched). King and rook vs king (`6k/8/6K1/8/8/8/8/R7 w`): mate in 1 ply (12 positions). The Scholar corner with only Ke1, Qd1, Bc4 vs Ke8, Pf7 (`4k3/5p2/8/8/2B5/8/8/3QK3 w`): **no forced mate within 5 plies (3 White moves)** (34,537 positions; legal replies only, no passes). From the full board after 1.e4 e5, 5 plies: 2,961 sequences end in mate (23,027,889 positions, about 2 minutes), Scholar's Mate among them.
+**E8 — practice boards** (`small.c`, `small_output.txt`). King and queen vs king (`7k/8/5K2/8/8/8/8/Q7 w`): no mate in 1 ply, forced mate within 3 plies (2 White moves; 50 positions searched). King and rook vs king (`6k1/8/6K1/8/8/8/8/R7 w`): mate in 1 ply (12 positions). The Scholar corner with only Ke1, Qd1, Bc4 vs Ke8, Pf7 (`4k3/5p2/8/8/2B5/8/8/3QK3 w`): **no forced mate within 5 plies (3 White moves)** (34,537 positions; legal replies only, no passes). From the full board after 1.e4 e5, 5 plies: 2,961 sequences end in mate (23,027,889 positions, about 2 minutes), Scholar's Mate among them.
 
 ## 9. Answers to ChatGPT's Section 9 questions
 
@@ -254,6 +254,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.2.1 | 2026-10-25 | Stage 3S implemented (version 6). E8's king-and-rook FEN corrected from `6k/8/6K1/...` (only 7 squares in its first rank, found by the new FEN tests) to `6k1/8/6K1/...`; the position the example computed was already the intended one (black king g8), so its result is unchanged. |
 | 1.2 | 2026-10-25 | ChatGPT's review 03 (approved in principle) incorporated: plies everywhere; explicit identities for the moved, castling, captured and promoted pieces; zero-move causes BLOCKED/CHECK/PIN; hypothetical passes labelled; captured pieces reported separately and `by-capture` denied squares; the exact charge-once rule per transition (lost, restored, gained; lost again = a new event); the exact definition of forced and possible mates and `LIMIT N`; the deterministic 3A report format; regression (golden transcripts of version 5), report, charge-once and preview-invariant tests; facts kept apart from conclusions. |
 | 1.1 | 2026-10-25 | The owner's loop idea added (Section 5b, stage 3C, example E6); his method of practice boards first and the build-up ladder (Section 5c, stage 3S, examples E7, E8); goals, exchanges and comparison move to 3D, 3E, 3F; `docs/PLAN.md` written as the plain-words version of the plan. |
 | 1.0 | 2026-10-25 | First draft, written by Claude from the owner's words and ChatGPT's plan; worked examples computed against version 5. |

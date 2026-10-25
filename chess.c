@@ -2,6 +2,8 @@
  * Type two characters (for example d2), then press Enter to see legal moves.
  * Step 2 lists other pieces before and after a hypothetical destination.
  * Every move requires selecting, previewing, then F to finalize.
+ * Stage 3S: "fen <FEN>" sets up a practice position; "fen" prints the
+ * current position. See docs/CALCULATOR_SPEC.md.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -34,6 +36,7 @@ typedef struct {
     bool white_rook_a_moved, white_rook_h_moved;
     bool black_rook_a_moved, black_rook_h_moved;
     int ep_row, ep_col, halfmove_clock;
+    int fullmove_number; /* Stage 3S: the FEN move number, starting at 1 */
     Position *history;
     size_t history_size, history_capacity;
 } Board;
@@ -672,6 +675,9 @@ static void make_move(Board *b, Move m) {
     } else {
         ++b->halfmove_clock;
     }
+    if (b->turn == BLACK) {
+        ++b->fullmove_number;
+    }
     b->turn = opposite(b->turn);
 }
 
@@ -702,6 +708,7 @@ static void reset_board(Board *b) {
     b->ep_row = -1;
     b->ep_col = -1;
     b->halfmove_clock = 0;
+    b->fullmove_number = 1;
     b->history_size = 0;
     record_position(b);
 }
@@ -1332,6 +1339,397 @@ static void show_step2_after(const Board *board, Move proposed) {
     puts("Press P then Enter to preview another destination, or N for a new piece.");
 }
 
+/* STAGE 3S: practice boards.
+ * A position can be set up from one line of standard chess notation (FEN),
+ * for example the normal start:
+ *   rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+ * Commands (not shown in the prompts, so version 5's screens are unchanged):
+ *   fen <FEN>   set up that position, after checking that it is possible
+ *   fen         print the current position as a FEN line
+ * An impossible position is refused with a reason, and the game is left as
+ * it was. A position where the side to move is in check is accepted. */
+
+#define FEN_TEXT_SIZE 100
+
+/* Splits text at single spaces into at most max_fields fields. Returns the
+ * number of fields, or -1 when there are too many or a field is empty. */
+static int split_fen_fields(char *text, char *fields[], int max_fields) {
+    int count = 0;
+    char *start = text;
+
+    for (;;) {
+        char *space = strchr(start, ' ');
+        if (count == max_fields || *start == '\0' || *start == ' ') {
+            return -1;
+        }
+        fields[count] = start;
+        ++count;
+        if (space == NULL) {
+            return count;
+        }
+        *space = '\0';
+        start = space + 1;
+    }
+}
+
+static bool fen_piece_from_char(char symbol, Piece *piece) {
+    char upper = (char)toupper((unsigned char)symbol);
+    if (strchr("PNBRQK", upper) == NULL) {
+        return false;
+    }
+    piece->type = upper;
+    piece->color = isupper((unsigned char)symbol) ? WHITE : BLACK;
+    return true;
+}
+
+/* Field 1: the eight ranks, from rank 8 down to rank 1. */
+static const char *fen_read_placement(Board *b, const char *text) {
+    int row = 0;
+    int col = 0;
+
+    for (const char *p = text; *p != '\0'; ++p) {
+        if (*p == '/') {
+            if (col != 8) {
+                return "a rank does not have exactly 8 squares";
+            }
+            ++row;
+            col = 0;
+            if (row > 7) {
+                return "more than 8 ranks";
+            }
+        } else if (*p >= '1' && *p <= '8') {
+            col += *p - '0';
+            if (col > 8) {
+                return "a rank does not have exactly 8 squares";
+            }
+        } else if (isdigit((unsigned char)*p)) {
+            return "a rank does not have exactly 8 squares"; /* 0 or 9 empty squares */
+        } else {
+            Piece piece;
+            if (!fen_piece_from_char(*p, &piece)) {
+                return "unknown piece letter";
+            }
+            if (col > 7) {
+                return "a rank does not have exactly 8 squares";
+            }
+            b->board[row][col] = piece;
+            ++col;
+        }
+    }
+    if (row != 7 || col != 8) {
+        return "the board must have exactly 8 ranks of 8 squares";
+    }
+    return NULL;
+}
+
+static bool piece_at(const Board *b, int row, int col, char type, Color color) {
+    return b->board[row][col].type == type && b->board[row][col].color == color;
+}
+
+/* Field 3: castling rights, "-" or letters from KQkq in that order. Each
+ * right needs the king and that rook on their starting squares. */
+static const char *fen_read_castling(Board *b, const char *text) {
+    bool wk = false, wq = false, bk = false, bq = false;
+
+    if (strcmp(text, "-") != 0) {
+        const char *order = "KQkq";
+        const char *next = order;
+        for (const char *p = text; *p != '\0'; ++p) {
+            const char *found = strchr(next, *p);
+            if (found == NULL) {
+                return "castling field must be - or letters from KQkq in that order";
+            }
+            next = found + 1;
+            wk = wk || *p == 'K';
+            wq = wq || *p == 'Q';
+            bk = bk || *p == 'k';
+            bq = bq || *p == 'q';
+        }
+    }
+    if ((wk || wq) && !piece_at(b, 7, 4, 'K', WHITE)) {
+        return "White castling right without the king on e1";
+    }
+    if ((bk || bq) && !piece_at(b, 0, 4, 'K', BLACK)) {
+        return "Black castling right without the king on e8";
+    }
+    if ((wk && !piece_at(b, 7, 7, 'R', WHITE)) || (wq && !piece_at(b, 7, 0, 'R', WHITE)) ||
+        (bk && !piece_at(b, 0, 7, 'R', BLACK)) || (bq && !piece_at(b, 0, 0, 'R', BLACK))) {
+        return "castling right without the rook on its starting square";
+    }
+    b->white_king_moved = !(wk || wq);
+    b->black_king_moved = !(bk || bq);
+    b->white_rook_h_moved = !wk;
+    b->white_rook_a_moved = !wq;
+    b->black_rook_h_moved = !bk;
+    b->black_rook_a_moved = !bq;
+    return NULL;
+}
+
+/* Field 4: the en passant square, "-" or the square a pawn just skipped. */
+static const char *fen_read_en_passant(Board *b, const char *text) {
+    int row, col;
+
+    b->ep_row = -1;
+    b->ep_col = -1;
+    if (strcmp(text, "-") == 0) {
+        return NULL;
+    }
+    if (strlen(text) != 2 || !parse_square(text, &row, &col)) {
+        return "en passant field must be - or a square";
+    }
+
+    /* White to move: Black just moved a pawn two squares, so the square is
+     * on rank 6, that pawn is on rank 5, and the square behind is empty. */
+    int expected_row = (b->turn == WHITE) ? 2 : 5;
+    int pawn_row = (b->turn == WHITE) ? 3 : 4;
+    int start_row = (b->turn == WHITE) ? 1 : 6;
+    Color mover = opposite(b->turn);
+    if (row != expected_row) {
+        return "en passant square is on the wrong rank for the side to move";
+    }
+    if (!piece_at(b, pawn_row, col, 'P', mover) ||
+        b->board[row][col].color != EMPTY || b->board[start_row][col].color != EMPTY) {
+        return "en passant square does not match a pawn that just moved two squares";
+    }
+    b->ep_row = row;
+    b->ep_col = col;
+    return NULL;
+}
+
+/* Fields 5 and 6: the halfmove clock and the move number. */
+static bool fen_read_number(const char *text, int minimum, int *value) {
+    long number = 0;
+
+    if (*text == '\0' || strlen(text) > 5) {
+        return false;
+    }
+    for (const char *p = text; *p != '\0'; ++p) {
+        if (!isdigit((unsigned char)*p)) {
+            return false;
+        }
+        number = number * 10 + (*p - '0');
+    }
+    if (number < minimum) {
+        return false;
+    }
+    *value = (int)number;
+    return true;
+}
+
+/* Piece counts that no legal game can reach. */
+static const char *fen_check_material(const Board *b, Color side) {
+    int count[128] = {0};
+    int total = 0;
+
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            Piece p = b->board[row][col];
+            if (p.color != side) {
+                continue;
+            }
+            ++count[(unsigned char)p.type];
+            ++total;
+            if (p.type == 'P' && (row == 0 || row == 7)) {
+                return "a pawn is on the first or last rank";
+            }
+        }
+    }
+    if (count['K'] != 1) {
+        return side == WHITE ? "White must have exactly one king" : "Black must have exactly one king";
+    }
+    int promoted = (count['Q'] > 1 ? count['Q'] - 1 : 0) + (count['R'] > 2 ? count['R'] - 2 : 0) +
+                   (count['B'] > 2 ? count['B'] - 2 : 0) + (count['N'] > 2 ? count['N'] - 2 : 0);
+    if (count['P'] > 8 || total > 16 || promoted > 8 - count['P']) {
+        return side == WHITE ? "White has more pieces than a game allows" : "Black has more pieces than a game allows";
+    }
+    return NULL;
+}
+
+static int count_attackers(const Board *b, int row, int col, Color by) {
+    int attackers = 0;
+    for (int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            if (b->board[r][c].color == by && piece_attacks(b, r, c, row, col)) {
+                ++attackers;
+            }
+        }
+    }
+    return attackers;
+}
+
+/* Builds the position in a scratch board and checks it; only a possible
+ * position is copied into *b. On refusal, *reason says why and *b is
+ * unchanged. The move history restarts from the new position. */
+static bool load_fen(Board *b, const char *fen, const char **reason) {
+    char text[FEN_TEXT_SIZE];
+    char *fields[6];
+    Board next = {0};
+    int king_row = 0;
+    int king_col = 0;
+
+    if (strlen(fen) >= sizeof(text)) {
+        *reason = "FEN text is too long";
+        return false;
+    }
+    strcpy(text, fen);
+    int field_count = split_fen_fields(text, fields, 6);
+    if (field_count != 4 && field_count != 6) {
+        *reason = "a FEN has 6 fields (or 4) separated by single spaces";
+        return false;
+    }
+
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            next.board[row][col] = empty_piece();
+        }
+    }
+    *reason = fen_read_placement(&next, fields[0]);
+    if (*reason != NULL) {
+        return false;
+    }
+    if (strcmp(fields[1], "w") != 0 && strcmp(fields[1], "b") != 0) {
+        *reason = "side to move must be w or b";
+        return false;
+    }
+    next.turn = (fields[1][0] == 'w') ? WHITE : BLACK;
+    *reason = fen_check_material(&next, WHITE);
+    if (*reason == NULL) {
+        *reason = fen_check_material(&next, BLACK);
+    }
+    if (*reason == NULL) {
+        *reason = fen_read_castling(&next, fields[2]);
+    }
+    if (*reason == NULL) {
+        *reason = fen_read_en_passant(&next, fields[3]);
+    }
+    if (*reason != NULL) {
+        return false;
+    }
+
+    next.halfmove_clock = 0;
+    next.fullmove_number = 1;
+    if (field_count == 6 &&
+        (!fen_read_number(fields[4], 0, &next.halfmove_clock) ||
+         !fen_read_number(fields[5], 1, &next.fullmove_number))) {
+        *reason = "halfmove clock and move number must be whole numbers (move number at least 1)";
+        return false;
+    }
+
+    if (is_in_check(&next, opposite(next.turn))) {
+        *reason = "the side that is not to move is in check";
+        return false;
+    }
+    if (!find_king(&next, next.turn, &king_row, &king_col)) {
+        *reason = "the side to move has no king";
+        return false;
+    }
+    if (count_attackers(&next, king_row, king_col, opposite(next.turn)) > 2) {
+        *reason = "the king to move is attacked by more than two pieces";
+        return false;
+    }
+
+    next.history = b->history;
+    next.history_capacity = b->history_capacity;
+    next.history_size = 0;
+    *b = next;
+    record_position(b);
+    *reason = NULL;
+    return true;
+}
+
+/* Writes the current position as a FEN line into out. */
+static void board_to_fen(const Board *b, char out[FEN_TEXT_SIZE]) {
+    size_t n = 0;
+
+    for (int row = 0; row < 8; ++row) {
+        int empty = 0;
+        for (int col = 0; col < 8; ++col) {
+            Piece p = b->board[row][col];
+            if (p.color == EMPTY) {
+                ++empty;
+                continue;
+            }
+            if (empty > 0) {
+                out[n++] = (char)('0' + empty);
+                empty = 0;
+            }
+            out[n++] = piece_symbol(p);
+        }
+        if (empty > 0) {
+            out[n++] = (char)('0' + empty);
+        }
+        if (row < 7) {
+            out[n++] = '/';
+        }
+    }
+    out[n++] = ' ';
+    out[n++] = (b->turn == WHITE) ? 'w' : 'b';
+    out[n++] = ' ';
+    size_t castling_start = n;
+    if (!b->white_king_moved && !b->white_rook_h_moved) {
+        out[n++] = 'K';
+    }
+    if (!b->white_king_moved && !b->white_rook_a_moved) {
+        out[n++] = 'Q';
+    }
+    if (!b->black_king_moved && !b->black_rook_h_moved) {
+        out[n++] = 'k';
+    }
+    if (!b->black_king_moved && !b->black_rook_a_moved) {
+        out[n++] = 'q';
+    }
+    if (n == castling_start) {
+        out[n++] = '-';
+    }
+    out[n++] = ' ';
+    if (in_bounds(b->ep_row, b->ep_col)) {
+        out[n++] = (char)('a' + b->ep_col);
+        out[n++] = (char)('0' + 8 - b->ep_row);
+    } else {
+        out[n++] = '-';
+    }
+    snprintf(out + n, FEN_TEXT_SIZE - n, " %d %d", b->halfmove_clock, b->fullmove_number);
+}
+
+/* STAGE 3S: following one piece across a move, for the calculator.
+ * Every piece of the position before the move is in exactly one case:
+ * it stays on its square, it is the moved piece, it is the castling rook,
+ * it is captured (also en passant), or it is the pawn that promotes.
+ * after_type is the piece's type after the move (it changes on promotion).
+ * Not static: the tests use it now, and stage 3A's report will. */
+typedef enum { FOLLOW_STAYS, FOLLOW_MOVED, FOLLOW_CASTLING_ROOK, FOLLOW_CAPTURED, FOLLOW_PROMOTED } FollowCase;
+
+FollowCase follow_piece(const Board *before, Move move, int row, int col,
+                        int *after_row, int *after_col, char *after_type);
+FollowCase follow_piece(const Board *before, Move move, int row, int col,
+                        int *after_row, int *after_col, char *after_type) {
+    Piece piece = before->board[row][col];
+    Piece mover = before->board[move.sr][move.sc];
+    bool captured;
+
+    *after_type = piece.type;
+    if (row == move.sr && col == move.sc) {
+        *after_row = move.er;
+        *after_col = move.ec;
+        if (mover.type == 'P' && (move.er == 0 || move.er == 7)) {
+            *after_type = (move.promotion == '\0') ? 'Q' : move.promotion;
+            return FOLLOW_PROMOTED;
+        }
+        return FOLLOW_MOVED;
+    }
+
+    resolve_piece_after_move(before, move, row, col, after_row, after_col, &captured);
+    if (captured) {
+        *after_row = -1;
+        *after_col = -1;
+        return FOLLOW_CAPTURED;
+    }
+    if (*after_col != col) {
+        return FOLLOW_CASTLING_ROOK;
+    }
+    return FOLLOW_STAYS;
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -1445,6 +1843,25 @@ int main(void) {
             clear_selection(&selected_row, &selected_col, &preview_shown,
                             &promotion_choice_pending);
             puts("NEW SELECTION: now enter characters 1-2 for a different piece.");
+            continue;
+        }
+
+        /* Stage 3S: "fen" prints the position, "fen <FEN>" sets one up. */
+        if (strcmp(input, "fen") == 0) {
+            char fen_text[FEN_TEXT_SIZE];
+            board_to_fen(&game, fen_text);
+            printf("FEN: %s\n", fen_text);
+            continue;
+        }
+        if (strncmp(input, "fen ", 4) == 0) {
+            const char *reason = NULL;
+            if (load_fen(&game, input + 4, &reason)) {
+                clear_selection(&selected_row, &selected_col, &preview_shown,
+                                &promotion_choice_pending);
+                puts("FEN loaded: practice position set up.");
+            } else {
+                printf(RED "FEN rejected: %s. The position is unchanged." RESET "\n", reason);
+            }
             continue;
         }
 
