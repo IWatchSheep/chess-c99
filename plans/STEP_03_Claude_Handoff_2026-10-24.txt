@@ -1,0 +1,77 @@
+STEP 3 — CLAUDE HANDOFF / JOB BRIEF
+Date: 2026-10-24
+Status: Proposed work. No implementation approved or performed by this brief.
+Project baseline: chess(10).c (C99). Preserve a backup of this file before edits.
+
+OWNER'S ORIGINAL INTENT
+Two chess decision strategies use the same legal rules and starting positions.
+Side A — FORGETS / DIVES: prioritizes direct offensive opportunities (the queen-and-bishop Scholar's Mate attack is a teaching example), under-considering defensive relations and responses.
+Side B — REMEMBERS / COORDINATES: considers the *entire team's* legal moves, who protects whom, effective width (coordinated useful movements, numerical pressure and protection), enemy responses, and the value/order of exchanges. A pawn-for-queen exchange may be advantageous. Defense does not mean refusing to attack or sacrifice.
+Hypothesis to TEST, not assume: preserving and using relational information can yield better decisions than a direct-opportunity strategy, under some conditions. Also identify counterexamples.
+
+ALREADY PRESENT
+Step 1: selecting a piece and displaying legal destinations.
+Step 2: a proposed destination produces BEFORE and AFTER lists for all OTHER pieces, including GAINED, LOST, and UNCHANGED destinations. The selected piece is omitted; preview does NOT alter the actual board; F finalizes.
+Step 3 experimental implementation in chess(10).c: Side A and Side B candidate move rankings, measures of mobility, links, exposure, target pressure, and immediate opponent-response checks. This is NOT a proved general strategic calculator.
+Prior targeted observation: from 1.e4 e5 2.Bc4 Nc6, both current candidate comparators favored 3.Qh5 over 3.Nf3 in a pairwise test; Black 3...g6 disrupts the immediate 4.Qxf7# threat. Do not force Nf3 to win by design. Reproduce actual results locally before relying on them.
+
+JOB TO DO — ORDERED GATES
+GATE 0: BASELINE & REPRODUCIBILITY
+1. Read chess(10).c fully, plus any supplied earlier Step 2 tests and notes.
+2. Back up chess(10).c and identify current functions and measurements exactly.
+3. Compile with gcc -std=c99 -Wall -Wextra -Wpedantic -Werror -O2; record command, output, compiler version.
+4. Re-run Step 1 / Step 2 regression tests and at least one full preview/F-finalize flow. Keep the baseline unchanged while investigating.
+
+GATE 1: MATHEMATICAL SPECIFICATION (NO CODE CHANGES)
+1. Define independent quantities, with units and viewpoint, rather than mixing counts in one unexplained score:
+   - legal destinations (Step 2)
+   - geometrically controlled/defended squares including friendly-occupied squares
+   - first-order X-ray potential separately
+   - pairwise protection links and which links appear/disappear after m
+   - enemy attacks, legal captures, and checks/pins
+   - immediate and possible future exchange outcomes, explicitly stating search depth
+   - target-directed offense and goal definition
+   - opponent legal replies and verified threat survival
+2. Define 'effective width' as a *vector* of useful mobility, coordinated goal pressure, team protection and vulnerability—not merely side-by-side placement or piece count.
+3. Define exactly what Side A does not consider and Side B does, while keeping legal rules, access to original board, depth, runtime budgets, and tie-breaks comparable. 'Forgets' refers to a decision rule / selective consideration of relations, not inability to see pieces.
+4. Separate exact finite-horizon facts from heuristics. The standard piece values (P=100, N/B≈300, R=500, Q=900) are conventional approximations, not proved exchange worth. No king capture permitted.
+5. Check that 'SOUND' does not forbid a winning sacrifice or label all exposed but tactically safe arrangements unsound; opponent can play non-captures that neutralize attacks.
+
+GATE 2: DETECT EXISTING ERRORS BEFORE REDESIGN
+1. Audit current scoring functions and the meaning/sign of 'worst_case_net_cp', 'delta_exposure_cp', 'safe_width', formed/broken protection links, and surviving threat.
+2. Verify the board orientation, turn semantics, en passant, castling, promotion, check and mate detection in hypothetical evaluations.
+3. Distinguish attacking a square, protecting a friendly occupant, legal capture, and x-ray behind a blocker. Absolute pin vs relative pin.
+4. Check that the user-visible report correctly reflects computed data rather than over-claiming protection/safety or forced tactics.
+5. Produce a list of reproducible issues, each with an exact starting FEN, move sequence, expected property and observed result.
+
+GATE 3: SMALL DETERMINISTIC TESTS FIRST
+Test A: Initial position with 1.e4 e5 2.Bc4 Nc6; validate legal FEN:
+r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+Test 3.Qh5 threat 4.Qxf7# if Black fails to defend; after legal 3...g6 it is no longer a one-move mate threat. Do not hand-guess number of Black replies.
+Test B: 3.Nf3 from same position; compare actual calculated metrics under both rules, do not hard-code preference.
+Test C: pawn protects a friendly pawn despite not being able to move to the defended square.
+Test D: a bishop protects a friendly queen; x-ray beyond first blocker is separate.
+Test E: relative queen pin allows some moves; absolute king pin rules out illegal off-line moves. Use geometrically legal knight target squares.
+Test F: exchange where lower-value piece can capture higher-value piece; distinguish immediate capture from genuinely forced gain after replies.
+Test G: preview-only invariants, Step 2 before/after identities for captures, castling rook, en passant and promotion; F commits exactly once.
+Write tests against the real chess(10).c functions, plus independently check expected chess facts where possible. Record pass/fail counts and actual outputs.
+
+GATE 4: MINIMAL CORRECTION, ONLY AFTER TESTS
+1. Propose the smallest documented correction to the Side B decision process that uses protection and counter-replies consistently, without a special case for Scholar's Mate.
+2. Keep raw measurements separate; any derived ranking/threshold must be explicitly justified as a testable heuristic, not mathematical proof.
+3. Side A and Side B must have deterministic tie-breaks and identical legal constraints. If comparing search limits, state and equalize them.
+4. Test cases where A can succeed or B can be excessively cautious. Avoid concluding that B always wins.
+5. Keep existing Step 1, Step 2, preview/P/N/F workflows intact.
+6. Ask owner approval before changing the baseline version; deliver proposed patch or separate experimental branch first.
+
+EXPECTED DELIVERABLES TO OWNER
+- Short independent verdict: what is correct, uncertain, or broken in chess(10).c.
+- One precise math specification with definitions, units, and assumptions.
+- One readable automated C99 regression test file plus result log and reproduction command.
+- Small focused candidate patch or alternative comparator, only after tests support it.
+- A list of unresolved questions and next experiment.
+- No claims of full chess strength from a shallow search; no assertion that B must win.
+
+IMPORTANT OWNER WORKFLOW
+The owner is a C/C++ beginner. Prefer readable, commented C99 code and small changes. Preserve copies and working reports. Do not port the chess program to C++11 without a separate decision; C++11 is intended for the later AI v3 project, not automatically for this chess baseline.
+The owner is taking a break. This is a handoff to review later, not authorization for background work.

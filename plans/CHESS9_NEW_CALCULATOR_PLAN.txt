@@ -1,0 +1,91 @@
+CHESS(9) — NEW CALCULATOR PLAN (OWNER-LED RESET)
+Date: 2026-10-24
+Status: PLAN ONLY. No Step 3 calculator has been added to chess(9).c.
+
+0. BASELINE AND CHANGE CONTROL
+- Begin from the owner's original chess(9).c, not chess(10).c.
+- The base is C99 and retains standard legal moves, selection, preview of a proposed destination, BEFORE/AFTER lists for all other pieces on both sides, GAINED/LOST/UNCHANGED destination comparisons, and confirmation before finalizing a move.
+- Treat the earlier Gemini Side A/Side B scoring, 'safe width' sums, and mate-threat heuristics as historical experiments, NOT a required implementation.
+- Keep chess(9).c intact. Make any future experiment in a new version after verifying the design and running regression tests.
+
+1. OWNER'S INTENDED WORKFLOW (ALREADY PRESENT AT THE BASELINE)
+A. Select a piece: show the selected piece and squares legally available to it.
+B. Select one of those squares: do not move permanently; preview what the move would do to the squares available to EVERY OTHER friendly and opposing piece.
+C. Read the results as a machine-readable text list as well as on a human-friendly board.
+D. Confirm the move before changing the real game position.
+E. The chess rules remain authoritative. Preview must not commit a move.
+
+2. OWNER'S NEW CALCULATOR QUESTION
+Given a proposed move from square X to square Y, can a calculator identify follow-up moves that bring two or more friendly pieces alongside, into mutual support, or into protective alignment on a route toward one or more specified goal squares? Can it compare this coordinated or 'width-wise' route with an apparently shorter direct route by an individual long-moving piece? Can it account for the enemy's available defensive blocks and the value of pieces potentially exchanged?
+
+The owner's distinctive observation concerns how many pieces CAN'T MOVE to useful squares after each possible move. An enemy move might disable multiple follow-up destinations or block a queen-and-bishop route. The calculator should examine these restrictions for defense and again with roles reversed for offense.
+
+3. DEFINITIONS TO AGREE ON BEFORE ANY FORMULA OR CODE
+Do not collapse these into one metric:
+- Legal destinations: where a piece may legally move now, including empty-square moves and captures.
+- Geometric control/defense: squares a piece attacks or protects, including friendly-occupied squares; differs from legal destinations.
+- 'Can't move' must be split into explicit observations:
+  (a) a piece has zero legal moves in the current position;
+  (b) a particular destination available BEFORE is LOST AFTER;
+  (c) a square or route is inaccessible due to a blocker or king-safety rule;
+  (d) a move exists but is strategically undesirable (NOT the same as illegal).
+- Protection: piece P geometrically defends the occupied square of friendly piece Q. Record which named pieces are involved, not just totals.
+- Width (owner's provisional term): several pieces cooperating via follow-up motion, protection, numerical support, or beneficial exchange possibilities; NOT mere adjacency, not movement distance, and not just count of legal moves.
+- Goal: an externally chosen square or set of squares; initially a test parameter, NOT always the enemy king. Test first goal G1 and then a second goal G2.
+- Piece exchange value: approximate conventional piece values may be logged, but chess legality and checkmate must remain separate. A low-for-high trade may be worthwhile even with a sacrificed friendly piece.
+
+4. CALCULATOR INPUT / OUTPUT CONTRACT (DESIGN PROPOSAL, NOT IMPLEMENTATION)
+Inputs: original board B, candidate legal move m, goal set G (possibly G1 then G2).
+First compute B' = hypothetical result of m, without committing.
+Output, per piece ID (color, type, starting square), and for both sides:
+- legal destination sets BEFORE and AFTER;
+- GAINED / LOST / UNCHANGED destinations;
+- explicit zero-legal-move pieces BEFORE and AFTER;
+- protective relationships BEFORE and AFTER, listing every formed/broken link;
+- enemy blocking/countermove candidates and their effects on those lists;
+- prospective follow-up friendly moves that establish protection or convergence toward G;
+- potential exchange sequence and net material change, with uncertainty indicated where deeper replies are not checked.
+The report must distinguish directly calculated facts from estimates or speculative plans.
+
+5. NON-DUPLICATED COUNTING OF 'CAN'T MOVE'
+First identify the UNIT OF COUNTING before calculating:
+- Unique piece that currently has zero legal moves (count each piece once).
+- Unique (piece, destination) relationship LOST after a proposed move (count each pair once).
+- Unique destination square denied across the team (count each square once even if multiple pieces lose it).
+These are THREE DIFFERENT counts. Never sum or cancel them as though equivalent.
+For sequential hypothetical moves, recompute the state and calculate the difference between consecutive states; do not repeatedly charge the same disabled piece or lost (piece, square) relationship as a NEW loss.
+For each possible enemy response r, compute B'' = Apply(B', r), show which lost relationships are restored and which new ones are lost, then reverse colors and repeat for offensive opportunities.
+
+6. FIRST TEST SCENARIOS (DO NOT BIAS THE ANSWER)
+Test A: Empty or nearly empty small legal position to establish accurate before/after and counting behavior.
+Test B: A friendly piece protected by another friendly piece, then a legal move that breaks that protection; differentiate protection from legal mobility.
+Test C: One enemy blocking move restricting multiple legal destinations, and one reply restoring a subset; verify no double counting.
+Test D: Scholar's Mate attack: after 1.e4 e5 2.Bc4 Nc6 3.Qh5, check Black's 3...g6 and the queen/bishop f7 route. This is a test of enemy defensive blocking, not proof that a particular approach always wins.
+Test E: A legally constructed favorable low-value-for-high-value exchange with at least one opposing reply.
+Test F: Same initial position, two different externally specified goals G1 and G2; verify route/planning output changes in a traceable way.
+
+7. IMPLEMENT IN SMALL STAGES ONLY AFTER AGREEMENT
+Stage 3A — Independent, pure before/after relation extractor, with no scoring or move selection. Test each set exactly.
+Stage 3B — Nonduplicated mobility-loss counts and defensive-blocking report, for one candidate move and each legal enemy reply. Show examples with actual square names.
+Stage 3C — One- and two-step protective follow-up descriptions toward goal(s); explicitly label any assumption about opponent cooperation.
+Stage 3D — Legal exchange-sequence analysis (including capture order, promotions, pins and checking legality as appropriate); clearly bounded by search depth.
+Stage 3E — Only after the above pass, compare candidate routes and optionally experiment with different agent decision policies. Do not bake in which strategy should win.
+
+8. QUALITY GATES
+- C99 only, beginner-readable functions and comments.
+- Preserve chess(9) legal-move rules and selection/preview/finalize behavior.
+- Strict compile: gcc -std=c99 -Wall -Wextra -Wpedantic -Werror.
+- Add deterministic assertions for every example, including opponent replies and cases where a concept is NOT applicable.
+- Verify that preview leaves real board, history and turn unchanged.
+- Distinguish same-piece identity across movement, and handle captures/promotions correctly.
+- Avoid treating the same future square as multiple unique disabled squares merely because many pieces refer to it.
+- Show concrete before/after examples and exact calculations before proposing numerical weights.
+- No changes to chess(9).c before owner approves a specific implementation step.
+
+9. QUESTIONS FOR CLAUDE / REVIEWER
+- For the owner's 'many pieces can't move' description, which of the three counting units above best captures the intended calculation in each sentence? Preserve all three if needed.
+- What constitutes a 'shorter route' when the opponent can choose replies? Number of our moves, total plies, cost of exchanges, or a Pareto comparison of them? Keep ambiguous dimensions explicit.
+- What does 'coming up beside or protectively with you' mean in chess-specific measurable terms? Show concrete piece/square examples.
+- Does the proposed minimal Stage 3A report match the owner's purpose without importing Gemini's older weighted score?
+
+OWNER'S ORIGINAL WORDING is the authority for intent. This document organizes it into falsifiable measurements and design questions; it does not claim that the owner's hypothesis or any route formula is already proved.
