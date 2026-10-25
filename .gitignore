@@ -3,3 +3,6 @@
 cmake-build-*/
 *.exe
 *.o
+
+# Graphify code map output (made on your own PC)
+graphify-out/

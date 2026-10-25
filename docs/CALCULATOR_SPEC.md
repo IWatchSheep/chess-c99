@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.3
+# Chess calculator — specification v1.4
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). **Stage 3A is implemented as version 7** and awaits review before 3B. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). **Stage 3B is implemented as version 8** and awaits review before 3C. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -205,6 +205,25 @@ CALC END
 - **Charge-once test:** a sequence in which a pair is lost, restored, then lost again: reported as two separate `LOST` events and one restoration, never as a repeated charge for the pair while it stays missing.
 - **Preview invariants:** after `R`, the real board, the turn and the history are unchanged; `F` still plays the previewed move exactly once.
 
+**3B in detail — the reply view (v1.4).** After a preview, typing `replies` lists every legal reply of the other side; typing `replies <move>` (for example `replies g7g6`, or `replies e2e1q` for a promotion) prints the full 3A report of that one reply. Like `R`, it changes nothing: the board, the turn, the history and the memory stay as they were, and the existing preview output is unchanged. Without a preview the program says so.
+
+```
+REPLIES BEGIN <move>                     the previewed move m
+THREAT <side> <move> ...                 the mover's mate-in-one moves after m (as MATE1), or
+THREAT <side> none                       if m makes no such threat
+NO REPLIES <checkmate|stalemate>         only when m ends the game (then there is no THREAT line)
+REPLY <reply> <label> White U1 <n> U2 <n> U3 <n> GAINED <n> RESTORED <n> OPENED <n> Black U1 <n> ... OPENED <n>
+SUMMARY REPLIES <n> STOPS <n> LEAVES <n> NO-THREAT <n> ALLOWS <n>
+REPLIES END
+```
+
+- **Labels** (about the mover's mate-in-one moves, after m and the reply): `STOPS` m threatened mate and after the reply there is none; `LEAVES` m threatened mate and at least one remains; `NO-THREAT` m threatened no mate and the reply gives none; `ALLOWS` m threatened no mate but after the reply the mover has one. The labels are facts about mate-in-one only, not advice.
+- **Counts** on each `REPLY` line are exactly the `COUNT` lines of `replies <reply>`: the reply's changes from B' (after m) to B'', **with m treated as finalized**, so a pair m took away that the reply gives back is `RESTORED`. Example: E3's 3.Qh5 then 3...g6 shows Black `GAINED 3 RESTORED 2`.
+- **Order:** replies sorted by start square, then end square (rank 8 to 1, file a to h), then promotion piece Q, R, B, N.
+- **No reply is chosen, scored or played.**
+
+**Tests with 3B:** E3's 28 replies (8 `STOPS`: d8e7 d8f6 d8g5 d8h4 e8e7 g8h6 d7d5 g7g6; 20 `LEAVES`); E3b (no threat); a reply that `ALLOWS` a mate (1.e4 f6 2.d4 g5); a check with one answer (1.e4 f6 2.Qh5+, only g7g6); checkmate and stalemate (`NO REPLIES`, no `THREAT` line); promotion replies in Q, R, B, N order; counts equal to the `COUNT` lines of `replies <reply>`; `replies g7g6` equal to the `R` report after 3.Qh5 is played; refused input; the invariants. Golden transcripts of version 8 (`tests/golden_v8`) fix the whole output.
+
 ## 8. Worked examples (exact; computed by the programs in `tools/spec_examples/`)
 
 **E1 — the start position.** Each side: 6 zero-move pieces (White a1, c1, d1, e1, f1, h1); 20 legal (piece, square) pairs; team reach 16 squares; 19 protection links; 2 unprotected non-king pieces (the rooks a1, h1).
@@ -257,6 +276,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.4 | 2026-10-25 | Stage 3B implemented (version 8): the reply view (`replies`, `replies <move>`), its line format, the labels `STOPS`/`LEAVES`/`NO-THREAT`/`ALLOWS`, `SUMMARY`, `NO REPLIES` without a `THREAT` line, counts with m treated as finalized, and the fixed reply order. |
 | 1.3 | 2026-10-25 | Stage 3A implemented (version 7). Report details made exact from the implementation: `RESTORED` lines and the `RESTORED` count; names by square before the move, with permanent numbers behind them carrying the charge-once memory across finalized moves (ChatGPT review 05, point 2); link-line order; E3's 3...g6 with and without history. |
 | 1.2.1 | 2026-10-25 | Stage 3S implemented (version 6). E8's king-and-rook FEN corrected from `6k/8/6K1/...` (only 7 squares in its first rank, found by the new FEN tests) to `6k1/8/6K1/...`; the position the example computed was already the intended one (black king g8), so its result is unchanged. |
 | 1.2 | 2026-10-25 | ChatGPT's review 03 (approved in principle) incorporated: plies everywhere; explicit identities for the moved, castling, captured and promoted pieces; zero-move causes BLOCKED/CHECK/PIN; hypothetical passes labelled; captured pieces reported separately and `by-capture` denied squares; the exact charge-once rule per transition (lost, restored, gained; lost again = a new event); the exact definition of forced and possible mates and `LIMIT N`; the deterministic 3A report format; regression (golden transcripts of version 5), report, charge-once and preview-invariant tests; facts kept apart from conclusions. |

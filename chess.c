@@ -5,6 +5,8 @@
  * Stage 3S: "fen <FEN>" sets up a practice position; "fen" prints the
  * current position. See docs/CALCULATOR_SPEC.md.
  * Stage 3A: after a preview, "R" prints the calculator's fact report.
+ * Stage 3B: after a preview, "replies" lists every reply of the other side
+ * (does it stop the threat?), and "replies <move>" reports one reply.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -16,6 +18,9 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#ifdef _WIN32
+#include <io.h> /* _isatty */
+#endif
 
 #define RED   "\033[31m"
 #define CYAN  "\033[36m"
@@ -2224,6 +2229,221 @@ static void tracker_commit(Tracker *t, const Board *b, Move m) {
     t->grid = after_id;
 }
 
+/* STAGE 3B: the reply view (type "replies" after a preview).
+ * For the previewed move m, every legal reply of the other side is listed,
+ * in a fixed order, with:
+ *   - what happens to the mover's mate-in-one threats:
+ *       STOPS      m made a threat, and after this reply there is none
+ *       LEAVES     m made a threat, and after this reply one remains
+ *       NO-THREAT  m made no threat, and the reply gives none
+ *       ALLOWS     m made no threat, but after this reply the mover has one
+ *   - the reply's counts for both sides (as in the R report), measured with
+ *     m treated as played, so a move m took away that the reply gives back
+ *     is counted as RESTORED.
+ * "replies <move>" prints the full R report of that one reply.
+ * Nothing is chosen, scored or played. */
+
+typedef struct {
+    int zero_after;
+    int lost;
+    int denied;
+    int gained;
+    int restored;
+    int opened;
+} SideCounts;
+
+/* The counts of the R report's COUNT line, for move m from b with tracker t. */
+static void calc_counts(const Board *b, const Tracker *t, Move m, SideCounts counts[3]) {
+    Board a = *b;
+    IdGrid after_id;
+    bool captured[CALC_MAX_ID];
+    Snapshot s0, s1;
+
+    make_move(&a, m);
+    ids_after_move(b, m, &t->grid, &after_id, captured);
+    take_snapshot(b, &t->grid, &s0);
+    take_snapshot(&a, &after_id, &s1);
+    memset(counts, 0, sizeof(SideCounts) * 3);
+    for (int n = 1; n < CALC_MAX_ID; ++n) {
+        if (!s1.present[n]) {
+            continue;
+        }
+        SideCounts *c = &counts[t->color[n]];
+        if (s1.legal_count[n] == 0) {
+            ++c->zero_after;
+        }
+        for (int i = 0; i < 64; ++i) {
+            if (s0.legal[n][i] && !s1.legal[n][i]) {
+                ++c->lost;
+            } else if (!s0.legal[n][i] && s1.legal[n][i]) {
+                if (t->lost[n][i]) {
+                    ++c->restored;
+                } else {
+                    ++c->gained;
+                }
+            }
+        }
+    }
+    for (int side = WHITE; side <= BLACK; ++side) {
+        for (int i = 0; i < 64; ++i) {
+            if (s0.reach[side][i] && !s1.reach[side][i]) {
+                ++counts[side].denied;
+            } else if (!s0.reach[side][i] && s1.reach[side][i]) {
+                ++counts[side].opened;
+            }
+        }
+    }
+}
+
+static int count_mate_in_one(const Board *b, Color side) {
+    Board view = *b;
+    int mates = 0;
+
+    view.turn = side;
+    MoveList moves = generate_moves(&view);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Board next = view;
+        make_move(&next, moves.items[i]);
+        MoveList replies = generate_moves(&next);
+        if (replies.count == 0 && is_in_check(&next, next.turn)) {
+            ++mates;
+        }
+        free(replies.items);
+    }
+    free(moves.items);
+    return mates;
+}
+
+/* Fixed order of replies: by start square, then end square (rank 8 to 1,
+ * file a to h), then promotion piece Q, R, B, N. */
+static int promotion_rank(char promotion) {
+    const char *order = "QRBN";
+    const char *at = promotion ? strchr(order, promotion) : NULL;
+    return at ? (int)(at - order) + 1 : 0;
+}
+
+static int compare_moves(const void *left, const void *right) {
+    const Move *a = left;
+    const Move *b = right;
+    int ka = ((a->sr * 8 + a->sc) * 64 + a->er * 8 + a->ec) * 8 + promotion_rank(a->promotion);
+    int kb = ((b->sr * 8 + b->sc) * 64 + b->er * 8 + b->ec) * 8 + promotion_rank(b->promotion);
+    return (ka > kb) - (ka < kb);
+}
+
+static void counts_text(TextBuffer *out, const SideCounts counts[3]) {
+    for (int side = WHITE; side <= BLACK; ++side) {
+        const SideCounts *c = &counts[side];
+        text_add(out, " %s U1 %d U2 %d U3 %d GAINED %d RESTORED %d OPENED %d", color_name((Color)side),
+                 c->zero_after, c->lost, c->denied, c->gained, c->restored, c->opened);
+    }
+}
+
+/* The position after m, and the tracker as if m had been finalized. */
+static void position_after(const Board *b, const Tracker *t, Move m, Board *after, Tracker *after_tracker) {
+    *after = *b;
+    *after_tracker = *t;
+    tracker_commit(after_tracker, b, m);
+    make_move(after, m);
+}
+
+/* Builds the reply view for move m from position b, without changing b or t. */
+static void replies_report(const Board *b, const Tracker *t, Move m, TextBuffer *out) {
+    Board a;
+    Tracker ta;
+    char text[6];
+    int stops = 0, leaves = 0, no_threat = 0, allows = 0;
+
+    position_after(b, t, m, &a, &ta);
+    Color mover = b->board[m.sr][m.sc].color;
+    move_text(m, text);
+    text_add(out, "REPLIES BEGIN %s\n", text);
+
+    /* If m ends the game there is nothing to answer, so no THREAT line. */
+    MoveList replies = generate_moves(&a);
+    bool threat = false;
+    if (replies.count == 0) {
+        text_add(out, "NO REPLIES %s\n", is_in_check(&a, a.turn) ? "checkmate" : "stalemate");
+    } else {
+        TextBuffer threats = {NULL, 0, 0};
+        report_mates(&threats, &a, mover);
+        threat = threats.length > 0;
+        if (threat) {
+            text_add(out, "THREAT%s", threats.text + strlen("MATE1"));
+        } else {
+            text_add(out, "THREAT %s none\n", color_name(mover));
+        }
+        free(threats.text);
+    }
+    if (replies.count > 1) {
+        qsort(replies.items, replies.count, sizeof(Move), compare_moves);
+    }
+    for (size_t i = 0; i < replies.count; ++i) {
+        Board after_reply = a;
+        SideCounts counts[3];
+        make_move(&after_reply, replies.items[i]);
+        bool still = count_mate_in_one(&after_reply, mover) > 0;
+        const char *label;
+        if (threat && still) {
+            label = "LEAVES";
+            ++leaves;
+        } else if (threat) {
+            label = "STOPS";
+            ++stops;
+        } else if (still) {
+            label = "ALLOWS";
+            ++allows;
+        } else {
+            label = "NO-THREAT";
+            ++no_threat;
+        }
+        calc_counts(&a, &ta, replies.items[i], counts);
+        move_text(replies.items[i], text);
+        text_add(out, "REPLY %s %s", text, label);
+        counts_text(out, counts);
+        text_add(out, "\n");
+    }
+    text_add(out, "SUMMARY REPLIES %d STOPS %d LEAVES %d NO-THREAT %d ALLOWS %d\n", (int)replies.count,
+             stops, leaves, no_threat, allows);
+    text_add(out, "REPLIES END\n");
+    free(replies.items);
+}
+
+/* The full R report of one reply r to move m (m treated as played). */
+static bool reply_detail(const Board *b, const Tracker *t, Move m, Move r, TextBuffer *out) {
+    Board a;
+    Tracker ta;
+
+    position_after(b, t, m, &a, &ta);
+    if (!legal_move(&a, r)) {
+        return false;
+    }
+    calc_report(&a, &ta, r, out);
+    return true;
+}
+
+/* Reads a reply typed as e7e5 or e2e1q; false if it is not well formed. */
+static bool parse_move_text(const char *text, Move *m) {
+    size_t length = strlen(text);
+    int sr, sc, er, ec;
+
+    if ((length != 4 && length != 5) || !parse_square(text, &sr, &sc) || !parse_square(text + 2, &er, &ec)) {
+        return false;
+    }
+    m->sr = sr;
+    m->sc = sc;
+    m->er = er;
+    m->ec = ec;
+    m->promotion = '\0';
+    if (length == 5) {
+        char p = (char)toupper((unsigned char)text[4]);
+        if (strchr("QRBN", p) == NULL) {
+            return false;
+        }
+        m->promotion = p;
+    }
+    return true;
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -2244,7 +2464,12 @@ int main(void) {
     static Tracker tracker; /* Stage 3A: piece names and lost moves */
 
 #ifdef _WIN32
-    (void)system("chcp 65001 > nul");
+    /* Only in a real console window. When the input comes from a file (the
+     * transcript tests), the cmd.exe that system() starts used up that input
+     * before the game could read it, so the game saw no moves at all. */
+    if (_isatty(0)) {
+        (void)system("chcp 65001 > nul");
+    }
 #endif
 
     reset_board(&game);
@@ -2388,6 +2613,25 @@ int main(void) {
                 calc_report(&game, &tracker, preview_move, &report);
                 fputs(report.text, stdout);
                 free(report.text);
+            }
+            continue;
+        }
+
+        /* Stage 3B: "replies" and "replies <move>" for the previewed move. */
+        if (!strcmp(input, "replies") || !strncmp(input, "replies ", 8)) {
+            TextBuffer view = {NULL, 0, 0};
+            Move reply;
+            if (!preview_shown) {
+                puts(RED "No preview to answer. Select a piece and preview a destination, then type replies." RESET);
+            } else if (input[7] == '\0') {
+                replies_report(&game, &tracker, preview_move, &view);
+            } else if (!parse_move_text(input + 8, &reply) ||
+                       !reply_detail(&game, &tracker, preview_move, reply, &view)) {
+                puts(RED "Not a legal reply. Type replies to list them, or replies e7e5 for one." RESET);
+            }
+            if (view.text != NULL) {
+                fputs(view.text, stdout);
+                free(view.text);
             }
             continue;
         }

@@ -1,0 +1,77 @@
+Stage 3B results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 8 = Stage 3B (chess.c, tests/replies_tests.c,
+tests/golden_v8/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.4).
+
+What 3B adds (spec v1.4, Section 7, "3B in detail")
+1. After a preview, "replies" lists every legal reply of the other side:
+     REPLIES BEGIN <m>
+     THREAT <side> <moves> | THREAT <side> none
+     NO REPLIES checkmate|stalemate   (only when m ends the game)
+     REPLY <r> <label> White U1 U2 U3 GAINED RESTORED OPENED Black ...
+     SUMMARY REPLIES n STOPS n LEAVES n NO-THREAT n ALLOWS n
+     REPLIES END
+   Labels concern the mover's mate-in-one moves only:
+     STOPS (threat before, none after the reply), LEAVES (one remains),
+     NO-THREAT (none before, none after), ALLOWS (none before, one after).
+2. The counts on each REPLY line are exactly the COUNT lines of the 3A report
+   of that reply from B' (after m), with m treated as finalized: a pair m
+   took away that the reply gives back is RESTORED (E3: 3.Qh5 g6 shows Black
+   GAINED 3 RESTORED 2).
+3. "replies <move>" prints the full 3A report of one reply (B' -> B'').
+4. Fixed order: start square, end square (rank 8 to 1, file a to h),
+   promotion Q, R, B, N. Deterministic.
+5. Nothing is chosen, scored or played; board, turn, history and the
+   count-once memory are unchanged (tested). No weights, no Side A/B.
+
+One decision for you to check
+- When m itself ends the game (checkmate or stalemate) there is nothing to
+  answer, so the view prints NO REPLIES and no THREAT line. Computing the
+  mover's "mate in one" there would mean letting the mover move twice in a
+  finished game, which lists meaningless moves (after Qxf7# it listed 24).
+- Observation, not changed: the 3A report's MATE1 line (approved, fixed by
+  golden_08) has the same effect after a move that ends the game, because
+  MATE1 is defined as "the side's mate-in-one moves after the move" with the
+  turn ignored. Should a later stage suppress MATE1 when the game is over, or
+  keep the 3A definition as it is?
+
+Tests
+- tests/replies_tests.c (22 checks, CTest "replies_tests"): E3 3.Qh5 (28
+  replies; STOPS exactly d8e7 d8f6 d8g5 d8h4 e8e7 g8h6 d7d5 g7g6; 20 LEAVES;
+  THREAT White h5f7); E3b 3.Nf3 (THREAT none, all NO-THREAT); 1.e4 f6 2.d4,
+  the reply g7g5 ALLOWS (Qh5#); 1.e4 f6 2.Qh5+ (check, the only reply g7g6);
+  Qxf7# -> NO REPLIES checkmate; FEN 7k/5K2/8/8/8/8/8/6Q1 w, Qg6 -> NO
+  REPLIES stalemate; no THREAT line in either finished game; promotion
+  replies in Q, R, B, N order; sorted order; every REPLY line's counts equal
+  the COUNT lines of "replies <r>"; "replies g7g6" equals the R report after
+  3.Qh5 is finalized; illegal or malformed replies refused; invariants and
+  framing.
+- tests/golden_v8: 09_replies (no preview, Scholar's line, one reply in
+  detail, refused input, 3.Nf3, Qxf7#) and 10_replies_endings (stalemate,
+  checkmate on a practice board), recorded from version 8 under sanitizers.
+- CTest: 13 tests, all pass (unit_tests 63, calc_tests 27, replies_tests 22,
+  seven v5 goldens, one v7 golden, two v8 goldens). The eight earlier
+  transcripts are reproduced byte for byte. Strict C99 (-Werror),
+  ASan/UBSan clean, perft unchanged on the six standard positions, the four
+  spec example programs reproduce their saved outputs (only timings differ).
+
+Windows fix found by the owner's test run
+- On the owner's PC (Windows, MinGW GCC 15.2, CLion's CTest) the three test
+  programs passed, but all 10 transcript tests failed, also the seven of
+  version 5. The saved output stopped at the first prompt: the game received
+  no input. Since version 1, main() runs system("chcp 65001 > nul") on
+  Windows; the cmd.exe it starts used up the redirected input file before the
+  game read it. The call now runs only when the input is a real console
+  (_isatty(0), from <io.h>, inside #ifdef _WIN32). The game's output is pure
+  ASCII, so the transcripts do not depend on the code page. Nothing changes
+  on Linux; the golden files were not changed. The transcript tests had only
+  been run on Linux before.
+
+Also in this commit
+- docs/reviews/09: your Stage 3A confirmation (excerpts; the full text was
+  not kept).
+- .graphifyignore and graphify-out/ in .gitignore, for the owner's local
+  code map (Graphify); no effect on the program.
+
+Please review and say APPROVED for 3B, or list what to change, before 3C.
