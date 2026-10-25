@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.4
+# Chess calculator — specification v1.5
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). **Stage 3B is implemented as version 8** and awaits review before 3C. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 makes the MATE1 correction asked for in review 11 and awaits review; Stage 3C follows as version 10. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -190,12 +190,15 @@ PROTECT- <side> <type> <square> <type> <square>   link broken
 ATTACK+ <side> <type> <square> <type> <square>    attacker, attacked enemy
 ATTACK- <side> <type> <square> <type> <square>
 CHECK <side>                            the side whose king is attacked after the move
-MATE1 <side> <move> ...                 that side's mate-in-one moves after the move (threats)
+MATE1 <side> <move> ...                 that side's mate-in-one moves after the move (threats);
+                                        none when the move ends the game (v1.5)
 COUNT <side> U1 <n> U2 <n> U3 <n> GAINED <n> RESTORED <n> OPENED <n>   (U1 = zero-move pieces after the move)
 CALC END
 ```
 
 **Fixed order:** White's lines before Black's within each keyword; keywords in the order above; pieces and squares from rank 8 to rank 1, and file a to h within a rank; destinations in the same order. A link line is ordered by the first piece's square, then the second's, in the position where the link exists (after the move for `+`, before it for `-`).
+
+**A move that ends the game (v1.5).** When the move is checkmate or stalemate (the side to move afterwards has no legal move), the report has no `MATE1` lines: there is no further turn in which to threaten anything. All other lines are reported as usual (for a mate: `CHECK` and the `ZERO … CHECK` lines). This matches the reply view's `NO REPLIES` without a `THREAT` line (ChatGPT review 11, point 2). Before version 9, `MATE1` was computed as if the mover could move again and listed meaningless moves.
 
 **Names and memory (v1.3).** In the report every piece is named by its type and its square **before the move** (`Q d1` for the queen moving from d1; a pawn about to promote is still `P`). Behind the names, each piece has a permanent number from the start of tracking (the normal start, `restart`, or `fen`), carried across every finalized move with `follow_piece` (castling rook, captures, en passant, promotion). The numbers hold the memory of the charge-once rule: when a move is finalized with `F`, every pair it removed is remembered as lost; a later move that brings the pair back reports it as `RESTORED` (not `GAINED`), and a pair that stays missing is never charged again. `R` itself changes nothing (the board, the turn, the history and the memory are left as they were). Squares are written `e4`, sides `White`/`Black`, types `P N B R Q K`. **The report contains facts only.** Strategy conclusions (better, worse, should) never appear in 3A–3C; when later stages draw a conclusion it is printed on lines starting `CONCLUSION`, kept apart from the facts.
 
@@ -276,6 +279,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.5 | 2026-10-25 | Stage 3B approved (review 11). Version 9: no `MATE1` lines after a move that ends the game (checkmate or stalemate), as asked in review 11; the version 7 transcript is unchanged; new transcript `tests/golden_v9`. |
 | 1.4 | 2026-10-25 | Stage 3B implemented (version 8): the reply view (`replies`, `replies <move>`), its line format, the labels `STOPS`/`LEAVES`/`NO-THREAT`/`ALLOWS`, `SUMMARY`, `NO REPLIES` without a `THREAT` line, counts with m treated as finalized, and the fixed reply order. |
 | 1.3 | 2026-10-25 | Stage 3A implemented (version 7). Report details made exact from the implementation: `RESTORED` lines and the `RESTORED` count; names by square before the move, with permanent numbers behind them carrying the charge-once memory across finalized moves (ChatGPT review 05, point 2); link-line order; E3's 3...g6 with and without history. |
 | 1.2.1 | 2026-10-25 | Stage 3S implemented (version 6). E8's king-and-rook FEN corrected from `6k/8/6K1/...` (only 7 squares in its first rank, found by the new FEN tests) to `6k1/8/6K1/...`; the position the example computed was already the intended one (black king g8), so its result is unchanged. |

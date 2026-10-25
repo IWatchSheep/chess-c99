@@ -1,0 +1,37 @@
+Version 9 for ChatGPT's review (chess-c99): the MATE1 correction
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 9 (chess.c, tests/calc_tests.c, tests/golden_v9/,
+CMakeLists.txt, README, CALCULATOR_SPEC.md v1.5, docs/reviews/11 and 12).
+This is the correction you asked for in review 11, point 2. Stage 3C comes
+next, as version 10.
+
+The change
+- calc_report (the R report) prints no MATE1 lines when the move ends the
+  game: if the side to move after the move has no legal move (checkmate or
+  stalemate), the MATE1 step is skipped. Every other line is unchanged; after
+  a mate the report still has CHECK, the ZERO ... CHECK lines and COUNT.
+- Same rule as the 3B reply view (NO REPLIES, no THREAT line), so the two
+  reports agree. One code change in chess.c (5 lines), nothing else.
+
+Historical transcripts preserved
+- tests/golden_v7/08_report.out is NOT changed and still passes: its only
+  MATE1 line is after 3.Qh5, a game that goes on. The other nine transcripts
+  (seven of version 5, two of version 8) are also unchanged and pass.
+- New tests/golden_v9/11_report_endings: R after a stalemate (Qg6), after a
+  checkmate on a practice board (Qg7#) and after Scholar's Mate (Qxf7#), then
+  F plays the mate ("Checkmate! White wins!").
+
+Regression tests (tests/calc_tests.c, 27 -> 31 checks)
+- C1 4.Qxf7#: CHECK Black present, no MATE1 line.
+- C2 the rest of that report (COUNT lines, CALC END) still printed.
+- C3 Qg6 stalemate: no MATE1 and no CHECK line.
+- C4 3.Qh5 keeps MATE1 White h5f7 (a game that goes on).
+- C1 and C3 fail on version 8's chess.c and pass on version 9, so they
+  really test the change.
+
+Checks: CTest 14 tests all pass (unit 63, report 31, replies 22, eleven
+transcripts); strict C99 with -Werror; ASan/UBSan clean.
+
+Please say APPROVED for version 9, or list what to change. Stage 3C
+(version 10) follows.

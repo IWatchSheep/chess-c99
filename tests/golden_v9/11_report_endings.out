@@ -1,0 +1,811 @@
+=== Simple 2-Player Chess ===
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): FEN loaded: practice position set up.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m Q [0m|[48;5;180m[38;5;232m   [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+Piece selected. BEFORE/AFTER lists will appear together after the destination.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 3-4: enter a destination (e.g. d4), then Enter.
+The BEFORE and AFTER lists will appear. NO MOVE is made yet.
+Press N then Enter to choose a DIFFERENT piece.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - enter destination (characters 3-4): 
+PREVIEW ONLY: g1 -> g6 (NOT PLAYED)
+Widen your console to about 140 columns for the two-column report.
+CHANGE shows gained, lost, and unchanged destinations for each other piece.
+LEGAL MOVE LIST NOTE: Each side is evaluated as if it were that side's turn.
+Black and White possibilities are shown for comparison; only the actual
+side to move can play immediately. Check restrictions still apply.
+
+WHITE PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+f7 K: e8 f8 e7 e6 f6 g6                                            | f7 K: e8 f8 e7 e6 f6
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: g6
+    UNCHANGED: e8 f8 e7 e6 f6
+
+BLACK PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+h8 k: h7                                                           | h8 k: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: h7
+    UNCHANGED: (none)
+
+The real board and player turn have NOT changed.
+Press F then Enter to FINALIZE this previewed move.
+Press P then Enter to preview another destination, or N for a new piece.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: g1 -> g6 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - Enter command (F/P/N): CALC BEGIN g1g6
+MOVED White Q g1 g6
+ZERO Black K h8 PIN after
+LOST White K f7 g6
+LOST White Q g1 a7 g6 c5 d4 e3 f2 h2 a1 c1 d1 e1 f1 h1
+LOST Black K h8 h7
+GAINED White Q g1 h7 a6 c6 d6 e6 f6 h6 f5 h5 e4 d3 c2 g1
+DENIED White a7
+DENIED White g6
+DENIED White c5
+DENIED White d4
+DENIED White e3
+DENIED White f2
+DENIED White h2
+DENIED White a1
+DENIED White c1
+DENIED White d1
+DENIED White e1
+DENIED White f1
+DENIED White h1
+DENIED Black h7
+OPENED White h7
+OPENED White a6
+OPENED White c6
+OPENED White d6
+OPENED White h6
+OPENED White f5
+OPENED White h5
+OPENED White e4
+OPENED White d3
+OPENED White c2
+OPENED White g1
+PROTECT+ White K f7 Q g1
+COUNT White U1 0 U2 14 U3 13 GAINED 13 RESTORED 0 OPENED 11
+COUNT Black U1 1 U2 1 U3 1 GAINED 0 RESTORED 0 OPENED 0
+CALC END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: g1 -> g6 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - Enter command (F/P/N): NEW SELECTION: now enter characters 1-2 for a different piece.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m Q [0m|[48;5;180m[38;5;232m   [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+Piece selected. BEFORE/AFTER lists will appear together after the destination.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 3-4: enter a destination (e.g. d4), then Enter.
+The BEFORE and AFTER lists will appear. NO MOVE is made yet.
+Press N then Enter to choose a DIFFERENT piece.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - enter destination (characters 3-4): 
+PREVIEW ONLY: g1 -> g7 (NOT PLAYED)
+Widen your console to about 140 columns for the two-column report.
+CHANGE shows gained, lost, and unchanged destinations for each other piece.
+LEGAL MOVE LIST NOTE: Each side is evaluated as if it were that side's turn.
+Black and White possibilities are shown for comparison; only the actual
+side to move can play immediately. Check restrictions still apply.
+
+WHITE PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+f7 K: e8 f8 e7 e6 f6 g6                                            | f7 K: e8 f8 e7 e6 f6 g6
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: e8 f8 e7 e6 f6 g6
+
+BLACK PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+h8 k: h7                                                           | h8 k: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: h7
+    UNCHANGED: (none)
+
+The real board and player turn have NOT changed.
+Press F then Enter to FINALIZE this previewed move.
+Press P then Enter to preview another destination, or N for a new piece.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: g1 -> g7 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - Enter command (F/P/N): CALC BEGIN g1g7
+MOVED White Q g1 g7
+ZERO Black K h8 CHECK after
+LOST White Q g1 a7 g7 b6 c5 e3 f2 h2 b1 c1 d1 e1 f1 h1
+LOST Black K h8 h7
+GAINED White Q g1 f8 h7 f6 h6 e5 c3 b2 g1
+DENIED White a7
+DENIED White g7
+DENIED White b6
+DENIED White c5
+DENIED White e3
+DENIED White f2
+DENIED White h2
+DENIED White b1
+DENIED White c1
+DENIED White d1
+DENIED White e1
+DENIED White f1
+DENIED White h1
+DENIED Black h7
+OPENED White h7
+OPENED White h6
+OPENED White e5
+OPENED White c3
+OPENED White b2
+OPENED White g1
+PROTECT+ White K f7 Q g1
+ATTACK+ Black K h8 Q g1
+CHECK Black
+COUNT White U1 0 U2 13 U3 13 GAINED 8 RESTORED 0 OPENED 6
+COUNT Black U1 1 U2 1 U3 1 GAINED 0 RESTORED 0 OPENED 0
+CALC END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m k [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m K [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m[Q][0m|[48;5;180m[38;5;232m * [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at g1
+LEGAL DESTINATIONS: g8 a7 g7 b6 g6 c5 g5 d4 g4 e3 g3 f2 g2 h2 a1 b1 c1 d1 e1 f1 h1
+TOTAL: 21 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: g1 -> g7 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected g1 -> a1 b1 c1 d1 e1 f1 h1 f2 g2 h2 e3 g3 d4 g4 c5 g5 b6 g6 a7 g7 g8
+White - Enter command (F/P/N): FEN loaded: practice position set up.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m Q [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): Selected h5 -> d1 e2 f3 h3 g4 h4 e5 f5 g5 g6 h6 f7 h7
+Piece selected. BEFORE/AFTER lists will appear together after the destination.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m(p)[0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m(p)[0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m(p)[0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m[Q][0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at h5
+LEGAL DESTINATIONS: f7 h7 g6 h6 e5 f5 g5 g4 h4 f3 h3 e2 d1
+TOTAL: 13 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 3-4: enter a destination (e.g. d4), then Enter.
+The BEFORE and AFTER lists will appear. NO MOVE is made yet.
+Press N then Enter to choose a DIFFERENT piece.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+Selected h5 -> d1 e2 f3 h3 g4 h4 e5 f5 g5 g6 h6 f7 h7
+White - enter destination (characters 3-4): 
+PREVIEW ONLY: h5 -> f7 (NOT PLAYED)
+Widen your console to about 140 columns for the two-column report.
+CHANGE shows gained, lost, and unchanged destinations for each other piece.
+LEGAL MOVE LIST NOTE: Each side is evaluated as if it were that side's turn.
+Black and White possibilities are shown for comparison; only the actual
+side to move can play immediately. Check restrictions still apply.
+
+WHITE PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+c4 B: b5 a6 d5 e6 f7 b3 d3 e2 f1                                   | c4 B: b5 a6 d5 e6 b3 d3 e2 f1
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: f7
+    UNCHANGED: a6 e6 b5 d5 b3 d3 e2 f1
+e4 P: (none)                                                       | e4 P: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+a2 P: a3 a4                                                        | a2 P: a3 a4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: a4 a3
+b2 P: b3 b4                                                        | b2 P: b3 b4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: b4 b3
+c2 P: c3                                                           | c2 P: c3
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: c3
+d2 P: d3 d4                                                        | d2 P: d3 d4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: d4 d3
+f2 P: f3 f4                                                        | f2 P: f3 f4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: f4 f3
+g2 P: g3 g4                                                        | g2 P: g3 g4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: g4 g3
+h2 P: h3 h4                                                        | h2 P: h3 h4
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: h4 h3
+a1 R: (none)                                                       | a1 R: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+b1 N: a3 c3                                                        | b1 N: a3 c3
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: a3 c3
+c1 B: (none)                                                       | c1 B: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+e1 K: e2 d1 f1                                                     | e1 K: e2 d1 f1
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: e2 d1 f1
+g1 N: f3 h3 e2                                                     | g1 N: f3 h3 e2
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: f3 h3 e2
+h1 R: (none)                                                       | h1 R: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+
+BLACK PIECES (excluding selected piece)
+BEFORE: square piece -> legal destinations                         | AFTER: square piece -> legal destinations
+-------------------------------------------------------------------+-------------------------------------------------------------------
+a8 r: b8                                                           | a8 r: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: b8
+    UNCHANGED: (none)
+c8 b: (none)                                                       | c8 b: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+d8 q: e7                                                           | d8 q: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: e7
+    UNCHANGED: (none)
+e8 k: e7                                                           | e8 k: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: e7
+    UNCHANGED: (none)
+f8 b: e7 d6 c5 b4 a3                                               | f8 b: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: e7 d6 c5 b4 a3
+    UNCHANGED: (none)
+h8 r: g8                                                           | h8 r: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: g8
+    UNCHANGED: (none)
+a7 p: a6 a5                                                        | a7 p: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: a6 a5
+    UNCHANGED: (none)
+b7 p: b6 b5                                                        | b7 p: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: b6 b5
+    UNCHANGED: (none)
+c7 p: (none)                                                       | c7 p: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+d7 p: d6 d5                                                        | d7 p: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: d6 d5
+    UNCHANGED: (none)
+f7 p: (none)                                                       | (captured at f7)
+    CHANGE: CAPTURED - this piece has no AFTER moves.
+g7 p: g6 g5                                                        | g7 p: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: g6 g5
+    UNCHANGED: (none)
+h7 p: h6                                                           | h7 p: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: h6
+    UNCHANGED: (none)
+c6 n: b8 e7 a5 b4 d4                                               | c6 n: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: b8 e7 a5 b4 d4
+    UNCHANGED: (none)
+f6 n: g8 d5 h5 e4 g4                                               | f6 n: (none)
+    CHANGE: destinations changed.
+    GAINED: (none)
+    LOST: g8 d5 h5 e4 g4
+    UNCHANGED: (none)
+e5 p: (none)                                                       | e5 p: (none)
+    CHANGE: UNCHANGED - no destinations gained or lost.
+    GAINED: (none)
+    LOST: (none)
+    UNCHANGED: (none)
+
+The real board and player turn have NOT changed.
+Press F then Enter to FINALIZE this previewed move.
+Press P then Enter to preview another destination, or N for a new piece.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m(p)[0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m(p)[0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m(p)[0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m[Q][0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at h5
+LEGAL DESTINATIONS: f7 h7 g6 h6 e5 f5 g5 g4 h4 f3 h3 e2 d1
+TOTAL: 13 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: h5 -> f7 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected h5 -> d1 e2 f3 h3 g4 h4 e5 f5 g5 g6 h6 f7 h7
+White - Enter command (F/P/N): CALC BEGIN h5f7
+MOVED White Q h5 f7
+CAPTURED Black P f7
+ZERO White P e4 BLOCKED both
+ZERO White R a1 BLOCKED both
+ZERO White B c1 BLOCKED both
+ZERO White R h1 BLOCKED both
+ZERO Black R a8 CHECK after
+ZERO Black B c8 BLOCKED both
+ZERO Black Q d8 CHECK after
+ZERO Black K e8 CHECK after
+ZERO Black B f8 CHECK after
+ZERO Black R h8 CHECK after
+ZERO Black P a7 CHECK after
+ZERO Black P b7 CHECK after
+ZERO Black P c7 BLOCKED both
+ZERO Black P d7 CHECK after
+ZERO Black P g7 CHECK after
+ZERO Black P h7 CHECK after
+ZERO Black N c6 CHECK after
+ZERO Black N f6 CHECK after
+ZERO Black P e5 BLOCKED both
+LOST White Q h5 f7 h7 h6 e5 f5 g5 g4 h4 f3 h3 e2 d1
+LOST White B c4 f7
+LOST Black R a8 b8
+LOST Black Q d8 e7
+LOST Black K e8 e7
+LOST Black B f8 e7 d6 c5 b4 a3
+LOST Black R h8 g8
+LOST Black P a7 a6 a5
+LOST Black P b7 b6 b5
+LOST Black P d7 d6 d5
+LOST Black P g7 g6 g5
+LOST Black P h7 h6
+LOST Black N c6 b8 e7 a5 b4 d4
+LOST Black N f6 g8 d5 h5 e4 g4
+GAINED White Q h5 f8 g8 d7 e7 g7 e6 f6 d5 h5
+DENIED White f7
+DENIED White h7
+DENIED White h6
+DENIED White e5
+DENIED White f5
+DENIED White g5
+DENIED Black b8
+DENIED Black g8
+DENIED Black e7
+DENIED Black a6
+DENIED Black b6
+DENIED Black d6
+DENIED Black g6
+DENIED Black h6
+DENIED Black a5
+DENIED Black b5
+DENIED Black c5
+DENIED Black d5
+DENIED Black g5
+DENIED Black h5
+DENIED Black b4
+DENIED Black d4
+DENIED Black e4
+DENIED Black g4
+DENIED Black a3
+OPENED White f8
+OPENED White g8
+OPENED White d7
+OPENED White e7
+OPENED White g7
+OPENED White f6
+OPENED White h5
+PROTECT+ White Q h5 B c4
+PROTECT+ White B c4 Q h5
+PROTECT- White Q h5 P h2
+PROTECT- Black K e8 P f7
+ATTACK+ White Q h5 B f8
+ATTACK+ White Q h5 P d7
+ATTACK+ White Q h5 P g7
+ATTACK+ White Q h5 N f6
+ATTACK+ Black K e8 Q h5
+ATTACK- White Q h5 P f7
+ATTACK- White Q h5 P h7
+ATTACK- White Q h5 P e5
+ATTACK- White B c4 P f7
+ATTACK- Black N f6 Q h5
+CHECK Black
+COUNT White U1 4 U2 13 U3 6 GAINED 9 RESTORED 0 OPENED 7
+COUNT Black U1 15 U2 28 U3 19 GAINED 0 RESTORED 0 OPENED 0
+CALC END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m(p)[0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m(p)[0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m(p)[0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m|[48;5;180m[38;5;232m[Q][0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m * [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m * [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m * [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+SELECTED: White Q at h5
+LEGAL DESTINATIONS: f7 h7 g6 h6 e5 f5 g5 g4 h4 f3 h3 e2 d1
+TOTAL: 13 square(s)
+LEGEND: [P]=selected piece, *=empty legal destination, (p)=legal capture
+Selection is informational: no piece has moved.
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+PREVIEW READY: h5 -> f7 (NOT played).
+F = Finalize move | P = Preview another destination | N = New piece
+Type one command, then press Enter.
+Selected h5 -> d1 e2 f3 h3 g4 h4 e5 f5 g5 g6 h6 f7 h7
+White - Enter command (F/P/N): FINALIZED: h5 -> f7
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+Checkmate! White wins!

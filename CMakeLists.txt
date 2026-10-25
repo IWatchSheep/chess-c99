@@ -39,10 +39,11 @@ add_test(NAME replies_tests COMMAND replies_tests)
 
 # 2. Golden transcripts: complete output on fixed input scripts. tests/golden
 #    was recorded from version 5 (the game), tests/golden_v7 from version 7
-#    (the R report), tests/golden_v8 from version 8 (the reply view). Every
+#    (the R report), tests/golden_v8 from version 8 (the reply view), tests/golden_v9
+#    from version 9 (the report after a move that ends the game). Every
 #    later version must print exactly the same.
 file(GLOB golden_inputs "${CMAKE_SOURCE_DIR}/tests/golden/*.in" "${CMAKE_SOURCE_DIR}/tests/golden_v7/*.in"
-                        "${CMAKE_SOURCE_DIR}/tests/golden_v8/*.in")
+                        "${CMAKE_SOURCE_DIR}/tests/golden_v8/*.in" "${CMAKE_SOURCE_DIR}/tests/golden_v9/*.in")
 foreach (golden_input ${golden_inputs})
     get_filename_component(golden_name "${golden_input}" NAME_WE)
     get_filename_component(golden_dir "${golden_input}" DIRECTORY)

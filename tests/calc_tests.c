@@ -102,6 +102,19 @@ static void expect_absent(const char *text, const char *line, const char *what) 
     check(text != NULL && !has_line(text, line), what);
 }
 
+/* Does some line of the report start with this text? */
+static bool has_prefix(const char *text, const char *prefix) {
+    size_t n = strlen(prefix);
+    for (const char *p = text; p != NULL && *p != '\0';) {
+        if (strncmp(p, prefix, n) == 0) {
+            return true;
+        }
+        const char *end = strchr(p, '\n');
+        p = end ? end + 1 : NULL;
+    }
+    return false;
+}
+
 static const char *const SCHOLAR = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3";
 
 /* E2: the whole report for 1.e4, line by line. */
@@ -346,6 +359,31 @@ static void test_invariants(void) {
     free(g.board.history);
 }
 
+/* Version 9 (spec v1.5): no MATE1 lines after a move that ends the game. */
+static void test_game_over(void) {
+    Game g;
+    static const char *const played[] = {"d1h5", "g8f6"};
+    char *text = game_setup(&g, SCHOLAR, played, 2) ? report(&g, "h5f7") : NULL;
+    check(text != NULL && has_line(text, "CHECK Black") && !has_prefix(text, "MATE1 "),
+          "C1 4.Qxf7# is checkmate: CHECK Black, no MATE1 lines");
+    check(text != NULL && has_line(text, "CALC END") && has_prefix(text, "COUNT White ") &&
+              has_prefix(text, "COUNT Black "),
+          "C2 the rest of the checkmate report is still printed");
+    free(text);
+    free(g.board.history);
+
+    text = game_setup(&g, "7k/5K2/8/8/8/8/8/6Q1 w - - 0 1", NULL, 0) ? report(&g, "g1g6") : NULL;
+    check(text != NULL && !has_prefix(text, "MATE1 ") && !has_prefix(text, "CHECK "),
+          "C3 Qg6 is stalemate: no MATE1 and no CHECK lines");
+    free(text);
+    free(g.board.history);
+
+    text = game_setup(&g, SCHOLAR, NULL, 0) ? report(&g, "d1h5") : NULL;
+    check(text != NULL && has_line(text, "MATE1 White h5f7"), "C4 a game that goes on keeps its MATE1 line (3.Qh5)");
+    free(text);
+    free(g.board.history);
+}
+
 int main(void) {
     test_e2();
     test_e3();
@@ -356,6 +394,7 @@ int main(void) {
     test_zero_causes();
     test_charge_once();
     test_invariants();
+    test_game_over();
     printf("%d checks, %d failures\n", checks, failures);
     return failures == 0 ? 0 : 1;
 }

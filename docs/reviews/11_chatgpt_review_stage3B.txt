@@ -1,0 +1,134 @@
+ChatGPT review 11 — Stage 3B (Version 8), relayed by the owner, 2026-10-25.
+Two replies, recorded word for word as the owner pasted them.
+
+==== Reply 1 (Graphify still at commit 5f82f6c) ====
+
+## Graphify verification — Version 8 is not indexed yet
+
+I checked Graphify directly against your `IWatchSheep/chess-c99` repository and compared its indexed commit with GitHub.
+
+| Item                      | Commit              |
+| ------------------------- | ------------------- |
+| Stage 3B — Version 8      | `393f900`           |
+| Graphify indexed snapshot | `5f82f6c`           |
+| Graphify status           | Ready, but outdated |
+| Indexed code nodes        | 874                 |
+
+GitHub confirms that Graphify's snapshot is one commit behind Version 8.
+
+This means Graphify is connected and working, but its current index cannot provide a complete review of Stage 3B.
+
+I won't mistake the earlier Stage 3A code map for evidence that Stage 3B was indexed.
+
+## Answers to Claude's two questions
+
+1\. Should a move ending in checkmate or stalemate produce `NO REPLIES` and no `THREAT` line?
+
+Yes — APPROVED. The game has reached a terminal position. There are no legal opponent replies, so reporting an additional imaginary attacking turn would be misleading.
+
+2\. Should Stage 3A's `MATE1` report also be suppressed after the game ends?
+
+Yes. I recommend treating this as a documented semantic correction, with updated regression tests. Preserve the historical Version 7 golden transcript rather than silently replacing it.
+
+These answers are based on Claude's Stage 3B note and the Version 8 source code I previously inspected directly through GitHub.
+
+## Approval decision
+
+Stage 3B remains approved based on my earlier GitHub code review. However, I cannot claim a completed Graphify-based Version 8 review until the index is refreshed.
+
+The next action is to open your Graphify workspace and sync or reindex `IWatchSheep/chess-c99`, then check that the indexed commit is `393f900` or a descendant containing it.
+
+After that, I can use Graphify to examine the Version 8 call relationships and dependencies before confirming the Graphify review.
+
+No code changes are required by the two questions above.
+
+==== Reply 2 (Graphify at commit 393f900) ====
+
+Success! Graphify is now indexed at the correct Version 8 commit.
+
+I checked the index directly.
+
+| Detail                 | Verified result         |
+| ---------------------- | ----------------------- |
+| Repository             | `IWatchSheep/chess-c99` |
+| Indexed commit         | `393f900`               |
+| Stage                  | 3B — Version 8          |
+| Index status           | Ready                   |
+| Code nodes             | 218                     |
+| Dependency connections | 833                     |
+
+The indexed commit now matches Claude's Stage 3B submission exactly.
+
+I'll use the updated index to check the reply-processing functions and their dependencies, rather than relying on the earlier Stage 3A map.
+
+## Graphify Review Complete — Stage 3B APPROVED
+
+I've now reviewed Stage 3B using Graphify's correct Version 8 index (`393f900`).
+
+The indexed code confirms the important function relationships:
+
+Stage 3B — Function relationships
+
+replies_report()
+
+Processes the opponent's possible replies
+
+position_after()
+
+Copies the position and advances the tracker
+
+generate_moves()
+
+Finds legal replies
+
+calc_counts()
+
+Calculates movement changes
+
+count_mate_in_one()
+
+Checks remaining threats
+
+I also confirmed that `reply_detail()` reuses the established Stage 3A `calc_report()` function. That is a good architectural decision because it avoids implementing two different versions of the movement calculations.
+
+The indexed tests cover Scholar's Mate, defensive replies, promotions, completed games, and movement-count consistency.
+
+### Answers to Claude
+
+Question 1: `NO REPLIES` after checkmate or stalemate?
+
+APPROVED. The implementation checks for zero legal replies before calculating threats, so a completed game does not generate an imaginary additional turn.
+
+Question 2: Should Stage 3A suppress `MATE1` after a completed game?
+
+Yes. That would make the two reports consistent. Claude should document the correction, introduce a regression test, and preserve the original Version 7 golden output for historical comparison.
+
+### Final decision for Claude
+
+# ChatGPT Review 11 — Graphify Verification
+
+**Repository:** IWatchSheep/chess-c99\
+**Commit:** 393f900\
+**Stage:** 3B, Version 8\
+**Decision: APPROVED**
+
+Graphify's index was verified at commit 393f900 before reviewing the implementation.
+
+I examined the indexed definitions of replies_report(), position_after(), calc_counts(), reply_detail(), calc_report(), and their associated tests.
+
+The implementation correctly separates opponent-reply enumeration from movement measurements and uses the existing Stage 3A calculator for detailed reply reports.
+
+Both design questions are resolved:
+
+1. NO REPLIES and no THREAT line after a terminal move — approved.
+2. Suppress Stage 3A MATE1 after checkmate or stalemate in a documented future correction, with regression coverage and historical golden-output preservation.
+
+**Stage 3B is APPROVED. Proceed with Stage 3C.**
+
+Stage 3C should build on these verified components, exploring legal move sequences with explicit ply limits, preserving piece histories, and distinguishing possible outcomes from forced outcomes.
+
+Do not introduce weighted scoring or automatic strategy selection.
+
+Submit Stage 3C for review before proceeding to Stage 3D.
+
+You now have a confirmed Graphify connection and a verified Stage 3B approval.

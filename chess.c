@@ -7,6 +7,7 @@
  * Stage 3A: after a preview, "R" prints the calculator's fact report.
  * Stage 3B: after a preview, "replies" lists every reply of the other side
  * (does it stop the threat?), and "replies <move>" reports one reply.
+ * Version 9: after a move that ends the game, R prints no MATE1 lines.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -2186,7 +2187,12 @@ static void calc_report(const Board *b, const Tracker *t, Move m, TextBuffer *ou
             text_add(out, "CHECK %s\n", color_name(sides[i]));
         }
     }
-    for (int i = 0; i < 2; ++i) {
+    /* Version 9 (spec v1.5): a move that ends the game (checkmate or
+     * stalemate) leaves no further turn, so there are no MATE1 lines. */
+    MoveList answers = generate_moves(&a);
+    bool game_over = answers.count == 0;
+    free(answers.items);
+    for (int i = 0; !game_over && i < 2; ++i) {
         report_mates(out, &a, sides[i]);
     }
     for (int i = 0; i < 2; ++i) {
