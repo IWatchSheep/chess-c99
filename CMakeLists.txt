@@ -20,19 +20,28 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(chess_tests PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# Stage 3A tests: the calculator's report against the worked examples.
+add_executable(calc_tests tests/calc_tests.c)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(calc_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 enable_testing()
 add_test(NAME unit_tests COMMAND chess_tests)
+add_test(NAME calc_tests COMMAND calc_tests)
 
-# 2. Golden transcripts: version 5's complete output on fixed input scripts.
-#    Every later version must print exactly the same for the same input.
-file(GLOB golden_inputs "${CMAKE_SOURCE_DIR}/tests/golden/*.in")
+# 2. Golden transcripts: complete output on fixed input scripts. tests/golden
+#    was recorded from version 5 (the game), tests/golden_v7 from version 7
+#    (the R report). Every later version must print exactly the same.
+file(GLOB golden_inputs "${CMAKE_SOURCE_DIR}/tests/golden/*.in" "${CMAKE_SOURCE_DIR}/tests/golden_v7/*.in")
 foreach (golden_input ${golden_inputs})
     get_filename_component(golden_name "${golden_input}" NAME_WE)
+    get_filename_component(golden_dir "${golden_input}" DIRECTORY)
     add_test(NAME golden_${golden_name}
              COMMAND ${CMAKE_COMMAND}
                      -DEXE=$<TARGET_FILE:chess>
                      -DINPUT=${golden_input}
-                     -DEXPECTED=${CMAKE_SOURCE_DIR}/tests/golden/${golden_name}.out
+                     -DEXPECTED=${golden_dir}/${golden_name}.out
                      -DACTUAL=${CMAKE_BINARY_DIR}/${golden_name}.actual
                      -P ${CMAKE_SOURCE_DIR}/tests/compare_transcript.cmake)
 endforeach()

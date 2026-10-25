@@ -1,0 +1,30 @@
+ChatGPT Review 07 — Stage 3S Completion
+Project: chess-c99
+Decision: APPROVED
+I reviewed the Stage 3S completion report and inspected the updated repository implementation and test infrastructure.
+Stage 3S satisfies the approved design sufficiently to proceed.
+The new FEN loading capability supports the owner's proposed experimental method of starting with a small number of pieces and gradually building toward full chess positions.
+The implementation also provides piece-following functionality needed by the future calculator.
+The reported test results are:
+
+* 63 unit checks passing.
+* Seven golden-transcript regression tests passing.
+* Six standard positions used for move-generation verification.
+* Strict C99 compilation and sanitizer checks reported successful.
+
+These results are supported by the committed test infrastructure, although I have not independently executed the full suite.
+Stage 3S is approved.
+Please proceed with Stage 3A only, following CALCULATOR_SPEC.md v1.2.
+Requirements:
+
+1. Preserve the original chess program's behavior.
+2. Add factual measurements of U1, U2, and U3.
+3. Include protective and offensive relationships.
+4. Track the identities of pieces across moves.
+5. Prevent repeated counting of movement losses.
+6. Keep the report machine-readable and available through `R`.
+7. Add automated tests comparing the report against the approved worked examples.
+8. Do not introduce strategy selection or weighted scores.
+
+Submit Stage 3A's code and verification results for review before proceeding to Stage 3B.
+Approval granted to begin Stage 3A.

@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.2
+# Chess calculator — specification v1.3
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). **Stage 3S is implemented as version 6** and awaits review before 3A. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). **Stage 3A is implemented as version 7** and awaits review before 3B. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -181,7 +181,8 @@ PROMOTED <side> <from> <to> <new-type>  only for promotion
 ZERO <side> <type> <square> <BLOCKED|CHECK|PIN> <before|after|both>
 LOST <side> <type> <square> <dest> ...  U2: one line per piece, destinations listed;
                                         <square> is the piece's square before the move (its identity)
-GAINED <side> <type> <square> <dest> ...
+GAINED <side> <type> <square> <dest> ...   new pairs never lost before
+RESTORED <side> <type> <square> <dest> ... pairs lost at an earlier finalized move, now back
 DENIED <side> <square> [by-capture]     U3: one line per square
 OPENED <side> <square>
 PROTECT+ <side> <type> <square> <type> <square>   link formed (protector, protected)
@@ -190,11 +191,13 @@ ATTACK+ <side> <type> <square> <type> <square>    attacker, attacked enemy
 ATTACK- <side> <type> <square> <type> <square>
 CHECK <side>                            the side whose king is attacked after the move
 MATE1 <side> <move> ...                 that side's mate-in-one moves after the move (threats)
-COUNT <side> U1 <n> U2 <n> U3 <n> GAINED <n> OPENED <n>
+COUNT <side> U1 <n> U2 <n> U3 <n> GAINED <n> RESTORED <n> OPENED <n>   (U1 = zero-move pieces after the move)
 CALC END
 ```
 
-**Fixed order:** White's lines before Black's within each keyword; keywords in the order above; pieces and squares from rank 8 to rank 1, and file a to h within a rank; destinations in the same order. Squares are written `e4`, sides `White`/`Black`, types `P N B R Q K`. **The report contains facts only.** Strategy conclusions (better, worse, should) never appear in 3A–3C; when later stages draw a conclusion it is printed on lines starting `CONCLUSION`, kept apart from the facts.
+**Fixed order:** White's lines before Black's within each keyword; keywords in the order above; pieces and squares from rank 8 to rank 1, and file a to h within a rank; destinations in the same order. A link line is ordered by the first piece's square, then the second's, in the position where the link exists (after the move for `+`, before it for `-`).
+
+**Names and memory (v1.3).** In the report every piece is named by its type and its square **before the move** (`Q d1` for the queen moving from d1; a pawn about to promote is still `P`). Behind the names, each piece has a permanent number from the start of tracking (the normal start, `restart`, or `fen`), carried across every finalized move with `follow_piece` (castling rook, captures, en passant, promotion). The numbers hold the memory of the charge-once rule: when a move is finalized with `F`, every pair it removed is remembered as lost; a later move that brings the pair back reports it as `RESTORED` (not `GAINED`), and a pair that stays missing is never charged again. `R` itself changes nothing (the board, the turn, the history and the memory are left as they were). Squares are written `e4`, sides `White`/`Black`, types `P N B R Q K`. **The report contains facts only.** Strategy conclusions (better, worse, should) never appear in 3A–3C; when later stages draw a conclusion it is printed on lines starting `CONCLUSION`, kept apart from the facts.
 
 **Tests before and with 3A.**
 - **Regression (the game is unchanged):** before 3S, version 5 is run on fixed input scripts (a full game with previews, `P`, `N` and `F`; castling on both sides; en passant; promotion to each piece; illegal inputs; `claim`, `resign`, `restart`) and its complete output is saved as golden transcripts. Every later version must reproduce them **byte for byte** for the same input (they never type `R`).
@@ -214,7 +217,7 @@ Candidate **3.Qh5**:
 - Black: **3 lost pairs: f7 → f6, f7 → f5, h7 → h5.** The f7 pawn lost its moves because **Qh5 pins it** to the king on e8; h5 is now occupied. 2 denied squares (f5, h5).
 - White now threatens mate in one: **exactly 1 move, Qh5xf7#**. f7 is attacked by 2 White pieces (Qh5, Bc4) and defended by 1 (Ke8).
 - Black has **28 legal replies. 8 stop every mate-in-one: Qe7, Qf6, Qg5, Qh4, Ke7, Nh6, d5, g6. 20 leave one** (including the natural-looking Nf6, Be7, Nge7, a6, d6, h6).
-- After 3...g6: White lost 1 pair (Qh5 → f7, because g6 blocks the line h5–g6–f7); Black lost 1 (the g-pawn's old move to g6) and gained 5 (Bf8 → g7, h6; f7 → f6, f5 again: the pin is gone; and the g-pawn → h5: **it now attacks the queen**), 1 denied (g6), 3 opened (g7, f5, h5); Black's protection links rise from 19 to 20 (f7 → g6 and h7 → g6 formed).
+- After 3...g6: White lost 1 pair (Qh5 → f7, because g6 blocks the line h5–g6–f7); Black lost 1 (the g-pawn's old move to g6) and gained 5 (Bf8 → g7, h6; f7 → f6, f5 again: the pin is gone; and the g-pawn → h5: **it now attacks the queen**). In a game where 3.Qh5 was played (finalized), version 7's report lists f7 → f6, f5 as `RESTORED` (lost at 3.Qh5): `GAINED 3 RESTORED 2`; from the same position set up with `fen` there is no history, so all 5 are `GAINED`, 1 denied (g6), 3 opened (g7, f5, h5); Black's protection links rise from 19 to 20 (f7 → g6 and h7 → g6 formed).
 - After 3...Nf6: Qxf7# is still available.
 
 **E3b — the alternative 3.Nf3** from the same position: White lost 8 pairs (f2 → f4, f3; Qd1 → h5, g4, f3; the knight's old moves to f3, h3, e2), gained 8 (Ke1 → g1 castling; the knight → e5 (**attacking Black's e5 pawn**), g5, d4, h4 and back to g1; Rh1 → f1, g1); no mate threat; protection links 14 → 17. Both candidates are reported in the same units; nothing says which is better.
@@ -254,6 +257,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.3 | 2026-10-25 | Stage 3A implemented (version 7). Report details made exact from the implementation: `RESTORED` lines and the `RESTORED` count; names by square before the move, with permanent numbers behind them carrying the charge-once memory across finalized moves (ChatGPT review 05, point 2); link-line order; E3's 3...g6 with and without history. |
 | 1.2.1 | 2026-10-25 | Stage 3S implemented (version 6). E8's king-and-rook FEN corrected from `6k/8/6K1/...` (only 7 squares in its first rank, found by the new FEN tests) to `6k1/8/6K1/...`; the position the example computed was already the intended one (black king g8), so its result is unchanged. |
 | 1.2 | 2026-10-25 | ChatGPT's review 03 (approved in principle) incorporated: plies everywhere; explicit identities for the moved, castling, captured and promoted pieces; zero-move causes BLOCKED/CHECK/PIN; hypothetical passes labelled; captured pieces reported separately and `by-capture` denied squares; the exact charge-once rule per transition (lost, restored, gained; lost again = a new event); the exact definition of forced and possible mates and `LIMIT N`; the deterministic 3A report format; regression (golden transcripts of version 5), report, charge-once and preview-invariant tests; facts kept apart from conclusions. |
 | 1.1 | 2026-10-25 | The owner's loop idea added (Section 5b, stage 3C, example E6); his method of practice boards first and the build-up ladder (Section 5c, stage 3S, examples E7, E8); goals, exchanges and comparison move to 3D, 3E, 3F; `docs/PLAN.md` written as the plain-words version of the plan. |

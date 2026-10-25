@@ -1,0 +1,54 @@
+Stage 3A results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 7 = Stage 3A (chess.c, tests/calc_tests.c,
+tests/golden_v7/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.3).
+
+Your eight requirements
+1. Original behaviour preserved: all seven version 5 golden transcripts are
+   reproduced byte for byte; R is the only new command and is never typed in
+   them. The preview, P, N, F, promotion and draw flows are unchanged.
+2. U1, U2, U3: ZERO lines (with BLOCKED/CHECK/PIN and before/after/both),
+   LOST lines (U2 pairs), DENIED lines (U3, with by-capture); the reverse as
+   GAINED/RESTORED and OPENED; COUNT per side.
+3. Relationships: PROTECT+/- and ATTACK+/- (formed/broken, by identity),
+   CHECK, and MATE1 (each side's mate-in-one moves after the move).
+4. Identities: every piece gets a permanent number at the start of tracking
+   (start, restart, fen) and keeps it across every finalized move through
+   follow_piece (castling rook, capture, en passant, promotion). In the
+   report a piece is named by its type and square BEFORE the move, as v1.2
+   Section 7 says (readable: the pawn now on e5 is "P e5").
+5. Count-once: on F, every pair the move removes is remembered as lost; a
+   later move that brings it back reports RESTORED (not GAINED); a pair that
+   stays missing is never charged again; lost again later = a new LOST.
+6. R prints the report (CALC BEGIN ... CALC END), deterministic, one fact per
+   line, fixed keywords and order; R changes nothing (tested).
+7. tests/calc_tests.c (27 checks, CTest "calc_tests"): the whole 1.e4 report
+   line by line; 3.Qh5 (ZERO Black P f7 PIN after; LOST Black P f7 f6 f5; LOST
+   Black P h7 h5; MATE1 White h5f7; counts); 3...g6 after 3.Qh5 was played
+   (RESTORED Black P f7 f6 f5, GAINED 3 RESTORED 2, the g-pawn attacks the
+   queen, the threat gone) and the same position from a FEN (no history:
+   GAINED 5); 3.Nf3 (LOST 8, GAINED 8, the knight attacks e5); E5 protection
+   vs mobility; capture with DENIED ... by-capture; en passant; castling
+   (CASTLE); promotion with capture (PROMOTED, CAPTURED); each zero-move
+   cause; the lost / restored / lost-again sequence (rook a1 vs a bishop
+   blocking the a-file, five moves, with checks that the still-missing pairs
+   are not charged again in between); invariants (board, turn, history and
+   tracker unchanged by R; deterministic; framing lines).
+   The 1.e4, 3.Qh5, 3...g6 and 3.Nf3 numbers equal those computed by the
+   independent harness tools/spec_examples/examples.c.
+8. No strategy selection, no weights, no Side A/B.
+
+Also
+- tests/golden_v7/08_report: version 7's output for a script with ten R
+  reports, so later versions cannot change the report silently.
+- CTest: 10 tests, all pass (unit_tests 63 checks, calc_tests 27, seven v5
+  goldens, one v7 golden). Strict C99 (-Wall -Wextra -Wpedantic -Werror),
+  ASan/UBSan clean (no leaks in calc_tests), perft unchanged on the six
+  standard positions, the four spec example programs reproduce their saved
+  outputs.
+- Spec v1.3 makes the implemented details exact: RESTORED keyword and count,
+  names before the move with permanent numbers behind them, link-line order,
+  E3's 3...g6 with and without history.
+
+Please review and say APPROVED for 3A, or list what to change, before 3B.

@@ -4,6 +4,7 @@
  * Every move requires selecting, previewing, then F to finalize.
  * Stage 3S: "fen <FEN>" sets up a practice position; "fen" prints the
  * current position. See docs/CALCULATOR_SPEC.md.
+ * Stage 3A: after a preview, "R" prints the calculator's fact report.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -14,6 +15,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #define RED   "\033[31m"
 #define CYAN  "\033[36m"
@@ -1730,6 +1732,498 @@ FollowCase follow_piece(const Board *before, Move move, int row, int col,
     return FOLLOW_STAYS;
 }
 
+/* STAGE 3A: the calculator's fact report (type R after a preview).
+ * It only counts and lists what a move changes; it never chooses a move.
+ * The exact format is in docs/CALCULATOR_SPEC.md, Section 7.
+ *
+ * Piece identity: every piece gets a permanent number when tracking starts
+ * (the normal start, restart, or a FEN set-up). The number follows the
+ * piece wherever it goes (a promoted pawn keeps its number), so a move it
+ * lost earlier is recognised when it comes back (RESTORED), and a move that
+ * is still missing is never charged again. In the report a piece is named
+ * by its type and square BEFORE the move, for example "Q d1" (spec 7). */
+
+#define CALC_MAX_ID 33 /* at most 32 pieces, numbered from 1 */
+
+/* The identity number of the piece on each square, 0 = empty. (A struct, so
+ * it can be passed as const in C99.) */
+typedef struct {
+    int id[8][8];
+} IdGrid;
+
+typedef struct {
+    IdGrid grid;                  /* identity number on each square */
+    Color color[CALC_MAX_ID];
+    bool lost[CALC_MAX_ID][64];   /* (piece, square) pairs lost and not yet back */
+} Tracker;
+
+/* Everything the report needs to know about one position. */
+typedef struct {
+    bool present[CALC_MAX_ID];
+    int row[CALC_MAX_ID];
+    int col[CALC_MAX_ID];
+    bool legal[CALC_MAX_ID][64];  /* L: legal destinations, by square index */
+    int legal_count[CALC_MAX_ID];
+    bool reach[3][64];            /* team reach, indexed by Color */
+} Snapshot;
+
+/* A growing text, so the report can be printed or tested as one string. */
+typedef struct {
+    char *text;
+    size_t length;
+    size_t capacity;
+} TextBuffer;
+
+static void text_add(TextBuffer *t, const char *format, ...) {
+    va_list args;
+    char line[512];
+
+    va_start(args, format);
+    int n = vsnprintf(line, sizeof(line), format, args);
+    va_end(args);
+    if (n < 0) {
+        return;
+    }
+    size_t add = strlen(line);
+    if (t->length + add + 1 > t->capacity) {
+        size_t capacity = t->capacity == 0 ? 1024 : t->capacity;
+        while (t->length + add + 1 > capacity) {
+            capacity *= 2;
+        }
+        char *more = realloc(t->text, capacity);
+        if (!more) {
+            fputs("Out of memory building the calculator report.\n", stderr);
+            exit(EXIT_FAILURE);
+        }
+        t->text = more;
+        t->capacity = capacity;
+    }
+    memcpy(t->text + t->length, line, add + 1);
+    t->length += add;
+}
+
+static int square_index(int row, int col) {
+    return row * 8 + col; /* rank 8 to rank 1, file a to h */
+}
+
+static void square_text(int index, char out[3]) {
+    out[0] = (char)('a' + index % 8);
+    out[1] = (char)('0' + 8 - index / 8);
+    out[2] = '\0';
+}
+
+/* Gives every piece its name, at the start of tracking. */
+static void tracker_init(Tracker *t, const Board *b) {
+    int next = 1;
+
+    memset(t, 0, sizeof(*t));
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            Piece p = b->board[row][col];
+            if (p.color == EMPTY || next >= CALC_MAX_ID) {
+                continue;
+            }
+            t->grid.id[row][col] = next;
+            t->color[next] = p.color;
+            ++next;
+        }
+    }
+}
+
+/* Report names: each piece's type and square before the move. */
+typedef struct {
+    char name[CALC_MAX_ID][8];
+} Names;
+
+static void make_names(const Board *b, const Tracker *t, Names *names) {
+    memset(names, 0, sizeof(*names));
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = t->grid.id[row][col];
+            if (n != 0) {
+                char square[3];
+                square_text(square_index(row, col), square);
+                snprintf(names->name[n], 8, "%c %s", b->board[row][col].type, square);
+            }
+        }
+    }
+}
+
+static void take_snapshot(const Board *b, const IdGrid *ids, Snapshot *s) {
+    memset(s, 0, sizeof(*s));
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = ids->id[row][col];
+            if (n == 0) {
+                continue;
+            }
+            bool destinations[8][8];
+            Color side = b->board[row][col].color;
+            legal_destination_map(b, row, col, side, destinations);
+            s->present[n] = true;
+            s->row[n] = row;
+            s->col[n] = col;
+            for (int i = 0; i < 64; ++i) {
+                if (destinations[i / 8][i % 8]) {
+                    s->legal[n][i] = true;
+                    ++s->legal_count[n];
+                    s->reach[side][i] = true;
+                }
+            }
+        }
+    }
+}
+
+/* Where every named piece is after the move (follow_piece, stage 3S). */
+static void ids_after_move(const Board *before, Move m, const IdGrid *ids,
+                           IdGrid *after, bool captured[CALC_MAX_ID]) {
+    memset(after, 0, sizeof(*after));
+    memset(captured, 0, sizeof(bool) * CALC_MAX_ID);
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = ids->id[row][col];
+            int to_row, to_col;
+            char type_after;
+            if (n == 0) {
+                continue;
+            }
+            if (follow_piece(before, m, row, col, &to_row, &to_col, &type_after) == FOLLOW_CAPTURED) {
+                captured[n] = true;
+            } else {
+                after->id[to_row][to_col] = n;
+            }
+        }
+    }
+}
+
+/* Why a piece has no legal move: BLOCKED, CHECK or PIN (spec Section 3). */
+static const char *zero_move_cause(const Board *b, int row, int col) {
+    Board view = *b;
+    int pseudo = 0;
+
+    view.turn = b->board[row][col].color;
+    for (int er = 0; er < 8; ++er) {
+        for (int ec = 0; ec < 8; ++ec) {
+            Move m = {row, col, er, ec, '\0'};
+            if (pseudo_legal(&view, m)) {
+                ++pseudo;
+            }
+        }
+    }
+    if (pseudo == 0) {
+        return "BLOCKED";
+    }
+    return is_in_check(&view, view.turn) ? "CHECK" : "PIN";
+}
+
+/* Does the piece on (pr,pc) protect (same colour) or attack (other colour)
+ * the piece on (qr,qc)? Kings are never protected or listed as attacked. */
+static bool linked(const Board *b, int pr, int pc, int qr, int qc, bool protect) {
+    Piece p = b->board[pr][pc];
+    Piece q = b->board[qr][qc];
+    if (p.color == EMPTY || q.color == EMPTY || q.type == 'K' || (pr == qr && pc == qc)) {
+        return false;
+    }
+    if ((p.color == q.color) != protect) {
+        return false;
+    }
+    return piece_attacks(b, pr, pc, qr, qc);
+}
+
+/* Lists links that exist in `has` and not in `lacks` (identity pairs). */
+static void report_links(TextBuffer *out, const Names *names, const char *keyword, Color side, bool protect,
+                         const Board *has, const IdGrid *has_id, const Board *lacks, const Snapshot *lacks_snap) {
+    for (int pr = 0; pr < 8; ++pr) {
+        for (int pc = 0; pc < 8; ++pc) {
+            int p = has_id->id[pr][pc];
+            if (p == 0 || has->board[pr][pc].color != side) {
+                continue;
+            }
+            for (int qr = 0; qr < 8; ++qr) {
+                for (int qc = 0; qc < 8; ++qc) {
+                    int q = has_id->id[qr][qc];
+                    if (q == 0 || !linked(has, pr, pc, qr, qc, protect)) {
+                        continue;
+                    }
+                    bool in_other = lacks_snap->present[p] && lacks_snap->present[q] &&
+                                    linked(lacks, lacks_snap->row[p], lacks_snap->col[p],
+                                           lacks_snap->row[q], lacks_snap->col[q], protect);
+                    if (!in_other) {
+                        text_add(out, "%s %s %s %s\n", keyword, color_name(side), names->name[p], names->name[q]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void move_text(Move m, char out[6]) {
+    out[0] = (char)('a' + m.sc);
+    out[1] = (char)('0' + 8 - m.sr);
+    out[2] = (char)('a' + m.ec);
+    out[3] = (char)('0' + 8 - m.er);
+    out[4] = m.promotion ? (char)tolower((unsigned char)m.promotion) : '\0';
+    out[5] = '\0';
+}
+
+/* The moves of `side` (made the side to move) that give checkmate. */
+static void report_mates(TextBuffer *out, const Board *b, Color side) {
+    Board view = *b;
+    MoveList moves;
+    bool any = false;
+
+    view.turn = side;
+    moves = generate_moves(&view);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Board next = view;
+        make_move(&next, moves.items[i]);
+        MoveList replies = generate_moves(&next);
+        bool mate = replies.count == 0 && is_in_check(&next, next.turn);
+        free(replies.items);
+        if (mate) {
+            char text[6];
+            move_text(moves.items[i], text);
+            if (!any) {
+                text_add(out, "MATE1 %s", color_name(side));
+                any = true;
+            }
+            text_add(out, " %s", text);
+        }
+    }
+    free(moves.items);
+    if (any) {
+        text_add(out, "\n");
+    }
+}
+
+static void report_header(TextBuffer *out, const Board *b, const Tracker *t, Move m,
+                          const bool captured[CALC_MAX_ID]) {
+    Piece mover = b->board[m.sr][m.sc];
+    char text[6], from[3], to[3];
+
+    move_text(m, text);
+    text_add(out, "CALC BEGIN %s\n", text);
+    square_text(square_index(m.sr, m.sc), from);
+    square_text(square_index(m.er, m.ec), to);
+    text_add(out, "MOVED %s %c %s %s\n", color_name(mover.color), mover.type, from, to);
+    if (mover.type == 'K' && abs(m.ec - m.sc) == 2) {
+        char rook_from[3], rook_to[3];
+        square_text(square_index(m.sr, m.ec > m.sc ? 7 : 0), rook_from);
+        square_text(square_index(m.sr, m.ec > m.sc ? 5 : 3), rook_to);
+        text_add(out, "CASTLE %s %s %s\n", color_name(mover.color), rook_from, rook_to);
+    }
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = t->grid.id[row][col];
+            if (n != 0 && captured[n]) {
+                char square[3];
+                square_text(square_index(row, col), square);
+                text_add(out, "CAPTURED %s %c %s\n", color_name(t->color[n]), b->board[row][col].type, square);
+            }
+        }
+    }
+    if (mover.type == 'P' && (m.er == 0 || m.er == 7)) {
+        text_add(out, "PROMOTED %s %s %s %c\n", color_name(mover.color), from, to,
+                 m.promotion ? m.promotion : 'Q');
+    }
+}
+
+static void report_zero(TextBuffer *out, const Board *b, const Board *a, const Tracker *t,
+                        const Snapshot *s0, const Snapshot *s1, Color side) {
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = t->grid.id[row][col];
+            if (n == 0 || t->color[n] != side || !s1->present[n]) {
+                continue;
+            }
+            bool before = s0->legal_count[n] == 0;
+            bool after = s1->legal_count[n] == 0;
+            if (!before && !after) {
+                continue;
+            }
+            char name[8];
+            char square[3];
+            square_text(square_index(row, col), square);
+            snprintf(name, sizeof(name), "%c %s", b->board[row][col].type, square);
+            const char *cause = after ? zero_move_cause(a, s1->row[n], s1->col[n])
+                                      : zero_move_cause(b, row, col);
+            text_add(out, "ZERO %s %s %s %s\n", color_name(side), name, cause,
+                     before && after ? "both" : (after ? "after" : "before"));
+        }
+    }
+}
+
+/* LOST, then GAINED, then RESTORED, for one side; returns the counts. */
+static void report_pairs(TextBuffer *out, const Tracker *t, const Names *names, const Snapshot *s0,
+                         const Snapshot *s1, Color side, const char *keyword, int *count) {
+    *count = 0;
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int n = t->grid.id[row][col];
+            bool any = false;
+            if (n == 0 || t->color[n] != side || !s1->present[n]) {
+                continue;
+            }
+            for (int i = 0; i < 64; ++i) {
+                bool lost = s0->legal[n][i] && !s1->legal[n][i];
+                bool new_square = !s0->legal[n][i] && s1->legal[n][i];
+                bool wanted = (keyword[0] == 'L' && lost) ||
+                              (keyword[0] == 'G' && new_square && !t->lost[n][i]) ||
+                              (keyword[0] == 'R' && new_square && t->lost[n][i]);
+                if (!wanted) {
+                    continue;
+                }
+                char square[3];
+                square_text(i, square);
+                if (!any) {
+                    text_add(out, "%s %s %s", keyword, color_name(side), names->name[n]);
+                    any = true;
+                }
+                text_add(out, " %s", square);
+                ++*count;
+            }
+            if (any) {
+                text_add(out, "\n");
+            }
+        }
+    }
+}
+
+/* DENIED (with by-capture) or OPENED squares for one side. */
+static int report_team_squares(TextBuffer *out, const Board *b, const Tracker *t, const Snapshot *s0,
+                               const Snapshot *s1, const bool captured[CALC_MAX_ID], Color side, bool denied) {
+    int count = 0;
+    for (int i = 0; i < 64; ++i) {
+        bool change = denied ? (s0->reach[side][i] && !s1->reach[side][i])
+                             : (!s0->reach[side][i] && s1->reach[side][i]);
+        if (!change) {
+            continue;
+        }
+        bool only_captured = denied;
+        for (int row = 0; row < 8 && only_captured; ++row) {
+            for (int col = 0; col < 8; ++col) {
+                int n = t->grid.id[row][col];
+                if (n != 0 && b->board[row][col].color == side && s0->legal[n][i] && !captured[n]) {
+                    only_captured = false;
+                    break;
+                }
+            }
+        }
+        char square[3];
+        square_text(i, square);
+        text_add(out, "%s %s %s%s\n", denied ? "DENIED" : "OPENED", color_name(side), square,
+                 only_captured ? " by-capture" : "");
+        ++count;
+    }
+    return count;
+}
+
+static int count_zero_after(const Tracker *t, const Snapshot *s1, Color side) {
+    int zero = 0;
+    for (int n = 1; n < CALC_MAX_ID; ++n) {
+        if (s1->present[n] && t->color[n] == side && s1->legal_count[n] == 0) {
+            ++zero;
+        }
+    }
+    return zero;
+}
+
+/* Builds the whole report for move m from position b, without changing b
+ * or the tracker. */
+static void calc_report(const Board *b, const Tracker *t, Move m, TextBuffer *out) {
+    Board a = *b;
+    IdGrid after_id;
+    bool captured[CALC_MAX_ID];
+    Snapshot s0, s1;
+    int lost[3], gained[3], restored[3], denied[3], opened[3];
+    static const Color sides[2] = {WHITE, BLACK};
+    Names names;
+
+    make_names(b, t, &names);
+    make_move(&a, m);
+    ids_after_move(b, m, &t->grid, &after_id, captured);
+    take_snapshot(b, &t->grid, &s0);
+    take_snapshot(&a, &after_id, &s1);
+
+    report_header(out, b, t, m, captured);
+    for (int i = 0; i < 2; ++i) {
+        report_zero(out, b, &a, t, &s0, &s1, sides[i]);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_pairs(out, t, &names, &s0, &s1, sides[i], "LOST", &lost[sides[i]]);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_pairs(out, t, &names, &s0, &s1, sides[i], "GAINED", &gained[sides[i]]);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_pairs(out, t, &names, &s0, &s1, sides[i], "RESTORED", &restored[sides[i]]);
+    }
+    for (int i = 0; i < 2; ++i) {
+        denied[sides[i]] = report_team_squares(out, b, t, &s0, &s1, captured, sides[i], true);
+    }
+    for (int i = 0; i < 2; ++i) {
+        opened[sides[i]] = report_team_squares(out, b, t, &s0, &s1, captured, sides[i], false);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_links(out, &names, "PROTECT+", sides[i], true, &a, &after_id, b, &s0);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_links(out, &names, "PROTECT-", sides[i], true, b, &t->grid, &a, &s1);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_links(out, &names, "ATTACK+", sides[i], false, &a, &after_id, b, &s0);
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_links(out, &names, "ATTACK-", sides[i], false, b, &t->grid, &a, &s1);
+    }
+    for (int i = 0; i < 2; ++i) {
+        if (is_in_check(&a, sides[i])) {
+            text_add(out, "CHECK %s\n", color_name(sides[i]));
+        }
+    }
+    for (int i = 0; i < 2; ++i) {
+        report_mates(out, &a, sides[i]);
+    }
+    for (int i = 0; i < 2; ++i) {
+        Color s = sides[i];
+        text_add(out, "COUNT %s U1 %d U2 %d U3 %d GAINED %d RESTORED %d OPENED %d\n", color_name(s),
+                 count_zero_after(t, &s1, s), lost[s], denied[s], gained[s], restored[s], opened[s]);
+    }
+    text_add(out, "CALC END\n");
+}
+
+/* Called when a move is finalized with F: remembers which pairs were lost
+ * (so a later return is RESTORED, and a pair still missing is never charged
+ * again) and moves every name to its new square. */
+static void tracker_commit(Tracker *t, const Board *b, Move m) {
+    Board a = *b;
+    IdGrid after_id;
+    bool captured[CALC_MAX_ID];
+    Snapshot s0, s1;
+
+    make_move(&a, m);
+    ids_after_move(b, m, &t->grid, &after_id, captured);
+    take_snapshot(b, &t->grid, &s0);
+    take_snapshot(&a, &after_id, &s1);
+    for (int n = 1; n < CALC_MAX_ID; ++n) {
+        if (captured[n]) {
+            memset(t->lost[n], 0, sizeof(t->lost[n]));
+            continue;
+        }
+        if (!s1.present[n]) {
+            continue;
+        }
+        for (int i = 0; i < 64; ++i) {
+            if (s0.legal[n][i] && !s1.legal[n][i]) {
+                t->lost[n][i] = true;
+            } else if (!s0.legal[n][i] && s1.legal[n][i]) {
+                t->lost[n][i] = false;
+            }
+        }
+    }
+    t->grid = after_id;
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -1747,12 +2241,14 @@ int main(void) {
     Move preview_move = {0, 0, 0, 0, '\0'};
     bool promotion_choice_pending = false;
     Move pending_promotion_move = {0, 0, 0, 0, '\0'};
+    static Tracker tracker; /* Stage 3A: piece names and lost moves */
 
 #ifdef _WIN32
     (void)system("chcp 65001 > nul");
 #endif
 
     reset_board(&game);
+    tracker_init(&tracker, &game);
     puts("=== Simple 2-Player Chess ===");
 
     for (;;) {
@@ -1858,6 +2354,7 @@ int main(void) {
             if (load_fen(&game, input + 4, &reason)) {
                 clear_selection(&selected_row, &selected_col, &preview_shown,
                                 &promotion_choice_pending);
+                tracker_init(&tracker, &game);
                 puts("FEN loaded: practice position set up.");
             } else {
                 printf(RED "FEN rejected: %s. The position is unchanged." RESET "\n", reason);
@@ -1882,6 +2379,19 @@ int main(void) {
             continue;
         }
 
+        /* Stage 3A: R prints the calculator's report for the previewed move. */
+        if (!strcmp(input, "r") || !strcmp(input, "R")) {
+            if (!preview_shown) {
+                puts(RED "No preview to report. Select a piece and preview a destination, then type R." RESET);
+            } else {
+                TextBuffer report = {NULL, 0, 0};
+                calc_report(&game, &tracker, preview_move, &report);
+                fputs(report.text, stdout);
+                free(report.text);
+            }
+            continue;
+        }
+
         /* Explicitly finalize ONLY the last valid previewed move. */
         if (command == COMMAND_FINALIZE) {
             if (!preview_shown || !in_bounds(selected_row, selected_col)) {
@@ -1896,6 +2406,7 @@ int main(void) {
             printf("FINALIZED: %c%d -> %c%d\n",
                    'a' + preview_move.sc, 8 - preview_move.sr,
                    'a' + preview_move.ec, 8 - preview_move.er);
+            tracker_commit(&tracker, &game, preview_move);
             make_move(&game, preview_move);
             record_position(&game);
             clear_selection(&selected_row, &selected_col, &preview_shown,
@@ -1967,6 +2478,7 @@ int main(void) {
         }
         if (command == COMMAND_RESTART) {
             reset_board(&game);
+            tracker_init(&tracker, &game);
             clear_selection(&selected_row, &selected_col, &preview_shown,
                             &promotion_choice_pending);
             puts("Game restarted.");
