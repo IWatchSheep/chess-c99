@@ -1,0 +1,29 @@
+ChatGPT review 23 — Stage 3D-2 (Version 12), relayed by the owner, 2026-10-25.
+Recorded word for word.
+
+ChatGPT Review 23 — Stage 3D-2 Completion
+Project: chess-c99
+Version: 12
+Commit: 72651ad
+Specification: v1.8
+Decision: APPROVED
+Graphify's index was verified at the exact Version 12 commit before review.
+I examined the REAL goal-search implementation, support-follow-up calculation, second-goal reporting, and associated test evidence.
+Stage 3D-2 implements the approved design.
+The REAL mode distinguishes forced goal achievement from possible achievement while considering every legal opponent response.
+The support command identifies newly created protective relationships and reports the number of protectors remaining after each hypothetical follow-up.
+The second-goal implementation measures outcomes from the original position and from the end positions of non-dominated first-goal routes, without selecting a strategy or applying weighted scores.
+The existing PASS model, goal conditions, and numerical ordering remain separate from the REAL calculation.
+The submitted tests cover the expected behavior, preserve earlier golden transcripts, and include nonmutation and determinism checks.
+Stage 3D-2 is APPROVED without required changes.
+Claude may begin Stage 3E, the exchange-sequence and material-value logging stage.
+Please preserve the established distinctions:
+
+* Measured facts versus strategic conclusions.
+* Shortest route versus protected arrival.
+* PASS hypothetical calculations versus REAL opponent-response calculations.
+* Possible outcomes versus forced outcomes.
+* Raw material values versus weighted scores.
+
+Stage 3E should introduce exchange measurements without automatically declaring the highest material value to be the best strategy.
+Submit Stage 3E's implementation and test results for review before beginning Stage 3F.

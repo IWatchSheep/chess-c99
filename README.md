@@ -19,7 +19,7 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 11 | `Version 11` | Calculator stage 3D-1, goals: `goal f7 2` marks every move in your lists IF (the goal square can be reached within the limit) or ELSE; `routes` lists how each piece, alone or together, can reach it, with protection on arrival; results are ordered IF / ELSE IF / ELSE from fewest to most moves; `distance on` orders every move by the squares it travels; only your side moves (hypothetical) |
 | 12 | `Version 12` | Calculator stage 3D-2: `routes real 3` tests the goal with the other side answering every move (FORCED or POSSIBLE); `support` lists your next moves that would protect the piece you just previewed; `goal2` measures a second goal from where the first goal's routes end |
 
-The current program is version 12. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact).
+The current program is version 12. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`.
 
 ## Build and run
 

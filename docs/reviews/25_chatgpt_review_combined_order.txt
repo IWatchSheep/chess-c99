@@ -1,0 +1,118 @@
+ChatGPT reply on the owner's combined IF / ELSE IF / ELSE order (it calls it
+"ChatGPT Review 26"), relayed by the owner, 2026-10-25. Recorded word for
+word: ChatGPT's whole reply. In this folder it is file 25.
+
+Yes, that makes sense. I think I understand your correction to the calculator design better now.
+
+You don't want two completely separate IF / ELSE IF / ELSE lists that never interact.
+
+You want the first list to measure movement distance, the second list to measure capture value, and then a sorting rule that combines both lists.
+
+The important distinction is whether a movement captures a piece.
+
+## How I understand your proposed calculator
+
+List all legal movements
+
+First IF chain
+
+Movement distance
+
+IF — shortest
+
+ELSE IF — middle distances
+
+ELSE — longest
+
+Second IF chain
+
+Capture value
+
+IF — highest value
+
+ELSE IF — middle values
+
+ELSE — lowest value
+
+Combined conditional sorting
+
+No capture → use distance order
+
+Capture → use capture-value order
+
+### Example
+
+Suppose the calculator finds these four hypothetical legal options:
+
+| Movement | Distance | Captures  | Selected condition |
+| -------- | -------- | --------- | ------------------ |
+| Move A   | 1        | None      | Distance IF        |
+| Move B   | 2        | Pawn (1)  | Capture ELSE       |
+| Move C   | 4        | Queen (9) | Capture IF         |
+| Move D   | 3        | None      | Distance ELSE      |
+
+In this example, Move C is first within the capture branch, even though it travels farther than the pawn capture.
+
+Move A is first within the non-capture branch, because it has the shortest movement distance.
+
+That does not yet establish whether Move C should come before Move A overall. That would require an additional rule.
+
+### The logic in C99
+
+Here is a simplified representation of your idea, not a complete chess program:
+
+```
+if (move.captures_piece) {
+    /* Use the capture-value IF / ELSE IF / ELSE order. */
+    sort_by_capture_value();
+} else {
+    /* Use the distance IF / ELSE IF / ELSE order. */
+    sort_by_movement_distance();
+}
+```
+
+This combines the two calculations while preserving their different purposes.
+
+## What I would tell Claude
+
+# ChatGPT Review 26 — Owner's Combined IF / ELSE IF / ELSE Calculator
+
+The owner has clarified the Stage 3E design.
+
+The intended calculator is not simply two unrelated ordering lists.
+
+It has two existing measurements:
+
+1. Movement-distance ordering: least number of squares traveled to greatest.
+2. Capture-value ordering: greatest captured piece value to least.
+
+These are combined through an additional conditional branch.
+
+**Proposed interpretation:**
+
+- When a legal movement does not capture a piece, use the movement-distance IF / ELSE IF / ELSE ordering.
+- When a legal movement captures a piece, use the capture-value IF / ELSE IF / ELSE ordering.
+- Keep both original numerical measurements visible.
+- Distinguish the two branches in the output so their IF labels are not confused.
+- Preserve the original legal-move lists and the previously approved calculator measurements.
+
+For example:
+
+NO CAPTURE — DISTANCE IF 1\
+NO CAPTURE — DISTANCE ELSE 3\
+CAPTURE — VALUE IF 9\
+CAPTURE — VALUE ELSE 1
+
+The branching decision must not by itself declare any movement strategically superior or automatically play a move.
+
+**One design question remains:** Should the combined display place all captures before non-captures, all non-captures before captures, or keep two groups while showing both together?
+
+My recommendation is to keep the two groups visibly distinct until the owner specifies an overall ordering.
+
+Please incorporate this clarification into the Stage 3E design before implementing Version 13.
+
+There is just one important question to settle:
+
+When the calculator finds a short move that captures nothing and a longer move that captures a queen, do you want it to put the queen capture first in the combined list, or show the capture and non-capture groups separately?
+
+That determines the final sorting rule, and I don't want to choose it for you.

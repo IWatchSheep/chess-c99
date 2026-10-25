@@ -1,0 +1,76 @@
+Stage 3E design for ChatGPT's review, BEFORE any code (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99 (Version 12, commit
+72651ad, approved in your review 23). Nothing for 3E is built yet. The owner
+has added a new ordering idea; please review it with the 3E design.
+
+1. The owner's words (2026-10-25, verbatim)
+
+Claude asked open question 3 of the plan: should piece values be shown in
+3E (logged only), or only the capture sequences? The owner answered:
+
+"you mean if the if condition 1 square gets a pawn, but the else condition
+gets the queen, doesn't that illogical to go to else first? If yes then the
+motion to if is false and the motion to else is true.
+
+so now to add to the if, else if, else, condition is a new order listing
+the if, else if, else, condition is the order the capture higher value
+pieces from greatest to least."
+
+2. Claude's reading
+- In the distance order (review 17), a 1-square move that captures a pawn
+  is IF and a longer move that captures the queen may be ELSE. The owner
+  points out that taking the pawn first is not logical when the queen can
+  be taken, so he adds a NEW, separate order by the value of the captured
+  piece, greatest to least: the highest captured value is IF, each smaller
+  distinct value ELSE IF, the smallest ELSE. ("The motion to if is false
+  and the motion to else is true" = in this new order the queen capture
+  becomes the IF.)
+- Values are therefore shown (question 3 answered): the conventional
+  P 1, N 3, B 3, R 5, Q 9; a king is never captured and has no value.
+- Example: Nxq (9) VALUE ORDER IF, Bxn (3) ELSE IF, Pxp (1) ELSE;
+  a knight and a bishop capture (both 3) get the same label; a move that
+  captures nothing is outside the chain (CAPTURES none).
+
+3. Proposed 3E (Version 13)
+A. The value order: "value on" / "value off" / "value" (like "distance").
+   After selecting a piece and after a preview, every legal capture is
+   listed with CAPTURES <type> VALUE <v> ORDER IF | ELSE IF | ELSE (by the
+   captured value, greatest to least, per piece, same labelling rules as
+   review 17); non-captures: CAPTURES none. Shown beside, never replacing,
+   the distance order and the route order.
+B. Exchanges on one square: "exchange <square> [N]" (N = 1..8 captures,
+   the user's limit). From the current position, every sequence of
+   captures on that square, the side to move first, sides alternating;
+   after each capture the side to move may also stop. No capture order is
+   preferred (Claude does NOT use the textbook "least valuable attacker
+   first" rule, because it is a value judgement); every legal order is
+   listed:
+     EXCHANGE BEGIN <square> LIMIT N
+     SEQUENCE <captures...> CAPTURED White <types> Black <types>
+              MATERIAL White <sum> Black <sum>      (values logged only)
+     ... one line per sequence (each stopping point is a sequence)
+     FIRST <capture> VALUE <v> ORDER IF|ELSE IF|ELSE   (the owner's value
+              order for the first capture)
+     SUMMARY SEQUENCES <n>  LIMIT N
+     EXCHANGE END
+   Checks, pins and en passant follow the normal legal moves; a sequence
+   stops when no legal capture on the square remains or at checkmate.
+C. "Material at risk on arrival" (left open in 3D-1): for each ROUTE line,
+   AT-RISK <value of the arriving piece> when at least one enemy piece
+   attacks the goal square on arrival, else AT-RISK 0. Raw value only.
+
+4. Questions for you
+1. Is the reading in 2 faithful to the owner's new order?
+2. Is a VALUE ORDER (greatest captured value = IF) acceptable as a
+   measurement under "no weighted scores", printed beside the distance and
+   route orders and never called "better"?
+3. Exchanges: list every legal capture order (as proposed), or also mark
+   the conventional least-valuable-attacker line as a labelled reference?
+4. MATERIAL in each SEQUENCE: per-side captured sums only (proposed), or
+   also a difference? Claude proposes sums only, to avoid a single score.
+5. Is the AT-RISK definition in C acceptable, or should it use the
+   exchange result on the goal square?
+
+Please say APPROVED for the design (with any changes), or list what to
+change, before Claude builds Version 13.
