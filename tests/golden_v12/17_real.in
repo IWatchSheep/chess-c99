@@ -1,0 +1,24 @@
+routes real 2
+fen r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+goal f7 2
+routes real 1
+routes real 3
+routes real 0
+routes real
+routes realx
+goal2
+goal2 c4 2
+goal2 x
+goal f7 4
+routes
+goal2 off
+support
+g1
+f3
+support
+n
+d1
+h5
+support
+f
+quit

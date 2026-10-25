@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.7
+# Chess calculator — specification v1.8
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). Stage 3C was implemented as version 10 and approved (review 15: "Stage 3C is APPROVED without required changes."). The 3D design was approved with clarifications and split into 3D-1 and 3D-2 (review 16); the owner's IF / ELSE IF / ELSE order was approved as two views (review 17). **Stage 3D-1 is implemented as version 11** and awaits review; 3D-2 is not yet authorized. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). Stage 3C was implemented as version 10 and approved (review 15: "Stage 3C is APPROVED without required changes."). The 3D design was approved with clarifications and split into 3D-1 and 3D-2 (review 16); the owner's IF / ELSE IF / ELSE order was approved as two views (review 17). Stage 3D-1 was implemented as version 11 and approved (review 21: "Stage 3D-1 is APPROVED without required changes."). **Stage 3D-2 is implemented as version 12** and awaits review before 3E. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -243,6 +243,28 @@ REPLIES END
 - **Order:** replies sorted by start square, then end square (rank 8 to 1, file a to h), then promotion piece Q, R, B, N.
 - **No reply is chosen, scored or played.**
 
+**3D-2 in detail — REAL goals, support, the second goal (v1.8).** Every report says PASS (hypothetical: only S moves) or REAL (the other side answers with every legal move); the two are never mixed.
+
+- **`routes real N`** (N = 1 to 6 plies, the user's choice; a goal must be set): for each goal square and each condition (REACH, PROTECTED), every first move m of S gets `CONDITION IF FORCED` (m itself satisfies the condition — `MOVES 1` — or N ≥ 3 and after every legal reply the condition is forced within N − 2 plies, S choosing a possibly different continuation after each reply), `CONDITION IF POSSIBLE k OF r` (not forced, but after k of the r replies the condition can still be satisfied within the depth), or `CONDITION ELSE`. The condition is tested right after each S move. A sequence ends at checkmate or stalemate (a move that mates on another square is ELSE: the game is over). Counting is never proof of forcing.
+
+```
+ROUTES BEGIN <S> GOAL <squares> DEPTH <N> REAL
+NOTE REAL: <other> answers with every legal move; FORCED = reached whatever <other> does
+GOAL <sq> REACH | GOAL <sq> PROTECTED        then one FIRST line per first move:
+FIRST <m> CONDITION IF FORCED [MOVES 1] | CONDITION IF POSSIBLE <k> OF <r> | CONDITION ELSE
+RESULT <sq> REACH|PROTECTED CONDITION IF FORCED | CONDITION IF POSSIBLE | CONDITION ELSE
+SQUARE <sq> REACH <result> PROTECTED <result>   each square
+FIRST-IF REACH|PROTECTED <sq> FORCED|POSSIBLE | FIRST-IF … none (ELSE)   the owner's if / else if order
+LIMIT <N>                                       when some result is not FORCED
+NO MOVES checkmate|stalemate                    instead, when S has no legal move
+ROUTES END
+```
+
+- **`support`** after a preview of m (PASS: S moves again): every legal move f of another S piece q after which q protects the moved piece and did not before (a new protection link, Section 6 "support follow-up"). `SUPPORT BEGIN <m> PASS`, `NOTE …`, `SUPPORT NOW <type> <sq> PROTECTORS <n>`, then `FOLLOW <f> <type> <from> PROTECTS <type> <sq> PROTECTORS <n>` (protectors after f; a follow-up can block another protector's line, and the count shows it), `SUMMARY FOLLOWS <n>`, `SUPPORT END`.
+- **The second goal G2** (Section 6): `goal2 <squares> <L>`, `goal2`, `goal2 off`. With a first goal and a second goal set, `routes` adds, before `ROUTES END`: `SECOND GOAL <squares> LIMIT <L> PASS AFTER <sq>` (the first goal square that is IF, or `none (ELSE)`), then `FROM START SQUARE <sq> REACH … PROTECTED …` measured from the current position, and the same line `FROM <route moves> SQUARE …` from the end of every route to that square that is not DOMINATED (each route once), then `SECOND END`. So the change from G1 to G2 can be traced. PASS only.
+
+**Tests with 3D-2:** REAL depth 1 and 3 from the E3 position (Qh5: reaching f7 FORCED, arriving protected POSSIBLE 26 of 28); all 33 first moves and both conditions checked against an independent count; a mate on another square ends the sequence (ELSE); NO MOVES; support after 1.e4 (exactly 7 moves), 1.d4 (existing links not listed), 3.Qh5 (Bxf7, Be2, g4); the second goal (c4: 0 from the start, 1 after Bxf7, 0 after Qxf7), routes not repeated, first goal not reached; labels, invariants, determinism, refused input. Transcripts `tests/golden_v12`.
+
 **3D-1 in detail — goals, IF / ELSE and the order (v1.7).** PASS mode only (the other side passes; hypothetical, never a real sequence of turns). REAL mode, support follow-ups and the second goal are Stage 3D-2, not yet authorized.
 
 - **Goal:** `goal <squares> <L>`: one square or an ordered set (`goal f7 2`, `goal f7 g7 h7 3`), or `goal king <L>` (the squares next to the enemy king, in board order); `L` = own moves, 1 to 4. `goal` shows it, `goal off` clears it. With no goal and no distance view active, every output is exactly as in version 10.
@@ -355,6 +377,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.8 | 2026-10-25 | Stage 3D-1 approved (review 21). Stage 3D-2 implemented (version 12): `routes real N` (FORCED / POSSIBLE / ELSE per first move, both conditions), `support` (new protection links after a preview), `goal2` (the second goal from the start and from the end of each non-dominated route). |
 | 1.7 | 2026-10-25 | Stage 3C approved (review 15). The owner's TRUE/FALSE motion and IF / ELSE IF / ELSE words recorded (Section 1). Stage 3D split (review 16); 3D-1 implemented as version 11: goals and ordered sets, CONDITION IF / ELSE, PIECE and SIDE, PASS routes, arrival vector and DOMINATED, marks in the lists, the ORDER chain by moves and the distance order by squares (review 17). |
 | 1.6 | 2026-10-25 | Version 9 approved (review 13). Stage 3C implemented (version 10): `loop N`, `loop N K`, `trace`; their line formats; forced / possible / not found per first move; per-node measurements through `trace`; no default depth. |
 | 1.5 | 2026-10-25 | Stage 3B approved (review 11). Version 9: no `MATE1` lines after a move that ends the game (checkmate or stalemate), as asked in review 11; the version 7 transcript is unchanged; new transcript `tests/golden_v9`. |

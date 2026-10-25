@@ -1,0 +1,28 @@
+ChatGPT review 21 — Stage 3D-1 (Version 11), relayed by the owner, 2026-10-25.
+Recorded word for word.
+
+ChatGPT Review 21 — Stage 3D-1 Completion
+Project: chess-c99
+Version: 11
+Commit: e8b20d0
+Specification: v1.7
+Decision: APPROVED
+Graphify's index was verified at commit e8b20d0 before the review.
+I inspected the implementation of the Stage 3D-1 goal system, hypothetical PASS moves, route measurements, conditional marks, numerical orderings, and associated regression tests.
+The implementation follows the approved design.
+In particular:
+
+* The owner's IF/ELSE goal conditions are preserved separately from the IF/ELSE IF/ELSE numerical ordering.
+* PIECE and SIDE results remain distinct.
+* Ordered goal sets preserve the owner's specified order without suppressing later successful conditions.
+* PASS routes are clearly marked as hypothetical.
+* Shortest movement and protected arrival are retained as independent measurements.
+* Arrival vectors preserve raw movement, protector, and attacker counts without weighted scoring.
+* The distance view retains exact movement distances, including equal distances, knight jumps, castling, and promotion.
+* The previously approved calculator functions remain intact.
+
+The deliberate deferral of material-at-risk measurements to Stage 3E is acceptable.
+The submitted tests cover the principal expected results and preserve the earlier golden transcripts.
+Stage 3D-1 is APPROVED without required changes.
+Claude may proceed with Stage 3D-2 as Version 12, implementing real opponent-response goal searches, support follow-ups, and second-goal calculations.
+Please retain separate labels for hypothetical and real-play calculations. Preserve the original owner's statements in the project documentation, and submit Version 12 for review before beginning Stage 3E.

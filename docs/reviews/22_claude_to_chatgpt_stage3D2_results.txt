@@ -1,0 +1,60 @@
+Stage 3D-2 results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 12 = Stage 3D-2 (chess.c, tests/real_tests.c,
+tests/golden_v12/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.8,
+docs/reviews/21 (your review 21, word for word) and 22 (this note)).
+
+What 3D-2 adds (spec v1.8, Section 7, "3D-2 in detail")
+1. "routes real N" (N = 1..6 plies): per goal square and condition (REACH,
+   PROTECTED), per first move m of S:
+     CONDITION IF FORCED [MOVES 1] - m satisfies the condition, or N >= 3 and
+       after EVERY reply it is forced within N - 2 (existential S choices,
+       universal replies, a different continuation allowed per reply);
+     CONDITION IF POSSIBLE k OF r - not forced; after k of r replies the
+       condition can still be satisfied within the depth;
+     CONDITION ELSE.
+   Then RESULT, SQUARE, FIRST-IF <sq> FORCED|POSSIBLE (the owner's if /
+   else if order), LIMIT N when something is not forced. The condition is
+   tested right after each S move; a line ends at checkmate or stalemate.
+   Header "... DEPTH N REAL" and a NOTE; PASS reports keep "PASS".
+2. "support" after a preview (PASS): every move of another S piece that
+   creates a NEW protection link to the moved piece, with the protector
+   count after it (a follow-up may block another protector's line; the
+   count shows that, e.g. after Nf3, Be2 protects f3 but blocks Qd1: 2).
+3. "goal2 <squares> <L>": with a first goal, "routes" adds SECOND ... AFTER
+   <first IF square>, FROM START (the current position) and FROM <route>
+   for every non-dominated route to that square (each once), SIDE REACH and
+   PROTECTED for each G2 square. PASS only. First goal not reached: from the
+   start only.
+No weights; no move is chosen; the board, turn and history are unchanged.
+
+Evidence (tests/real_tests.c, 16 checks, CTest "real_tests")
+- E3 position, goal f7: depth 1 - Bxf7 FORCED (MOVES 1), nothing protected.
+  Depth 3 - Qh5 and Qf3: REACH FORCED; PROTECTED POSSIBLE 26 OF 28 (Qh5;
+  ...g6 and ...d5 block a line) and 26 OF 31 (Qf3); Bxf7 PROTECTED POSSIBLE
+  1 OF 2 (after ...Kxf7 nothing is left on f7); a3 REACH POSSIBLE 30 OF 31.
+- For all 33 first moves and both conditions, depth 3 agrees with an
+  independent count (one White move after each reply).
+- K+R v K, goal b8: Ra8 is checkmate on a8, so ELSE (the game ends; PASS
+  would continue); Rb1 forces Rb8. NO MOVES from a mated position.
+- support: after 1.e4 exactly d3, f3, Nc3, Qg4, Qf3, Qe2, Bd3; after 1.d4
+  Qd2/Qd3 are not listed (the queen already protects d4), c3 is; after 3.Qh5
+  Bxf7, Be2, g4.
+- second goal c4 after goal f7: FROM START 0 moves; after Bxf7 1 (the bishop
+  left); after Qh5-f7 0 and protected (the queen on f7 guards c4); 8 FROM
+  lines, none repeated; first goal not reached -> START only.
+- Labels REAL / PASS, determinism, invariants, refused input.
+- tests/golden_v12: 17_real, 18_real_boards.
+- CTest: 24 tests, all pass (unit 63, report 31, replies 22, loop 28, goal
+  34, real 16, 18 transcripts). All 16 earlier transcripts unchanged.
+  Strict C99 -Werror; ASan/UBSan clean.
+
+Notes
+- routes_report (version 11's entry point) is kept for the version 11 tests
+  and calls the new routes_report_with without a second goal.
+- REAL routes reuse 3C's forcing structure with the goal condition in place
+  of checkmate; draw rules are not applied inside the search (as in 3C).
+
+Please review and say APPROVED for 3D-2 (Version 12), or list what to
+change, before 3E.

@@ -16,6 +16,8 @@
  * PASS mode only: the other side passes (hypothetical). Results are
  * CONDITION IF / ELSE; route lengths and move distances get the owner's
  * ORDER chain IF / ELSE IF / ELSE ("distance on" shows move distances).
+ * Stage 3D-2: "routes real N" (the other side answers: FORCED / POSSIBLE),
+ * "support" after a preview, and "goal2" for a second goal.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -2945,6 +2947,9 @@ typedef struct {
     int attackers;
     size_t line_start; /* where its ROUTE line starts in the text */
     size_t line_end;
+    Move path[GOAL_MAX_LIMIT]; /* Stage 3D-2: the route itself, for the second goal */
+    int length;
+    bool dominated;
 } RouteVector;
 
 #define GOAL_MAX_ROUTES 512
@@ -2968,6 +2973,8 @@ static void route_line(RouteState *s, const Board *end, const char *kind, int le
     RouteVector *v = &s->routes[s->route_count++];
     Color enemy = s->side == WHITE ? BLACK : WHITE;
     v->own = length;
+    v->length = length;
+    memcpy(v->path, s->path, sizeof(v->path));
     v->protectors = pieces_on_square(end, s->sq, s->side);
     v->attackers = pieces_on_square(end, s->sq, enemy);
     v->line_start = s->out->length;
@@ -3037,7 +3044,7 @@ static void mark_dominated(RouteState *s) {
     size_t copied = s->routes[0].line_start;
     text_raw(&marked, s->out->text, copied);
     for (int i = 0; i < s->route_count; ++i) {
-        const RouteVector *a = &s->routes[i];
+        RouteVector *a = &s->routes[i];
         bool dominated = false;
         for (int j = 0; j < s->route_count && !dominated; ++j) {
             const RouteVector *b = &s->routes[j];
@@ -3047,6 +3054,7 @@ static void mark_dominated(RouteState *s) {
         }
         size_t next = i + 1 < s->route_count ? s->routes[i + 1].line_start : s->out->length;
         text_raw(&marked, s->out->text + a->line_start, a->line_end - a->line_start);
+        a->dominated = dominated;
         if (dominated) {
             text_add(&marked, " DOMINATED");
         }
@@ -3080,8 +3088,13 @@ static const char *order_label(const int *values, int count, int value) {
     return larger == 0 ? "ELSE" : "ELSE IF";
 }
 
-static void routes_report(const Board *b, const Goal *g, TextBuffer *out) {
+static void second_goal_report(const Board *b, const Goal *second, const int *first_square,
+                               const RouteVector *routes, int route_count, TextBuffer *out);
+
+static void routes_report_with(const Board *b, const Goal *g, const Goal *second, TextBuffer *out) {
     static RouteState s;
+    static RouteVector saved[GOAL_MAX_ROUTES];
+    int saved_count = 0, first_reach = -1;
     int squares[GOAL_MAX_SQUARES];
     int count = goal_squares(g, b, b->turn, squares);
     Color side = b->turn, enemy = side == WHITE ? BLACK : WHITE;
@@ -3151,6 +3164,11 @@ static void routes_report(const Board *b, const Goal *g, TextBuffer *out) {
         if (s.route_count > 0) {
             mark_dominated(&s);
         }
+        if (reach[k] >= 0 && first_reach < 0) {
+            first_reach = squares[k];
+            saved_count = s.route_count;
+            memcpy(saved, s.routes, sizeof(RouteVector) * (size_t)s.route_count);
+        }
         if (s.extra > 0) {
             text_add(&part, "MORE ROUTES %d not listed\n", s.extra);
         }
@@ -3181,7 +3199,16 @@ static void routes_report(const Board *b, const Goal *g, TextBuffer *out) {
             text_add(out, "FIRST-IF %s none (ELSE)\n", names[c]);
         }
     }
+    if (second != NULL && second->active) {
+        second_goal_report(b, second, first_reach >= 0 ? &first_reach : NULL, saved, saved_count, out);
+    }
     text_add(out, "ROUTES END\n");
+}
+
+/* The first goal only (version 11's report; used by the tests). */
+void routes_report(const Board *b, const Goal *g, TextBuffer *out);
+void routes_report(const Board *b, const Goal *g, TextBuffer *out) {
+    routes_report_with(b, g, NULL, out);
 }
 
 /* ---- marks: the IF/ELSE results added to the lists while playing ---- */
@@ -3410,6 +3437,311 @@ static void distance_after(const Board *b, Move m, TextBuffer *out) {
     text_add(out, "DISTANCE ORDER END\n");
 }
 
+/* STAGE 3D-2 (spec v1.8): REAL goal searches, support follow-ups and the
+ * second goal.
+ * "routes real N": the goal squares tested with the other side answering
+ * with every legal move, N plies (1 to 6). For each first move m of S:
+ * CONDITION IF FORCED (m reaches the goal, or N >= 3 and after every reply
+ * the goal is forced within N - 2), CONDITION IF POSSIBLE k OF r (after k
+ * of the r replies the goal can still be reached within the depth), or
+ * CONDITION ELSE. As in 3C, S may choose a different continuation after
+ * each reply, and counting is never proof of forcing. A sequence ends at
+ * checkmate or stalemate. The goal counts as reached right after an S
+ * move.
+ * "support": after a preview, every one-move follow-up of another S piece
+ * that makes a new protection link to the moved piece (PASS).
+ * "goal2 <squares> <L>": a second goal; "routes" then measures it from the
+ * start position and from the end of every route to the first goal square
+ * that is IF and not DOMINATED (PASS). */
+
+static bool goal_forced_real(const Board *b, Color side, int sq, GoalCondition cond, int n) {
+    bool forced = false;
+    if (n < 1) {
+        return false;
+    }
+    MoveList moves = generate_moves(b);
+    for (size_t i = 0; i < moves.count && !forced; ++i) {
+        Board next = *b;
+        make_move(&next, moves.items[i]);
+        if (goal_holds(&next, side, sq, cond)) {
+            forced = true;
+            break;
+        }
+        if (n < 3) {
+            continue;
+        }
+        MoveList replies = generate_moves(&next);
+        bool all = replies.count > 0;
+        for (size_t j = 0; j < replies.count && all; ++j) {
+            Board after = next;
+            make_move(&after, replies.items[j]);
+            all = goal_forced_real(&after, side, sq, cond, n - 2);
+        }
+        free(replies.items);
+        forced = all;
+    }
+    free(moves.items);
+    return forced;
+}
+
+static bool goal_possible_real(const Board *b, Color side, int sq, GoalCondition cond, int n) {
+    bool possible = false;
+    if (n < 1) {
+        return false;
+    }
+    MoveList moves = generate_moves(b);
+    for (size_t i = 0; i < moves.count && !possible; ++i) {
+        Board next = *b;
+        make_move(&next, moves.items[i]);
+        if (goal_holds(&next, side, sq, cond)) {
+            possible = true;
+            break;
+        }
+        if (n < 3) {
+            continue;
+        }
+        MoveList replies = generate_moves(&next);
+        for (size_t j = 0; j < replies.count && !possible; ++j) {
+            Board after = next;
+            make_move(&after, replies.items[j]);
+            possible = goal_possible_real(&after, side, sq, cond, n - 2);
+        }
+        free(replies.items);
+    }
+    free(moves.items);
+    return possible;
+}
+
+typedef enum { REAL_ELSE, REAL_POSSIBLE, REAL_FORCED } RealResult;
+
+static const char *real_text(RealResult r) {
+    return r == REAL_FORCED ? "CONDITION IF FORCED" : r == REAL_POSSIBLE ? "CONDITION IF POSSIBLE" : "CONDITION ELSE";
+}
+
+/* The FIRST lines for one square and condition; returns the overall result. */
+static RealResult real_first_lines(const Board *b, int sq, GoalCondition cond, int depth, TextBuffer *out) {
+    Color side = b->turn;
+    RealResult best = REAL_ELSE;
+    char text[6];
+    MoveList first = sorted_moves(b);
+    for (size_t i = 0; i < first.count; ++i) {
+        Board next = *b;
+        make_move(&next, first.items[i]);
+        move_text(first.items[i], text);
+        text_add(out, "FIRST %s ", text);
+        if (goal_holds(&next, side, sq, cond)) {
+            text_add(out, "CONDITION IF FORCED MOVES 1\n");
+            best = REAL_FORCED;
+            continue;
+        }
+        MoveList replies = generate_moves(&next);
+        bool forced = depth >= 3 && replies.count > 0;
+        int k = 0;
+        for (size_t j = 0; j < replies.count && depth >= 3; ++j) {
+            Board after = next;
+            make_move(&after, replies.items[j]);
+            bool can = goal_possible_real(&after, side, sq, cond, depth - 2);
+            if (can) {
+                ++k;
+            }
+            if (forced && (!can || !goal_forced_real(&after, side, sq, cond, depth - 2))) {
+                forced = false;
+            }
+        }
+        if (forced) {
+            text_add(out, "CONDITION IF FORCED\n");
+            best = REAL_FORCED;
+        } else if (k > 0) {
+            text_add(out, "CONDITION IF POSSIBLE %d OF %d\n", k, (int)replies.count);
+            if (best == REAL_ELSE) {
+                best = REAL_POSSIBLE;
+            }
+        } else {
+            text_add(out, "CONDITION ELSE\n");
+        }
+        free(replies.items);
+    }
+    free(first.items);
+    return best;
+}
+
+static void routes_real_report(const Board *b, const Goal *g, int depth, TextBuffer *out) {
+    int squares[GOAL_MAX_SQUARES];
+    int count = goal_squares(g, b, b->turn, squares);
+    Color side = b->turn, enemy = side == WHITE ? BLACK : WHITE;
+    RealResult result[GOAL_MAX_SQUARES][2];
+    const char *names[2] = {"REACH", "PROTECTED"};
+    bool all_forced = true;
+    char sq[3];
+
+    text_add(out, "ROUTES BEGIN %s GOAL ", color_name(side));
+    goal_text(g, out);
+    text_add(out, " DEPTH %d REAL\n", depth);
+    text_add(out, "NOTE REAL: %s answers with every legal move; FORCED = reached whatever %s does\n",
+             color_name(enemy), color_name(enemy));
+    MoveList moves = generate_moves(b);
+    bool none = moves.count == 0;
+    free(moves.items);
+    if (none) {
+        text_add(out, "NO MOVES %s\n", is_in_check(b, side) ? "checkmate" : "stalemate");
+        text_add(out, "ROUTES END\n");
+        return;
+    }
+    for (int k = 0; k < count; ++k) {
+        square_text(squares[k], sq);
+        for (int c = 0; c < 2; ++c) {
+            text_add(out, "GOAL %s %s\n", sq, names[c]);
+            result[k][c] = real_first_lines(b, squares[k], c == 0 ? COND_REACH : COND_PROTECTED, depth, out);
+            text_add(out, "RESULT %s %s %s\n", sq, names[c], real_text(result[k][c]));
+            if (result[k][c] != REAL_FORCED) {
+                all_forced = false;
+            }
+        }
+    }
+    if (count == 0) {
+        text_add(out, "NO SQUARES\n");
+    }
+    for (int k = 0; k < count; ++k) {
+        square_text(squares[k], sq);
+        text_add(out, "SQUARE %s REACH %s PROTECTED %s\n", sq, real_text(result[k][0]), real_text(result[k][1]));
+    }
+    for (int c = 0; c < 2; ++c) {
+        int first = -1;
+        for (int k = 0; k < count && first < 0; ++k) {
+            if (result[k][c] != REAL_ELSE) {
+                first = k;
+            }
+        }
+        if (first >= 0) {
+            square_text(squares[first], sq);
+            text_add(out, "FIRST-IF %s %s %s\n", names[c], sq, result[first][c] == REAL_FORCED ? "FORCED" : "POSSIBLE");
+        } else {
+            text_add(out, "FIRST-IF %s none (ELSE)\n", names[c]);
+        }
+    }
+    if (!all_forced || count == 0) {
+        text_add(out, "LIMIT %d\n", depth);
+    }
+    text_add(out, "ROUTES END\n");
+}
+
+/* Reads "real N" after "routes "; false if not well formed. */
+static bool parse_routes_real(const char *text, int *depth) {
+    int n = 0, used = 0;
+    if (strncmp(text, "real ", 5) != 0 || sscanf(text + 5, "%d%n", &n, &used) != 1 || text[5 + used] != '\0' ||
+        n < 1 || n > LOOP_MAX_DEPTH) {
+        return false;
+    }
+    *depth = n;
+    return true;
+}
+
+/* "support" after previewing m (PASS: S moves again). */
+static void support_report(const Board *b, Move m, TextBuffer *out) {
+    Color side = b->turn;
+    Board after = *b;
+    char text[6], at[3], from[3];
+    int follows = 0;
+    pass_play(&after, m, side);
+    int sq = m.er * 8 + m.ec;
+    char type = after.board[m.er][m.ec].type;
+    square_text(sq, at);
+    move_text(m, text);
+    text_add(out, "SUPPORT BEGIN %s PASS\n", text);
+    text_add(out, "NOTE PASS is hypothetical: %s moves again, %s passes\n", color_name(side),
+             color_name(side == WHITE ? BLACK : WHITE));
+    text_add(out, "SUPPORT NOW %c %s PROTECTORS %d\n", type, at, pieces_on_square(&after, sq, side));
+    MoveList moves = pass_moves(&after, side);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Move f = moves.items[i];
+        if (f.sr == m.er && f.sc == m.ec) {
+            continue; /* another piece only */
+        }
+        Board next = after;
+        pass_play(&next, f, side);
+        if (next.board[m.er][m.ec].color != side) {
+            continue;
+        }
+        bool before = piece_attacks(&after, f.sr, f.sc, m.er, m.ec);
+        bool now = piece_attacks(&next, f.er, f.ec, m.er, m.ec);
+        if (now && !before) {
+            move_text(f, text);
+            square_text(f.sr * 8 + f.sc, from);
+            text_add(out, "FOLLOW %s %c %s PROTECTS %c %s PROTECTORS %d\n", text, after.board[f.sr][f.sc].type, from, type,
+                     at, pieces_on_square(&next, sq, side));
+            ++follows;
+        }
+    }
+    free(moves.items);
+    text_add(out, "SUMMARY FOLLOWS %d\n", follows);
+    text_add(out, "SUPPORT END\n");
+}
+
+/* The second goal, measured from the start position and from the end of
+ * every route to the first IF square of the first goal that is not
+ * DOMINATED (PASS). */
+static void second_from(const Board *from, const Goal *second, const char *label, TextBuffer *out) {
+    int squares[GOAL_MAX_SQUARES];
+    int count = goal_squares(second, from, from->turn, squares);
+    char sq[3];
+    for (int k = 0; k < count; ++k) {
+        int reach = side_distance(from, from->turn, squares[k], COND_REACH, second->limit);
+        int prot = side_distance(from, from->turn, squares[k], COND_PROTECTED, second->limit);
+        square_text(squares[k], sq);
+        text_add(out, "FROM %s SQUARE %s REACH ", label, sq);
+        if (reach >= 0) {
+            text_add(out, "CONDITION IF MOVES %d", reach);
+        } else {
+            text_add(out, "CONDITION ELSE");
+        }
+        text_add(out, " PROTECTED ");
+        if (prot >= 0) {
+            text_add(out, "CONDITION IF MOVES %d\n", prot);
+        } else {
+            text_add(out, "CONDITION ELSE\n");
+        }
+    }
+}
+
+static void second_goal_report(const Board *b, const Goal *second, const int *first_square,
+                               const RouteVector *routes, int route_count, TextBuffer *out) {
+    char sq[3], text[6];
+    text_add(out, "SECOND GOAL ");
+    goal_text(second, out);
+    text_add(out, " LIMIT %d PASS AFTER ", second->limit);
+    if (first_square != NULL) {
+        square_text(*first_square, sq);
+        text_add(out, "%s\n", sq);
+    } else {
+        text_add(out, "none (ELSE)\n");
+    }
+    second_from(b, second, "START", out);
+    for (int i = 0; first_square != NULL && i < route_count; ++i) {
+        bool repeated = false; /* the same moves listed as a PIECE and a SIDE route */
+        for (int j = 0; j < i && !repeated; ++j) {
+            repeated = !routes[j].dominated && routes[j].length == routes[i].length;
+            for (int p = 0; repeated && p < routes[i].length; ++p) {
+                const Move *x = &routes[j].path[p], *y = &routes[i].path[p];
+                repeated = x->sr == y->sr && x->sc == y->sc && x->er == y->er && x->ec == y->ec &&
+                           x->promotion == y->promotion;
+            }
+        }
+        if (routes[i].dominated || repeated) {
+            continue;
+        }
+        Board end = *b;
+        TextBuffer label = {NULL, 0, 0};
+        for (int p = 0; p < routes[i].length; ++p) {
+            pass_play(&end, routes[i].path[p], b->turn);
+            move_text(routes[i].path[p], text);
+            text_add(&label, "%s%s", p ? " " : "", text);
+        }
+        second_from(&end, second, label.text, out);
+        free(label.text);
+    }
+    text_add(out, "SECOND END\n");
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -3430,6 +3762,7 @@ int main(void) {
     static Tracker tracker; /* Stage 3A: piece names and lost moves */
     static Goal goal;       /* Stage 3D-1: the active goal, if any */
     bool distance_view = false; /* Stage 3D-1: "distance on" */
+    static Goal second_goal;    /* Stage 3D-2: "goal2" */
 
 #ifdef _WIN32
     /* Only in a real console window. When the input comes from a file (the
@@ -3668,12 +4001,68 @@ int main(void) {
             printf("DISTANCE ORDER %s\n", distance_view ? "ON" : "OFF");
             continue;
         }
+        if (!strcmp(input, "goal2") || !strncmp(input, "goal2 ", 6)) {
+            if (input[5] == '\0') {
+                if (second_goal.active) {
+                    TextBuffer view = {NULL, 0, 0};
+                    text_add(&view, "SECOND GOAL ACTIVE ");
+                    goal_text(&second_goal, &view);
+                    text_add(&view, " LIMIT %d PASS\n", second_goal.limit);
+                    fputs(view.text, stdout);
+                    free(view.text);
+                } else {
+                    puts("No second goal is active. Type goal2 d5 2 (squares, then a limit of own moves 1 to 4).");
+                }
+            } else if (!strcmp(input + 6, "off")) {
+                second_goal.active = false;
+                puts("Second goal cleared.");
+            } else if (parse_goal(input + 6, &second_goal)) {
+                TextBuffer view = {NULL, 0, 0};
+                text_add(&view, "SECOND GOAL ACTIVE ");
+                goal_text(&second_goal, &view);
+                text_add(&view, " LIMIT %d PASS\n", second_goal.limit);
+                fputs(view.text, stdout);
+                free(view.text);
+            } else {
+                puts(RED "Type goal2, squares and a limit from 1 to 4, for example goal2 d5 2; goal2 off clears it." RESET);
+            }
+            continue;
+        }
+        if (!strncmp(input, "routes ", 7)) {
+            int depth = 0;
+            if (!goal.active) {
+                puts(RED "No goal is active. Type goal f7 2 first, then routes." RESET);
+            } else if (!parse_routes_real(input + 7, &depth)) {
+                puts(RED "Type routes (PASS), or routes real and a depth from 1 to 6, for example routes real 3." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                if (depth >= 5) {
+                    printf("Searching %d plies. This can take minutes.\n", depth);
+                    fflush(stdout);
+                }
+                routes_real_report(&game, &goal, depth, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        if (!strcmp(input, "support")) {
+            if (!preview_shown) {
+                puts(RED "No preview to support. Select a piece and preview a destination, then type support." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                support_report(&game, preview_move, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
         if (!strcmp(input, "routes")) {
             if (!goal.active) {
                 puts(RED "No goal is active. Type goal f7 2 first, then routes." RESET);
             } else {
                 TextBuffer view = {NULL, 0, 0};
-                routes_report(&game, &goal, &view);
+                routes_report_with(&game, &goal, &second_goal, &view);
                 fputs(view.text, stdout);
                 free(view.text);
             }

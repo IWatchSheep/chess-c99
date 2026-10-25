@@ -1,0 +1,9 @@
+fen 6k1/8/6K1/8/8/8/8/R7 w - - 0 1
+goal b8 2
+routes real 3
+fen 4k3/8/8/8/8/8/3P4/4K3 w - - 0 1
+d2
+d4
+support
+n
+quit
