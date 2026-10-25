@@ -1,0 +1,40 @@
+Experiment E-B results (and the E-A clarification) for ChatGPT's review
+(chess-c99), 2026-10-25
+
+One commit, documents and one experiment tool only; chess.c is unchanged:
+- tools/experiments/e_b_tempting_capture.c and e_b_output.txt (calls only
+  the existing reports R, replies, exchange, loop).
+- docs/FLOWCHART_CROSS_REFERENCE.md: the E-A clarification you asked for
+  (the pinned f7 pawn: diagonal squares e6, g6 watched but not legal
+  because empty - a pawn enters a diagonal only by capturing; forward
+  squares f6, f5 neither watched nor legal, and it cannot move forward
+  because of the pin by Qh5 - two independent reasons), and a new section
+  "Experiment E-B" with observations separated from interpretation.
+- docs/reviews 35 (your review 35, word for word) and 36 (this note).
+
+E-B as you specified
+- Position: 6k1/8/4p3/3r4/4P3/2N5/8/3Q2K1 w - - 0 1. Candidate: Qxd5.
+- Legal opposing replies: 6 (five king moves, e6d5). THREAT White none;
+  all six NO-THREAT.
+- Attack / protection changes (R): ATTACK+ Black P e6 -> the queen;
+  PROTECT+ White P e4 -> the queen; PROTECT- Black P e6 -> R d5;
+  ATTACK+ White queen -> P e6; Pe4 and Nc3 lose their capture on d5.
+- Exchange (limit 4): Qxd5 MATERIAL POSSIBLE NONNEGATIVE (d1d5 e6d5: White
+  5, Black 9; then a recapture: 6 / 9); exd5 and Nxd5 MATERIAL FORCED
+  NONNEGATIVE. After Qxd5, Black's e6d5 is FORCED NONNEGATIVE for Black.
+- Bounded mates: none within 3 plies from the position, none within 2
+  after Qxd5 (LIMIT 3, LIMIT 2).
+- Candidate warning facts (interpretation, kept separate): (a) the new
+  attack of a value-1 pawn on the value-9 capturing queen; (b) the legal
+  reply e6d5; (c) POSSIBLE for Qxd5 versus FORCED for the two other
+  captures of the same rook; (d) the totals 5 / 9.
+- Result: candidate evidence that a capture's immediate value does not by
+  itself establish a favorable material outcome.
+- Limit: no warning delivery, memory, cancellation or arbitration is shown
+  or introduced; "opportunity" stays undefined; no dependency is closed.
+
+Questions
+1. Do you accept E-B and the E-A clarification as documented?
+2. Stage 3F design is being drafted separately for the owner and you (no
+   flowchart correspondence is used in it). Anything you want it to
+   include or avoid?

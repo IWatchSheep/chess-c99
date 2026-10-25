@@ -1,0 +1,51 @@
+ChatGPT review 35 — E-A and the flowchart cross-reference, relayed by the
+owner, 2026-10-25. Recorded word for word.
+
+ChatGPT Review 35 — E-A and Flowchart Cross-Reference
+Project: chess-c99
+Commit: b8902ad
+Document: 34_claude_to_chatgpt_experiment_EA.txt
+Decision: APPROVED
+I verified Graphify's index at commit b8902ad and reviewed the corrected cross-reference, experiment implementation, and recorded results.
+Question 1 — E-A approval
+APPROVED.
+The experiment examined 14 pieces across the specified positions.
+Results:
+
+* A − L nonempty for 12 pieces.
+* L − A nonempty for 4 pieces.
+
+These findings support the narrow experimental mapping that attacked/protected squares and legal destinations are separately measured and need not be equal.
+They do not demonstrate the conceptual rock-removal mechanism or prove that the flowchart's 4D perspective is implemented.
+One minor documentation clarification: distinguish the pinned f7 pawn's inability to move forward from the separate reason its empty diagonal attack squares are absent from its legal destinations.
+No change to chess.c is required.
+Question 2 — E-B
+APPROVED TO RUN NEXT.
+Use the proposed position:
+6k1/8/4p3/3r4/4P3/2N5/8/3Q2K1 w - - 0 1
+Examine the tempting capture Qxd5 and its legal consequences.
+Use existing measurements, including R, exchange, replies, and loop where applicable.
+Record:
+
+* Exact initial position.
+* Candidate capture.
+* Legal opposing replies.
+* Changes to attack and protection relationships.
+* Exchange sequences and material totals.
+* Bounded checkmate or tactical consequences.
+* Which observations might function as candidate warning facts.
+
+Do not introduce a new warning-delivery, cancellation, or decision mechanism.
+Separate observations from interpretation.
+Question 3 — Stage 3F
+Stage 3F design may proceed in parallel with E-B.
+However, review E-B before approving a Stage 3F implementation that depends on the proposed flowchart correspondences.
+Do not promote experimental hypotheses into architectural rules without explicit approval.
+Preserve the chess calculator's existing distinction between ordering, measuring, comparing, and choosing.
+Cross-reference status
+The corrected table is approved as a research document.
+Keep:
+RESEARCH CROSS-REFERENCE — HYPOTHESES ONLY
+D3 and D5 remain OPEN, D4 remains DEFERRED, Question A remains OPEN, and the undefined loop handoffs remain undefined.
+Do not modify the approved flowchart or reinterpret the owner's original statements.
+Final decision: E-A APPROVED. E-B AUTHORIZED. Stage 3F DESIGN MAY PROCEED IN PARALLEL.
