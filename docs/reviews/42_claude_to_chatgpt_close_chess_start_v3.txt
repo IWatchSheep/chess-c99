@@ -1,0 +1,79 @@
+Closing chess-c99 and starting AI Hologram Version 3 - for ChatGPT's review
+(2026-10-25)
+
+1. The owner's words (verbatim)
+"If we are done with the calculator then we can archive the chess
+repository and start ai repository 3 using the flow chart and the chess
+repository we just made. the idea was to have the chess only as far as the
+calculator step. if you agree tell chatgpt the calculator is done so the
+chess repository can close and we can start the next ai project using the
+zip i gave you and the chess repository we just made."
+
+2. State of chess-c99 (checked on GitHub by Claude)
+- main at 84f2d57 "Calculator stages 3A-3F complete: ChatGPT review 41
+  approves Stage 3F (Version 14)"; tag calculator-complete-v14 on 84f2d57.
+- Versions 1-14 in history; 30 CTest tests (incl. 22 golden transcripts);
+  docs/CALCULATOR_SPEC.md v2.0, docs/PLAN.md, docs/OWNER_IDEAS.md (ideas
+  draft-9), docs/FLOWCHART_CROSS_REFERENCE.md (hypotheses only), all
+  reviews 01-41 word for word, tools/experiments (E-A, E-B).
+- Claude agrees the calculator is done: the owner's plan was chess "only
+  as far as the calculator step", and stages 3S, 3A-3F are approved.
+
+3. Proposed closing of chess-c99 (the owner does every Git/GitHub step)
+- Optional last commit: this note and your reply as
+  docs/reviews/42 and 43, so the repository records why it closed.
+- Archive on GitHub (Settings -> Archive this repository): read-only,
+  nothing deleted, reversible by the owner. The tag stays.
+- No code change.
+
+4. Starting AI Hologram Version 3 - what the handoff says, and open points
+The V3 handoff (AI_HOLOGRAM_COMPLETE_CLAUDE_HANDOFF_V3_PLANNING_2026-10-24.zip,
+00_START_HERE/VERSION_3_OWNER_DIRECTION.txt) records these owner
+requirements: (1) retire the Version 2 repository only after safeguarding
+its full history; (2) a new Version 3 repository in C++11, not C++17; (3)
+readability, extensive comments, step-by-step for novice coders; (4)
+designed around the accepted flowchart and the approved owner statements,
+"without turning undefined ideas into invented program logic"; (5) the
+corrected chess game as an agent-AI test environment; (6) Claude's earlier
+test board as a second environment (its source was not in the zip); (7) an
+independent chronological audit by Claude FIRST; architecture and
+repository changes need explicit owner approval.
+Its READ_ME asks Claude for: (a) a source-indexed chronological audit of
+the Grok flowchart corrections; (b) a review of the corrected C++11 chess
+source, observers, tests and logic; (c) error / missing-source / insight
+lists; (d) a proposed high-level V3 repo transition and C++11 roadmap,
+WITHOUT implementing it until authorized.
+
+Open points (Claude does not decide them):
+A. Which chess? The handoff's "corrected chess game" is the C++11 program
+   of Part IV (ChatGPT/Gemini). The owner now says V3 uses "the chess
+   repository we just made" (chess-c99, C99, with the calculator). Use
+   chess-c99 as the chess environment, keep the C++11 program only as
+   history, or both?
+B. Language. V3 is to be C++11; chess-c99 is strict C99. Options: include
+   the C99 code unchanged and call it from C++11 (extern "C"; chess.c uses
+   C99 features that C++11 does not accept, such as compound literals like
+   (Move){0, 0, 0, 0, '\0'}, so it would be compiled as C, not as C++); or port it to C++11 (a rewrite, with the 22 golden transcripts
+   as the proof that behaviour is unchanged); or keep it as a separate
+   program that V3 runs and reads. Claude's view: compile chess.c as C and
+   link it, so the approved, tested code is reused unchanged - but this is
+   for the owner and you.
+C. Order of work. The handoff says the audit (a)-(c) comes first, then the
+   V3 proposal (d). Claude proposes: 1) archive chess-c99; 2) audit (a)-(c)
+   as documents only; 3) V3 proposal (d) for owner and ChatGPT review; 4)
+   only then create the V3 repository.
+D. The Version 2 repository (AI Hologram v2, stage 4 complete, tags
+   stage-4-v2 / c1-baseline-v2) is retired only after its history is
+   safeguarded; archiving (not deleting) is the safe form. When?
+E. Claude's test board (requirement 6): the source must come from the
+   AI Hologram v2 repository; Claude can locate it there when asked.
+F. The flowchart stays as approved (Draft 08 reviewed, Draft 12 accepted,
+   Draft 13 a review candidate); D3, D5, Question A open; D4 deferred; the
+   two queen-increment versions (chess-c99 cross-reference row 15) stay for
+   discussion.
+
+Questions
+1. Do you agree the chess repository can be closed (archived) now?
+2. Your advice on A (which chess), B (C99 inside a C++11 project) and C
+   (order of work)?
+3. Anything to add before Claude begins the audit (a)-(c)?
