@@ -188,10 +188,13 @@ static bool square_attacked(const Board *b, int r, int c, Color by) {
     return false;
 }
 
-static bool has_king(const Board *b, Color side) {
-    for (int r = 0; r < 8; ++r) {
-        for (int c = 0; c < 8; ++c) {
-            if (b->board[r][c].type == 'K' && b->board[r][c].color == side) {
+static bool find_king(const Board *b, Color side, int *king_row, int *king_col) {
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            Piece piece = b->board[row][col];
+            if (piece.type == 'K' && piece.color == side) {
+                *king_row = row;
+                *king_col = col;
                 return true;
             }
         }
@@ -199,15 +202,17 @@ static bool has_king(const Board *b, Color side) {
     return false;
 }
 
+static bool has_king(const Board *b, Color side) {
+    int row, col;
+    return find_king(b, side, &row, &col);
+}
+
 static bool is_in_check(const Board *b, Color side) {
-    for (int r = 0; r < 8; ++r) {
-        for (int c = 0; c < 8; ++c) {
-            if (b->board[r][c].type == 'K' && b->board[r][c].color == side) {
-                return square_attacked(b, r, c, opposite(side));
-            }
-        }
+    int row, col;
+    if (!find_king(b, side, &row, &col)) {
+        return false;
     }
-    return false;
+    return square_attacked(b, row, col, opposite(side));
 }
 
 static bool can_castle(const Board *b, Move move, Color side) {
@@ -280,12 +285,11 @@ static bool pawn_move_is_pseudo_legal(const Board *b, Move move, Piece pawn,
 }
 
 static bool king_move_is_pseudo_legal(const Board *b, Move move) {
-    int row_change = move.er - move.sr;
-    int col_change = move.ec - move.sc;
-    if (abs(row_change) <= 1 && abs(col_change) <= 1) {
+    if (piece_attacks(b, move.sr, move.sc, move.er, move.ec)) {
         return true;
     }
-    if (row_change != 0 || abs(col_change) != 2 || is_in_check(b, b->turn)) {
+    if (move.sr != move.er || abs(move.ec - move.sc) != 2 ||
+        is_in_check(b, b->turn)) {
         return false;
     }
     return can_castle(b, move, b->turn);
@@ -314,28 +318,15 @@ static bool pseudo_legal(const Board *b, Move m) {
         return false;
     }
 
-    int row_change = m.er - m.sr;
-    int col_change = m.ec - m.sc;
-
-    switch (piece.type) {
-        case 'P':
-            return pawn_move_is_pseudo_legal(b, m, piece, target);
-        case 'N':
-            return is_knight_move(row_change, col_change);
-        case 'B':
-            return is_diagonal_move(row_change, col_change) &&
-                   path_clear(b, m.sr, m.sc, m.er, m.ec);
-        case 'R':
-            return is_straight_move(row_change, col_change) &&
-                   path_clear(b, m.sr, m.sc, m.er, m.ec);
-        case 'Q':
-            return is_queen_move(row_change, col_change) &&
-                   path_clear(b, m.sr, m.sc, m.er, m.ec);
-        case 'K':
-            return king_move_is_pseudo_legal(b, m);
-        default:
-            return false;
+    if (piece.type == 'P') {
+        return pawn_move_is_pseudo_legal(b, m, piece, target);
     }
+
+    if (piece.type == 'K') {
+        return king_move_is_pseudo_legal(b, m);
+    }
+
+    return piece_attacks(b, m.sr, m.sc, m.er, m.ec);
 }
 
 static bool move_is_en_passant(const Board *b, Move move, Piece piece) {
@@ -381,79 +372,57 @@ static bool legal_move(const Board *b, Move move) {
     return !is_in_check(&after_move, b->turn);
 }
 
+static char piece_key_char(Piece piece) {
+    if (piece.color == EMPTY) {
+        return '.';
+    }
+    if (piece.color == WHITE) {
+        return (char)tolower((unsigned char)piece.type);
+    }
+    return piece.type;
+}
+
 static void position_key(const Board *b, char key[80]) {
     size_t n = 0;
 
     for (int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
-            Piece p = b->board[r][c];
-            if (p.color == EMPTY) {
-                key[n] = '.';
-            } else if (p.color == WHITE) {
-                key[n] = (char)tolower((unsigned char)p.type);
-            } else {
-                key[n] = p.type;
-            }
+            key[n] = piece_key_char(b->board[r][c]);
             ++n;
         }
     }
-    if (b->turn == WHITE) {
-        key[n] = 'W';
-    } else {
-        key[n] = 'B';
-    }
+
+    key[n] = (b->turn == WHITE) ? 'W' : 'B';
     ++n;
 
-    if (!b->white_king_moved && !b->white_rook_a_moved) {
-        key[n] = '1';
-    } else {
-        key[n] = '0';
-    }
+    key[n] = (!b->white_king_moved && !b->white_rook_a_moved) ? '1' : '0';
     ++n;
-
-    if (!b->white_king_moved && !b->white_rook_h_moved) {
-        key[n] = '1';
-    } else {
-        key[n] = '0';
-    }
+    key[n] = (!b->white_king_moved && !b->white_rook_h_moved) ? '1' : '0';
     ++n;
-
-    if (!b->black_king_moved && !b->black_rook_a_moved) {
-        key[n] = '1';
-    } else {
-        key[n] = '0';
-    }
+    key[n] = (!b->black_king_moved && !b->black_rook_a_moved) ? '1' : '0';
     ++n;
-
-    if (!b->black_king_moved && !b->black_rook_h_moved) {
-        key[n] = '1';
-    } else {
-        key[n] = '0';
-    }
+    key[n] = (!b->black_king_moved && !b->black_rook_h_moved) ? '1' : '0';
     ++n;
 
     bool legal_ep = false;
     if (in_bounds(b->ep_row, b->ep_col)) {
+        int direction = (b->turn == WHITE) ? 1 : -1;
+        int starting_row = b->ep_row + direction;
+
         for (int dc = -1; dc <= 1; dc += 2) {
-            int sr;
-            if (b->turn == WHITE) {
-                sr = b->ep_row + 1;
-            } else {
-                sr = b->ep_row - 1;
-            }
             int sc = b->ep_col + dc;
-            Move m = {sr, sc, b->ep_row, b->ep_col, '\0'};
-            bool source_is_on_board = in_bounds(sr, sc);
-            bool can_capture_en_passant = false;
-            if (source_is_on_board) {
-                can_capture_en_passant = legal_move(b, m);
+            if (!in_bounds(starting_row, sc)) {
+                continue;
             }
-            if (can_capture_en_passant) {
+
+            Move candidate = {starting_row, sc, b->ep_row, b->ep_col, '\0'};
+            if (legal_move(b, candidate)) {
                 legal_ep = true;
                 break;
             }
         }
     }
+
     if (legal_ep) {
         key[n] = (char)('0' + b->ep_row);
         ++n;
@@ -463,6 +432,7 @@ static void position_key(const Board *b, char key[80]) {
         key[n] = '-';
         ++n;
     }
+
     key[n] = '\0';
 }
 
@@ -648,37 +618,13 @@ static MoveList generate_moves(const Board *b) {
     return list;
 }
 
-static void mark_rook_captured(Board *b, int row, int col, Color color) {
-    if (row == 7 && col == 0 && color == WHITE) {
-        b->white_rook_a_moved = true;
+static void mark_rook_at_home_square(Board *b, int row, int col, Color side) {
+    int home_row = home_row_for(side);
+    if (row != home_row || (col != 0 && col != 7)) {
+        return;
     }
-    if (row == 7 && col == 7 && color == WHITE) {
-        b->white_rook_h_moved = true;
-    }
-    if (row == 0 && col == 0 && color == BLACK) {
-        b->black_rook_a_moved = true;
-    }
-    if (row == 0 && col == 7 && color == BLACK) {
-        b->black_rook_h_moved = true;
-    }
-}
 
-static void mark_rook_moved_from(Board *b, Piece piece, int row, int col) {
-    if (piece.color == WHITE) {
-        if (row == 7 && col == 0) {
-            b->white_rook_a_moved = true;
-        }
-        if (row == 7 && col == 7) {
-            b->white_rook_h_moved = true;
-        }
-    } else {
-        if (row == 0 && col == 0) {
-            b->black_rook_a_moved = true;
-        }
-        if (row == 0 && col == 7) {
-            b->black_rook_h_moved = true;
-        }
-    }
+    mark_rook_moved(b, side, col == 7);
 }
 
 static void update_castle_state(Board *b, Piece piece, Move m) {
@@ -695,7 +641,7 @@ static void update_castle_state(Board *b, Piece piece, Move m) {
     }
 
     if (piece.type == 'R') {
-        mark_rook_moved_from(b, piece, m.sr, m.sc);
+        mark_rook_at_home_square(b, m.sr, m.sc, piece.color);
     }
 }
 
@@ -706,7 +652,7 @@ static void make_move(Board *b, Move m) {
     bool capture = target.color != EMPTY || move_is_en_passant(b, m, p);
 
     if (target.type == 'R') {
-        mark_rook_captured(b, m.er, m.ec, target.color);
+        mark_rook_at_home_square(b, m.er, m.ec, target.color);
     }
 
     update_castle_state(b, p, m);
@@ -780,6 +726,18 @@ typedef enum {
     INPUT_READ_EOF
 } InputResult;
 
+typedef enum {
+    COMMAND_OTHER,
+    COMMAND_SHORT_NEW,
+    COMMAND_NEW,
+    COMMAND_FINALIZE,
+    COMMAND_PREVIEW,
+    COMMAND_QUIT,
+    COMMAND_RESTART,
+    COMMAND_RESIGN,
+    COMMAND_CLAIM
+} Command;
+
 static InputResult read_input_line(char *input, int capacity) {
     if (!fgets(input, capacity, stdin)) {
         return INPUT_READ_EOF;
@@ -803,20 +761,55 @@ static InputResult read_input_line(char *input, int capacity) {
     return INPUT_READ_OK;
 }
 
+static Command parse_command(const char *input) {
+    if (!strcmp(input, "n") || !strcmp(input, "N")) {
+        return COMMAND_SHORT_NEW;
+    }
+    if (!strcmp(input, "new") || !strcmp(input, "NEW") ||
+        !strcmp(input, "select none")) {
+        return COMMAND_NEW;
+    }
+    if (!strcmp(input, "f") || !strcmp(input, "F")) {
+        return COMMAND_FINALIZE;
+    }
+    if (!strcmp(input, "p") || !strcmp(input, "P")) {
+        return COMMAND_PREVIEW;
+    }
+    if (!strcmp(input, "quit") || !strcmp(input, "exit")) {
+        return COMMAND_QUIT;
+    }
+    if (!strcmp(input, "restart")) {
+        return COMMAND_RESTART;
+    }
+    if (!strcmp(input, "resign")) {
+        return COMMAND_RESIGN;
+    }
+    if (!strcmp(input, "claim")) {
+        return COMMAND_CLAIM;
+    }
+    return COMMAND_OTHER;
+}
+
+static bool is_game_command(Command command) {
+    return command == COMMAND_QUIT || command == COMMAND_RESTART ||
+           command == COMMAND_RESIGN || command == COMMAND_CLAIM;
+}
+
 /* Step 1: Inspect one piece without changing the position. */
-static void selected_destinations(const Board *b, int row, int col,
+static void legal_destination_map(const Board *position, int row, int col,
+                                  Color side_to_move,
                                   bool destinations[8][8]) {
     memset(destinations, 0, sizeof(bool) * 8 * 8);
     if (!in_bounds(row, col)) {
         return;
     }
-
-    /* Only the player whose turn it is can select a piece. */
-    if (b->board[row][col].color != b->turn) {
+    if (position->board[row][col].color == EMPTY) {
         return;
     }
 
-    MoveList moves = generate_moves(b);
+    Board view = *position;
+    view.turn = side_to_move;
+    MoveList moves = generate_moves(&view);
     for (size_t i = 0; i < moves.count; ++i) {
         Move move = moves.items[i];
         if (move.sr == row && move.sc == col) {
@@ -824,6 +817,16 @@ static void selected_destinations(const Board *b, int row, int col,
         }
     }
     free(moves.items);
+}
+
+static void selected_destinations(const Board *b, int row, int col,
+                                  bool destinations[8][8]) {
+    if (!in_bounds(row, col) || b->board[row][col].color != b->turn) {
+        memset(destinations, 0, sizeof(bool) * 8 * 8);
+        return;
+    }
+
+    legal_destination_map(b, row, col, b->turn, destinations);
 }
 
 /* Print available squares beside the next move prompt. */
@@ -867,6 +870,8 @@ static void display(const Board *b, int selected_row, int selected_col) {
             const char *background;
             const char *foreground;
             char symbol = ' ';
+            char left = ' ';
+            char right = ' ';
 
             if (light_square) {
                 background = LIGHT_SQUARE_BG;
@@ -877,18 +882,21 @@ static void display(const Board *b, int selected_row, int selected_col) {
             }
 
             symbol = piece_symbol(piece);
+            if (row == selected_row && col == selected_col) {
+                left = '[';
+                right = ']';
+            } else if (destinations[row][col]) {
+                if (piece.color == EMPTY) {
+                    symbol = '*';
+                } else {
+                    left = '(';
+                    right = ')';
+                }
+            }
 
             /* Three visible characters per cell preserve the board layout. */
-            if (row == selected_row && col == selected_col) {
-                printf("%s%s[%c]%s|", background, foreground, symbol, RESET);
-            } else if (destinations[row][col]) {
-                if (piece.color == EMPTY)
-                    printf("%s%s * %s|", background, foreground, RESET);
-                else
-                    printf("%s%s(%c)%s|", background, foreground, symbol, RESET);
-            } else {
-                printf("%s%s %c %s|", background, foreground, symbol, RESET);
-            }
+            printf("%s%s%c%c%c%s|", background, foreground,
+                   left, symbol, right, RESET);
         }
 
         printf(" %d\n", 8 - row);
@@ -970,29 +978,33 @@ static bool automatic_draw(const Board *b, const char **reason) {
         *reason = "75-move rule";
         return true;
     }
+
     char key[80];
     position_key(b, key);
     if (repetition_count(b, key) >= 5) {
         *reason = "fivefold repetition";
         return true;
     }
+
     if (dead_position(b)) {
         *reason = "dead position";
         return true;
     }
+
     return false;
 }
 
 static bool claimable_draw(const Board *b, Move intended, bool has_intended,
                            const char **reason) {
     const Board *position = b;
-    Board after_move;
+    Board after_move = {0};
     char key[80];
 
     if (has_intended) {
         if (!legal_move(b, intended)) {
             return false;
         }
+
         after_move = *b;
         make_move(&after_move, intended);
         position = &after_move;
@@ -1002,17 +1014,14 @@ static bool claimable_draw(const Board *b, Move intended, bool has_intended,
         *reason = "50-move rule";
         return true;
     }
+
     position_key(position, key);
-    unsigned repetitions_needed;
-    if (has_intended) {
-        repetitions_needed = 2;
-    } else {
-        repetitions_needed = 3;
-    }
-    if (repetition_count(b, key) >= repetitions_needed) {
+    unsigned repetitions_needed = has_intended ? 2u : 3u;
+    if (repetition_count(position, key) >= repetitions_needed) {
         *reason = "threefold repetition";
         return true;
     }
+
     return false;
 }
 
@@ -1091,33 +1100,32 @@ static size_t next_chunk(const char *source, size_t at, char *out) {
     size_t length = strlen(source);
     size_t copied = 0;
 
-    if (at >= length) {
-        out[0] = '\0';
-        return at;
-    }
-
     while (at < length && source[at] == ' ') {
         ++at;
     }
-    while (at < length && copied < COMPARE_WIDTH) {
-        out[copied] = source[at];
-        ++copied;
-        ++at;
-    }
+    while (at < length) {
+        size_t word_length = strcspn(source + at, " ");
+        size_t separator_length = copied == 0 ? 0 : 1;
 
-    if (at < length && source[at] != ' ' && copied == COMPARE_WIDTH) {
-        while (copied > 0 && out[copied - 1] != ' ') {
-            --copied;
+        if (copied + separator_length + word_length > COMPARE_WIDTH) {
+            if (copied == 0) {
+                memcpy(out, source + at, COMPARE_WIDTH);
+                at += COMPARE_WIDTH;
+                copied = COMPARE_WIDTH;
+            }
+            break;
         }
-        if (copied > 0) {
-            at -= (COMPARE_WIDTH - copied);
-        } else {
-            copied = COMPARE_WIDTH;
-        }
-    }
 
-    while (copied > 0 && out[copied - 1] == ' ') {
-        --copied;
+        if (separator_length != 0) {
+            out[copied++] = ' ';
+        }
+        memcpy(out + copied, source + at, word_length);
+        copied += word_length;
+        at += word_length;
+
+        while (at < length && source[at] == ' ') {
+            ++at;
+        }
     }
 
     out[copied] = '\0';
@@ -1154,6 +1162,69 @@ static void make_piece_description(const Board *position, int row, int col,
 
     snprintf(output, capacity, "%c%d %c: %s",
              'a' + col, 8 - row, displayed_piece, destinations);
+}
+
+/* STEP 2: Calculate a set of legal destination squares for ONE piece.
+ * Temporarily let that piece's side move, for both BEFORE and AFTER.
+ * A true entry at [row][col] means the piece can legally go there.
+ */
+static void piece_destination_map(const Board *position, int row, int col,
+                                  bool destination[8][8]) {
+    Color side_to_move = position->board[row][col].color;
+    legal_destination_map(position, row, col, side_to_move, destination);
+}
+
+/* Append one destination to a bounded text buffer. */
+static void append_destination(char *output, size_t capacity, int row, int col) {
+    size_t used = strlen(output);
+    if (used >= capacity) {
+        return;
+    }
+    snprintf(output + used, capacity - used, "%s%c%d",
+             used ? " " : "", 'a' + col, 8 - row);
+}
+
+/* Compare the same piece's destinations before and after a preview.
+ * Both gained and lost squares may exist for the SAME piece.
+ * A captured piece is marked CAPTURED rather than UNCHANGED.
+ */
+static void print_piece_changes(const Board *before, const Board *after,
+                                int before_row, int before_col,
+                                int after_row, int after_col, bool captured) {
+    bool old_destinations[8][8];
+    bool new_destinations[8][8];
+    char gained[256] = "";
+    char lost[256] = "";
+    char unchanged[256] = "";
+
+    if (captured) {
+        puts("    CHANGE: CAPTURED - this piece has no AFTER moves.");
+        return;
+    }
+
+    piece_destination_map(before, before_row, before_col, old_destinations);
+    piece_destination_map(after, after_row, after_col, new_destinations);
+
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (new_destinations[row][col] && !old_destinations[row][col]) {
+                append_destination(gained, sizeof(gained), row, col);
+            } else if (old_destinations[row][col] && !new_destinations[row][col]) {
+                append_destination(lost, sizeof(lost), row, col);
+            } else if (old_destinations[row][col] && new_destinations[row][col]) {
+                append_destination(unchanged, sizeof(unchanged), row, col);
+            }
+        }
+    }
+
+    if (gained[0] == '\0' && lost[0] == '\0') {
+        puts("    CHANGE: UNCHANGED - no destinations gained or lost.");
+    } else {
+        puts("    CHANGE: destinations changed.");
+    }
+    printf("    GAINED: %s\n", gained[0] ? gained : "(none)");
+    printf("    LOST: %s\n", lost[0] ? lost : "(none)");
+    printf("    UNCHANGED: %s\n", unchanged[0] ? unchanged : "(none)");
 }
 
 /* Lists every OTHER piece from the original board, aligned by identity.
@@ -1238,6 +1309,8 @@ static void compare_all_other_pieces(const Board *before, const Board *after,
                 }
 
                 print_side_by_side(before_description, after_description);
+                print_piece_changes(before, after, row, col,
+                                    after_row, after_col, captured);
             }
         }
     }
@@ -1249,6 +1322,7 @@ static void show_step2_after(const Board *board, Move proposed) {
            'a' + proposed.sc, 8 - proposed.sr, 'a' + proposed.ec, 8 - proposed.er);
     make_move(&simulated, proposed);
     puts("Widen your console to about 140 columns for the two-column report.");
+    puts("CHANGE shows gained, lost, and unchanged destinations for each other piece.");
     puts("LEGAL MOVE LIST NOTE: Each side is evaluated as if it were that side's turn.");
     puts("Black and White possibilities are shown for comparison; only the actual");
     puts("side to move can play immediately. Check restrictions still apply.");
@@ -1256,6 +1330,14 @@ static void show_step2_after(const Board *board, Move proposed) {
     puts("\nThe real board and player turn have NOT changed.");
     puts("Press F then Enter to FINALIZE this previewed move.");
     puts("Press P then Enter to preview another destination, or N for a new piece.");
+}
+
+static void clear_selection(int *row, int *col, bool *preview_shown,
+                            bool *promotion_choice_pending) {
+    *row = -1;
+    *col = -1;
+    *preview_shown = false;
+    *promotion_choice_pending = false;
 }
 
 int main(void) {
@@ -1309,7 +1391,13 @@ int main(void) {
 
         puts("STEP 2: Select, preview, then explicitly finalize a chess move.");
         if (promotion_choice_pending) {
-            puts("PROMOTION: type Q, R, B or N, then press Enter to generate the preview.");
+            puts("PROMOTION:");
+            puts("Q = Queen");
+            puts("R = Rook");
+            puts("B = Bishop");
+            puts("N = Knight");
+            puts("Type NEW to cancel and select another piece.");
+            puts("Type your choice, then press Enter.");
         } else if (!in_bounds(selected_row, selected_col)) {
             puts("Characters 1-2: enter a piece square (e.g. d2), then Enter.");
         } else if (!preview_shown) {
@@ -1349,14 +1437,13 @@ int main(void) {
         if (input_result == INPUT_READ_TOO_LONG) {
             continue;
         }
+        Command command = parse_command(input);
 
         /* An explicit new-selection command prevents ambiguous two-character input. */
-        if ((!promotion_choice_pending && (!strcmp(input, "n") || !strcmp(input, "N"))) ||
-            !strcmp(input, "new") || !strcmp(input, "select none")) {
-            selected_row = -1;
-            selected_col = -1;
-            preview_shown = false;
-            promotion_choice_pending = false;
+        if (command == COMMAND_NEW ||
+            (command == COMMAND_SHORT_NEW && !promotion_choice_pending)) {
+            clear_selection(&selected_row, &selected_col, &preview_shown,
+                            &promotion_choice_pending);
             puts("NEW SELECTION: now enter characters 1-2 for a different piece.");
             continue;
         }
@@ -1373,13 +1460,13 @@ int main(void) {
                 continue;
             }
         }
-        if (promotion_choice_pending) {
-            puts(RED "Choose Q, R, B or N; or N for new selection." RESET);
+        if (promotion_choice_pending && !is_game_command(command)) {
+            puts(RED "Choose Q, R, B or N; or type NEW to cancel." RESET);
             continue;
         }
 
         /* Explicitly finalize ONLY the last valid previewed move. */
-        if (!strcmp(input, "f") || !strcmp(input, "F")) {
+        if (command == COMMAND_FINALIZE) {
             if (!preview_shown || !in_bounds(selected_row, selected_col)) {
                 puts(RED "No preview to finalize. Select a piece and preview a destination first." RESET);
                 continue;
@@ -1394,14 +1481,13 @@ int main(void) {
                    'a' + preview_move.ec, 8 - preview_move.er);
             make_move(&game, preview_move);
             record_position(&game);
-            selected_row = -1;
-            selected_col = -1;
-            preview_shown = false;
+            clear_selection(&selected_row, &selected_col, &preview_shown,
+                            &promotion_choice_pending);
             continue;
         }
 
         /* P discards the current preview, but retains the selected piece. */
-        if (!strcmp(input, "p") || !strcmp(input, "P")) {
+        if (command == COMMAND_PREVIEW) {
             if (!in_bounds(selected_row, selected_col)) {
                 puts(RED "Select a piece first." RESET);
             } else {
@@ -1450,7 +1536,7 @@ int main(void) {
                 pending_promotion_move = chosen;
                 promotion_choice_pending = true;
                 puts("PROMOTION: choose Q (Queen), R (Rook), B (Bishop), or N (Knight).");
-                puts("Type 'new' to cancel and choose a different starting piece.");
+                puts("Type NEW to cancel and choose a different starting piece.");
                 continue;
             }
             show_step2_after(&game, chosen);
@@ -1459,19 +1545,17 @@ int main(void) {
             continue;
         }
 
-        if (!strcmp(input, "quit") || !strcmp(input, "exit")) {
+        if (command == COMMAND_QUIT) {
             break;
         }
-        if (!strcmp(input, "restart")) {
+        if (command == COMMAND_RESTART) {
             reset_board(&game);
-            selected_row = -1;
-            selected_col = -1;
-            preview_shown = false;
-            promotion_choice_pending = false;
+            clear_selection(&selected_row, &selected_col, &preview_shown,
+                            &promotion_choice_pending);
             puts("Game restarted.");
             continue;
         }
-        if (!strcmp(input, "resign")) {
+        if (command == COMMAND_RESIGN) {
             Color winner = opposite(game.turn);
             printf("%s resigns. %s wins.\n",
                    color_name(game.turn),
@@ -1481,7 +1565,7 @@ int main(void) {
 
         /* Draw claims without an intended move do not play any chess move.
          * An intended move must be previewed and finalized normally first. */
-        if (!strcmp(input, "claim")) {
+        if (command == COMMAND_CLAIM) {
             if (claimable_draw(&game, (Move){0, 0, 0, 0, '\0'},
                                false, &draw_reason)) {
                 printf("Game Over! Draw claimed by %s.\n", draw_reason);
