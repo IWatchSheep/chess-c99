@@ -21,6 +21,10 @@ This is the owner's plan for `chess-c99`, written as steps anyone can follow. Hi
   2. a **move** a piece had before and has lost;
   3. a **square** no piece of that side can reach any more.
 - **Threat** — a move the other side could play next that wins something, for example checkmate.
+- **Move (ply)** — one turn by one side: White's move is one, Black's reply is another. In this plan "4 moves ahead" means 4 of these single turns (chess programmers call each one a *ply*). "2 of White's moves" means 3 single turns: White, Black, White.
+- **Forced** — a mate is forced if, **whatever the other side replies, you always have an answer** that keeps the mate coming, and you may choose a different answer for each reply. Finding a mate in *some* lines is not enough: that is only **possible**.
+- **Imagined pass** — in some practice experiments one side is imagined to skip its turn. That is **not legal chess**; such results are always marked *(imagined pass)* and are only used to measure the board, never to claim how a real game goes.
+- **Report** — after a preview, typing `R` shows the calculator's facts, one per line. The normal preview stays exactly as it is now. (Agreed by the owner, 2026-10-25.)
 - **Goal** — a square someone chooses for the calculator to aim at.
 
 ## The method: start small, build up, learn from the lists
@@ -40,11 +44,11 @@ Why this matters, in numbers:
 
 | Board | What the loop does | Positions looked at | Time |
 |---|---|---|---|
-| King and queen against king | proves a forced mate in 2 moves | 50 | instant |
+| King and queen against king | proves a forced mate in 2 of White's moves (3 single moves) | 50 | instant |
 | King and rook against king (practice position) | finds mate in 1 | 12 | instant |
-| Full board, from after 1.e4 e5 | 5 moves ahead: 2,961 mating sequences, Scholar's Mate among them | 23,027,889 | about 2 minutes |
+| Full board, from after 1.e4 e5 | 5 single moves ahead: 2,961 mating sequences, Scholar's Mate among them | 23,027,889 | about 2 minutes |
 
-**What the build-up shows (the "ladder").** Take only what Scholar's Mate uses: White's king, queen on d1 and bishop on c4, against Black's king and f7 pawn. Add Black's other pieces around the king one at a time, and play Qh5 then Qxf7 (Black not moving):
+**What the build-up shows (the "ladder").** Take only what Scholar's Mate uses: White's king, queen on d1 and bishop on c4, against Black's king and f7 pawn. Add Black's other pieces around the king one at a time, and play Qh5 then Qxf7 (Black not moving — an *imagined pass*, a board experiment, not a real game):
 
 | Black pieces around the king | Black king's squares before Qxf7 | After Qxf7 | Result |
 |---|---|---|---|
@@ -53,7 +57,7 @@ Why this matters, in numbers:
 | + queen d8 | 2 | 0 | **checkmate** |
 | + bishop f8 | 1 | 0 | checkmate |
 
-The count of the king's squares falling to 0 is the mate. The piece that makes it work is **Black's own queen on d8**, which blocks her king's last escape; the bishop on f8 is not needed. With only the king and the f7 pawn, there is **no forced mate within 3 moves at all**: the king runs. So Scholar's Mate is a fact about Black's own pieces that *can't move out of the way* — the owner's "pieces that can't move", seen in the numbers.
+The count of the king's squares falling to 0 is the mate. The piece that makes it work is **Black's own queen on d8**, which blocks her king's last escape; the bishop on f8 is not needed. With only the king and the f7 pawn, there is **no forced mate within 3 of White's moves at all** (Black replying with real moves): the king runs. So Scholar's Mate is a fact about Black's own pieces that *can't move out of the way* — the owner's "pieces that can't move", seen in the numbers.
 
 **One caution, so the math logic is real.** A pattern seen in Scholar's Mate must also be checked on *other* mates (for example Fool's Mate) and on sequences that do *not* end in mate. If it only appears in one game, it may be a coincidence.
 
@@ -69,7 +73,7 @@ The count of the king's squares falling to 0 is the mate. The piece that makes i
 
 ## Step 2 — The calculator, one move at a time ("snapshot")
 
-After you preview a move, the calculator adds a report. It only **counts and lists**; it never chooses a move for you.
+After you preview a move, type `R` and the calculator shows its report. It only **counts and lists**; it never chooses a move for you. The report also says **why** a piece can't move: it is **blocked**, **pinned** to its king, or its king is **in check**. A captured piece is listed on its own line, so it never changes the counts silently.
 
 1. **For both sides, after your move:**
    - which pieces can't move at all;
@@ -99,7 +103,8 @@ The snapshot of step 2 looks one move and one reply ahead. The **loop** repeats 
 2. **At every loop the same counts are made** as in step 2, with the same rule: each loss is counted once, when it happens.
 3. **The loop reports what it finds**, for example:
    - sequences that end in checkmate, and for which side;
-   - whether a threat works **against every reply** (forced) or only if the other side makes a mistake;
+   - whether a mate is **forced** (an answer to every reply) or only **possible** (it happens only if the other side makes a mistake);
+   - when the chosen number of moves runs out without an answer, it says so, instead of pretending nothing exists;
    - sequences where many enemy pieces end up unable to move.
 4. **This is how other strategies than Scholar's Mate can be found.** The loop is not told what to look for; it lists what happens.
 
@@ -119,12 +124,12 @@ So the loop is useful for a few moves ahead. Going much deeper would need a rule
 
 **The loop is run in the order of the method above:** first on practice boards (king and queen against king; the Scholar's Mate corner with Black's pieces added one at a time), then on the full board from positions close to the strategy (for example after 1.e4 e5), and only then from the start.
 
-**Done when** the loop reproduces the practice-board results (forced mate in 2 with king and queen; the ladder table), the Fool's Mate numbers (8 at 4 moves, 347 at 5) and the Scholar's Mate reply counts.
+**Done when** the loop reproduces the practice-board results (forced mate in 2 of White's moves with king and queen; the ladder table), the Fool's Mate numbers (8 at 4 moves, 347 at 5) and the Scholar's Mate reply counts.
 
 ## Step 4 — Goals: routes to a chosen square
 
 1. **Choose a goal square** (for example f7).
-2. **For each of your pieces**, the calculator shows how many moves it needs to get there alone (the other side not moving), and whether it would arrive **protected** or **unprotected**.
+2. **For each of your pieces**, the calculator shows how many moves it needs to get there alone (the other side not moving: an *imagined pass*, used only to measure distance), and whether it would arrive **protected** or **unprotected**.
 3. **It also shows team routes**: two or more pieces moving so that one arrives on the goal **protected by another**. This is the owner's "two or more side by side or protective pieces" against "one long piece".
 4. **Routes are compared honestly.** A route is only called better if it is at least as good in every way (fewer moves, more protectors, fewer attackers, less material at risk). If one route is shorter and the other is safer, both are shown; the calculator does not pretend one number decides.
 5. **Then a second goal**, measured from where the first route ended, so you can follow the plan from goal 1 to goal 2.

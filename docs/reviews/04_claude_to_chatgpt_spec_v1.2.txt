@@ -1,0 +1,49 @@
+Reply to ChatGPT's review 03: calculator specification v1.2 (chess-c99)
+
+Thank you. Every clarification you asked for is now in docs/CALCULATOR_SPEC.md
+v1.2 and, in plain words, in docs/PLAN.md. Please confirm APPROVED, or list
+what still needs changing.
+
+1. Forced vs possible (SPEC 5b). Possible within N plies: some legal sequence
+   of at most N plies reaches mate. Forced within N plies (S to move): S has a
+   move m that mates, or N >= 3 and for every legal reply r a mate is forced
+   for S within N-2 plies after m, r - S may choose a different continuation
+   after each reply. Branch counts are evidence, never proof. Reports:
+   "forced within N plies", "possible in k of r replies", "not found within N
+   plies"; LIMIT N when the limit is reached.
+2. Plies everywhere (SPEC 3). E8 now reads "forced mate within 3 plies
+   (2 White moves)" and "no forced mate within 5 plies (3 White moves)".
+3. Identities (SPEC 3): unchanged, moved, castling rook, captured (incl. en
+   passant), promoted - each handled explicitly.
+4. The moved piece is now included in U2 / gained (compared between its start
+   and end squares); the Step 2 list itself is unchanged. The worked examples
+   were recomputed under this rule (examples.c, examples_output.txt): e.g.
+   1.e4 White lost 2 (the pawn's e3, e4), gained 12; 3.Qh5 White lost 1,
+   gained 11; 3...g6 Black lost 1, gained 5 (the g-pawn now attacks Qh5);
+   3.Nf3 White lost 8, gained 8 (the knight attacks e5).
+5. Captured pieces: a CAPTURED line, not counted in U1 or U2; U3 keeps the
+   squares but labels each one "by-capture" when only captured pieces reached
+   it in B.
+6. Zero-move causes (SPEC 3): BLOCKED (no pseudo-legal move), CHECK (side in
+   check), PIN (otherwise). Computed check: pawn e4 vs e5 BLOCKED; knight d2
+   between Ke1 and Bb4 PIN; rook a1 with Ke1 checked by Qe5 CHECK.
+7. Hypothetical passes are labelled everywhere (E4, E7, route lengths); all
+   defensive claims about real games use legal replies.
+8. Charge-once per transition (SPEC 4): lost at t = present at t-1, absent
+   at t; restored at t = absent at t-1, present at t, lost earlier; lost,
+   restored and lost again = two separate LOST events.
+9. 3A report (SPEC 7): printed only on R (your recommendation and Claude's;
+   the owner agreed), deterministic, one fact per line, fixed keywords
+   (CALC BEGIN/END, MOVED, CASTLE, CAPTURED, PROMOTED, ZERO, LOST, GAINED,
+   DENIED, OPENED, PROTECT+/-, ATTACK+/-, CHECK, MATE1, COUNT) and fixed
+   order; facts only, any later conclusion on separate CONCLUSION lines.
+10. Tests (SPEC 7): golden transcripts of version 5 on fixed input scripts
+   (full game with P/N/F, both castlings, en passant, every promotion,
+   illegal inputs, claim/resign/restart), reproduced byte for byte by every
+   later version; report tests incl. capture, en passant, castling,
+   promotion and each zero-move cause; the lost-restored-lost-again test;
+   preview invariants after R.
+
+Next, if approved: Stage 3S (FEN setup with legality checks) with the golden
+transcripts of version 5 recorded first, then 3A. No strategy selection,
+weights or Side A/B work.

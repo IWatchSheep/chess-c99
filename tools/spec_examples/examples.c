@@ -68,7 +68,8 @@ static void side_report(const Board *b, Color side, const char *title) {
 }
 
 /* Lost/gained between B and B' for one side, matching identities with
- * version 5's resolve_piece_after_move; the moved piece is left out. */
+ * version 5's resolve_piece_after_move; the moved piece is included,
+ * compared between its start and end squares (spec v1.2). */
 static void change_report(const Board *b, const Board *a, Move m, Color side) {
     int lost_pairs = 0, gained_pairs = 0, denied = 0, opened = 0;
     char lost[600] = "", gained[600] = "", den[200] = "", opn[200] = "";
@@ -77,9 +78,9 @@ static void change_report(const Board *b, const Board *a, Move m, Color side) {
         if (b->board[r][c].color != side) continue;
         bool L0[8][8]; legal_set(b, r, c, L0);
         for (int i = 0; i < 64; ++i) if (L0[i / 8][i % 8]) before_reach[i / 8][i % 8] = true;
-        if (r == m.sr && c == m.sc) continue;
         int ar, ac; bool captured;
         resolve_piece_after_move(b, m, r, c, &ar, &ac, &captured);
+        if (r == m.sr && c == m.sc) { ar = m.er; ac = m.ec; captured = false; } /* the moved piece is included (spec v1.2) */
         if (captured) continue;
         bool L1[8][8]; legal_set(a, ar, ac, L1);
         char s[3]; sq(r, c, s);
