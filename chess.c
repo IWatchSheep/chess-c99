@@ -8,6 +8,8 @@
  * Stage 3B: after a preview, "replies" lists every reply of the other side
  * (does it stop the threat?), and "replies <move>" reports one reply.
  * Version 9: after a move that ends the game, R prints no MATE1 lines.
+ * Stage 3C: "loop N" visits every sequence of up to N plies from the current
+ * position (mates, forced or possible); "trace <moves>" reports a sequence.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -2450,6 +2452,304 @@ static bool parse_move_text(const char *text, Move *m) {
     return true;
 }
 
+/* STAGE 3C: the loop (type "loop N", or "loop N K").
+ * From the current position, every legal sequence of 1 to N plies is
+ * visited, with nothing skipped (no pruning). Reported, without choosing a
+ * move: how many positions each ply has, every sequence that ends in
+ * checkmate (with the mated side), stalemates, and for each first move of
+ * the side to move (S) whether a mate of the other side is forced or only
+ * possible within N plies (spec Section 5b). With K, also how many sequences
+ * leave the side to move with at least K pieces that cannot move.
+ * "trace <moves>" prints the R report of each move of one sequence, with
+ * the piece memory carried from move to move as if each were finalized.
+ * Neither command changes the game. */
+
+#define LOOP_MAX_DEPTH 6
+#define LOOP_MAX_FIRST 256
+
+typedef struct {
+    int depth;
+    int zero_k;
+    Color mover;
+    long positions[LOOP_MAX_DEPTH + 1];
+    long mated[LOOP_MAX_DEPTH + 1][3];
+    long stalemates[LOOP_MAX_DEPTH + 1];
+    long zero[LOOP_MAX_DEPTH + 1];
+    long first_mated[LOOP_MAX_FIRST][3];
+    int first_index;
+    bool reply_reaches_mate; /* the current reply (ply 2) has a mate of the other side below it */
+    int replies_with_mate[LOOP_MAX_FIRST];
+    Move line[LOOP_MAX_DEPTH];
+    TextBuffer *out;
+} LoopState;
+
+static MoveList sorted_moves(const Board *b) {
+    MoveList moves = generate_moves(b);
+    if (moves.count > 1) {
+        qsort(moves.items, moves.count, sizeof(Move), compare_moves);
+    }
+    return moves;
+}
+
+/* Pieces of the side to move that have no legal move. */
+static int zero_move_pieces(const Board *b, const MoveList *moves) {
+    bool moves_from[64] = {false};
+    int zero = 0;
+    for (size_t i = 0; i < moves->count; ++i) {
+        moves_from[moves->items[i].sr * 8 + moves->items[i].sc] = true;
+    }
+    for (int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            if (b->board[r][c].color == b->turn && !moves_from[r * 8 + c]) {
+                ++zero;
+            }
+        }
+    }
+    return zero;
+}
+
+/* Visits position b, reached after `ply` plies (ply >= 1). */
+static void loop_walk(LoopState *s, const Board *b, int ply) {
+    MoveList moves = sorted_moves(b);
+    ++s->positions[ply];
+    if (s->zero_k > 0 && zero_move_pieces(b, &moves) >= s->zero_k) {
+        ++s->zero[ply];
+    }
+    if (moves.count == 0) {
+        if (is_in_check(b, b->turn)) {
+            char text[6];
+            ++s->mated[ply][b->turn];
+            ++s->first_mated[s->first_index][b->turn];
+            if (b->turn != s->mover && ply >= 3) {
+                s->reply_reaches_mate = true;
+            }
+            text_add(s->out, "MATE %d", ply);
+            for (int i = 0; i < ply; ++i) {
+                move_text(s->line[i], text);
+                text_add(s->out, " %s", text);
+            }
+            text_add(s->out, " MATED %s\n", color_name(b->turn));
+        } else {
+            ++s->stalemates[ply];
+        }
+    } else if (ply < s->depth) {
+        for (size_t i = 0; i < moves.count; ++i) {
+            Board next = *b;
+            make_move(&next, moves.items[i]);
+            s->line[ply] = moves.items[i];
+            if (ply == 1) {
+                s->reply_reaches_mate = false;
+            }
+            loop_walk(s, &next, ply + 1);
+            if (ply == 1 && s->reply_reaches_mate) {
+                ++s->replies_with_mate[s->first_index];
+            }
+        }
+    }
+    free(moves.items);
+}
+
+/* Forced within n plies for the side to move in b (spec Section 5b): a move
+ * that gives checkmate, or (n >= 3) a move after which every reply leaves a
+ * mate forced within n - 2 plies. */
+static bool mate_forced(const Board *b, int n) {
+    bool forced = false;
+    MoveList moves;
+
+    if (n < 1) {
+        return false;
+    }
+    moves = generate_moves(b);
+    for (size_t i = 0; i < moves.count && !forced; ++i) {
+        Board next = *b;
+        make_move(&next, moves.items[i]);
+        MoveList replies = generate_moves(&next);
+        if (replies.count == 0) {
+            forced = is_in_check(&next, next.turn);
+        } else if (n >= 3) {
+            bool all = true;
+            for (size_t j = 0; j < replies.count && all; ++j) {
+                Board after = next;
+                make_move(&after, replies.items[j]);
+                all = mate_forced(&after, n - 2);
+            }
+            forced = all;
+        }
+        free(replies.items);
+    }
+    free(moves.items);
+    return forced;
+}
+
+/* First move m (already played into `after`): forced within n plies? */
+static bool first_move_forces(const Board *after, int n) {
+    MoveList replies = generate_moves(after);
+    bool forced;
+    if (replies.count == 0) {
+        forced = is_in_check(after, after->turn);
+    } else {
+        forced = n >= 3;
+        for (size_t j = 0; j < replies.count && forced; ++j) {
+            Board next = *after;
+            make_move(&next, replies.items[j]);
+            forced = mate_forced(&next, n - 2);
+        }
+    }
+    free(replies.items);
+    return forced;
+}
+
+/* Builds the loop report for position b, depth 1..LOOP_MAX_DEPTH. */
+static void loop_report(const Board *b, int depth, int zero_k, TextBuffer *out) {
+    static LoopState s;
+    MoveList first = sorted_moves(b);
+    bool any_forced = false, any_possible = false;
+    char text[6];
+
+    memset(&s, 0, sizeof(s));
+    s.depth = depth;
+    s.zero_k = zero_k;
+    s.mover = b->turn;
+    s.out = out;
+    text_add(out, "LOOP BEGIN %s DEPTH %d", color_name(b->turn), depth);
+    if (zero_k > 0) {
+        text_add(out, " ZERO %d", zero_k);
+    }
+    text_add(out, "\n");
+    if (first.count == 0) {
+        text_add(out, "NO MOVES %s\n", is_in_check(b, b->turn) ? "checkmate" : "stalemate");
+        text_add(out, "LOOP END\n");
+        free(first.items);
+        return;
+    }
+
+    /* 1. Every sequence: MATE lines in a fixed order. */
+    for (size_t i = 0; i < first.count; ++i) {
+        Board next = *b;
+        make_move(&next, first.items[i]);
+        s.first_index = (int)i;
+        s.line[0] = first.items[i];
+        loop_walk(&s, &next, 1);
+    }
+
+    /* 2. Totals per ply. */
+    for (int p = 1; p <= depth; ++p) {
+        text_add(out, "PLY %d POSITIONS %ld MATED White %ld Black %ld STALEMATES %ld", p, s.positions[p],
+                 s.mated[p][WHITE], s.mated[p][BLACK], s.stalemates[p]);
+        if (zero_k > 0) {
+            text_add(out, " ZERO %ld", s.zero[p]);
+        }
+        text_add(out, "\n");
+    }
+
+    /* 3. Each first move: forced, possible, or not found (mate of the other side). */
+    for (size_t i = 0; i < first.count; ++i) {
+        Board next = *b;
+        make_move(&next, first.items[i]);
+        MoveList replies = generate_moves(&next);
+        move_text(first.items[i], text);
+        text_add(out, "FIRST %s ", text);
+        if (first_move_forces(&next, depth)) {
+            text_add(out, "FORCED");
+            any_forced = true;
+        } else if (s.replies_with_mate[i] > 0) {
+            text_add(out, "POSSIBLE %d OF %d", s.replies_with_mate[i], (int)replies.count);
+            any_possible = true;
+        } else {
+            text_add(out, "NOT-FOUND");
+        }
+        text_add(out, " MATED White %ld Black %ld\n", s.first_mated[i][WHITE], s.first_mated[i][BLACK]);
+        free(replies.items);
+    }
+    text_add(out, "RESULT %s %s\n", color_name(b->turn),
+             any_forced ? "FORCED" : any_possible ? "POSSIBLE" : "NOT-FOUND");
+    if (!any_forced) {
+        text_add(out, "LIMIT %d\n", depth);
+    }
+    text_add(out, "LOOP END\n");
+    free(first.items);
+}
+
+/* Reads "N" or "N K" after "loop "; false if not well formed. */
+static bool parse_loop_args(const char *text, int *depth, int *zero_k) {
+    int n = 0, k = 0, used = 0;
+    if (sscanf(text, "%d%n", &n, &used) != 1) {
+        return false;
+    }
+    text += used;
+    while (*text == ' ') {
+        ++text;
+    }
+    if (*text != '\0') {
+        if (sscanf(text, "%d%n", &k, &used) != 1 || text[used] != '\0' || k < 1 || k > 16) {
+            return false;
+        }
+    }
+    if (n < 1 || n > LOOP_MAX_DEPTH) {
+        return false;
+    }
+    *depth = n;
+    *zero_k = k;
+    return true;
+}
+
+/* "trace e2e4 e7e5 ...": the R report of each move in turn, the memory
+ * carried as if each move were finalized. False (and nothing printed) if a
+ * move is badly written or illegal; *bad_ply tells which. */
+static bool trace_report(const Board *b, const Tracker *t, const char *moves_text, TextBuffer *out, int *bad_ply) {
+    static Tracker tracker;
+    Board board = *b;
+    Move moves[LOOP_MAX_FIRST];
+    int count = 0;
+    char word[16];
+    const char *p = moves_text;
+
+    *bad_ply = 0;
+    tracker = *t;
+    while (*p != '\0') {
+        int length = 0;
+        while (*p == ' ') {
+            ++p;
+        }
+        if (*p == '\0') {
+            break;
+        }
+        while (p[length] != '\0' && p[length] != ' ') {
+            ++length;
+        }
+        if (count == LOOP_MAX_FIRST || length >= (int)sizeof(word)) {
+            *bad_ply = count + 1;
+            return false;
+        }
+        memcpy(word, p, (size_t)length);
+        word[length] = '\0';
+        p += length;
+        if (!parse_move_text(word, &moves[count]) || !legal_move(&board, moves[count])) {
+            *bad_ply = count + 1;
+            return false;
+        }
+        make_move(&board, moves[count]);
+        ++count;
+    }
+    if (count == 0) {
+        *bad_ply = 1;
+        return false;
+    }
+
+    board = *b;
+    text_add(out, "TRACE BEGIN %d\n", count);
+    for (int i = 0; i < count; ++i) {
+        char text[6];
+        move_text(moves[i], text);
+        text_add(out, "TRACE PLY %d %s\n", i + 1, text);
+        calc_report(&board, &tracker, moves[i], out);
+        tracker_commit(&tracker, &board, moves[i]);
+        make_move(&board, moves[i]);
+    }
+    text_add(out, "TRACE END\n");
+    return true;
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -2634,6 +2934,38 @@ int main(void) {
             } else if (!parse_move_text(input + 8, &reply) ||
                        !reply_detail(&game, &tracker, preview_move, reply, &view)) {
                 puts(RED "Not a legal reply. Type replies to list them, or replies e7e5 for one." RESET);
+            }
+            if (view.text != NULL) {
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+
+        /* Stage 3C: "loop N" (or "loop N K") and "trace <moves>", from the
+         * current position; nothing is played. */
+        if (!strcmp(input, "loop") || !strncmp(input, "loop ", 5)) {
+            int depth = 0, zero_k = 0;
+            if (input[4] == '\0' || !parse_loop_args(input + 5, &depth, &zero_k)) {
+                puts(RED "Type loop and a depth from 1 to 6, for example loop 3 (or loop 3 6 to also count pieces that can't move)." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                if (depth >= 5) {
+                    printf("Searching %d plies. This can take minutes (5 plies: about half a minute to a few minutes; 6: much longer).\n", depth);
+                    fflush(stdout);
+                }
+                loop_report(&game, depth, zero_k, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        if (!strcmp(input, "trace") || !strncmp(input, "trace ", 6)) {
+            TextBuffer view = {NULL, 0, 0};
+            int bad_ply = 0;
+            if (!trace_report(&game, &tracker, input[5] == '\0' ? "" : input + 6, &view, &bad_ply)) {
+                printf(RED "Not a legal sequence (move %d). Type trace and moves, for example trace e2e4 e7e5." RESET "\n",
+                       bad_ply);
             }
             if (view.text != NULL) {
                 fputs(view.text, stdout);

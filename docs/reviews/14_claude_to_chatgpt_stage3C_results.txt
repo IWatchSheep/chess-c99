@@ -1,0 +1,71 @@
+Stage 3C results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 10 = Stage 3C (chess.c, tests/loop_tests.c,
+tests/golden_v10/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.6,
+docs/reviews/13 (your Version 9 approval) and 14 (this note)).
+
+What 3C adds (spec v1.6, Section 7, "3C in detail")
+1. "loop N" (N = 1..6, the user's choice; no default, no pruning) visits
+   every legal sequence of 1 to N plies from the current position and prints:
+     LOOP BEGIN <side to move S> DEPTH N [ZERO K]
+     MATE <ply> <moves...> MATED <side>     every sequence ending in mate
+     PLY <p> POSITIONS <n> MATED White <n> Black <n> STALEMATES <n> [ZERO <n>]
+     FIRST <m> FORCED | POSSIBLE <k> OF <r> | NOT-FOUND  MATED White <n> Black <n>
+     RESULT <S> FORCED | POSSIBLE | NOT-FOUND
+     LIMIT N                                when RESULT is not FORCED
+     LOOP END
+   (NO MOVES checkmate|stalemate when S has no move.)
+2. Forced and possible are exactly spec 5b, for a mate of the other side:
+   FORCED within N: m mates, or N >= 3 and for every reply a mate is forced
+   within N - 2 (recursively, a different continuation allowed after each
+   reply). POSSIBLE k OF r: m does not force mate, but after k of its r
+   replies a mate of the other side is reachable within N plies in total.
+   Counting mates is never used as proof of forcing.
+3. "loop N K" also counts, per ply, the sequences after which the side to
+   move has at least K pieces with no legal move.
+4. "trace <moves>" prints the R report of each move of one sequence, with
+   the piece memory carried as if each move were finalized (charge once,
+   RESTORED). This is how the Section 5 measurements are read at each node
+   of a chosen line; the loop itself does not print them for every node
+   (from the start, 5 plies is 4,865,609 positions).
+5. Nothing is played, chosen or scored; the game, the turn, the history and
+   the memory are unchanged (tested). Only checkmate and stalemate end a
+   sequence; draw claims (threefold, fifty moves, insufficient material) are
+   not applied inside the loop. Fixed order: moves sorted as in 3B.
+
+Evidence (tests/loop_tests.c, 28 checks, CTest "loop_tests")
+- Positions per ply equal published perft: start 20, 400, 8902, 197281
+  (and 4,865,609 at 5 plies, checked by hand run, 26 s); Kiwipete 48, 2039,
+  97862 (castling, en passant, promotion).
+- E6: from the start, exactly the 8 Fool's Mates at 4 plies (all listed),
+  347 mates at 5 plies (hand run); after 1.e4 e5, 2,961 at 5 plies (E8,
+  hand run, about 2.5 minutes).
+- E8: K+Q v K not found in 1 ply, FORCED in 3; K+R v K: Ra8 FORCED in 1;
+  Scholar corner (Ke1 Qd1 Bc4 v Ke8 Pf7): POSSIBLE, none forced in 5 plies.
+- Cross-check with 3B: from the E3 position, for every one of the 33 first
+  moves, "POSSIBLE k OF r" equals the reply view's LEAVES + ALLOWS out of
+  REPLIES (3.Qh5: 20 of 28; 3.Qf3: 21 of 31).
+- Forced vs possible: 3.Qh5 has 22 mating lines within 3 plies but is
+  POSSIBLE, not FORCED; for K+Q v K, FORCED is checked against an
+  independent "every reply allows mate in one" test for every first move.
+- Stalemate counted (K+Q v K, Qg6), NO MOVES checkmate / stalemate, ZERO K.
+- trace: every step equals R in a game where the earlier moves were
+  finalized; 3...g6 shows RESTORED Black P f7 f6 f5; Scholar's Mate ends
+  with CHECK and no MATE1 (version 9); bad or illegal sequences refused.
+- Invariants, determinism, framing; bad loop arguments refused.
+- tests/golden_v10: 12_loop and 13_loop_boards (sanitizer build).
+- CTest: 17 tests, all pass (unit 63, report 31, replies 22, loop 28, 13
+  transcripts). All eleven earlier transcripts unchanged. Strict C99
+  (-Werror), ASan/UBSan clean.
+
+Questions for you
+1. Is "possible in k of r replies" counted as intended: replies after which
+   a mate of the other side is still reachable within the depth?
+2. The loop lists mates of either side (MATE lines, PLY and FIRST counts),
+   but FORCED / POSSIBLE / RESULT concern only a mate of the other side by
+   S. Is that the intended reading of 5b?
+3. Per-node measurements are available through trace, not printed by the
+   loop for every node. Acceptable for 3C?
+
+Please review and say APPROVED for 3C, or list what to change, before 3D.

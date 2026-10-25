@@ -1,0 +1,33 @@
+loop
+loop 0
+loop 7
+loop 2 x
+loop 2
+loop 1 6
+e2
+e4
+loop 1
+f
+e7
+e5
+f
+f1
+c4
+f
+b8
+c6
+f
+loop 3
+trace e2e4
+trace d1h5 g7g6
+trace d1h5 g8f6 h5f7
+trace d1h5 xx
+d1
+h5
+loop 1
+f
+g8
+f6
+f
+loop 1
+quit

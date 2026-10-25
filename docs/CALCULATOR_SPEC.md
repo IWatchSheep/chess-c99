@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.5
+# Chess calculator — specification v1.6
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 makes the MATE1 correction asked for in review 11 and awaits review; Stage 3C follows as version 10. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). **Stage 3C is implemented as version 10** and awaits review before 3D. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -225,6 +225,32 @@ REPLIES END
 - **Order:** replies sorted by start square, then end square (rank 8 to 1, file a to h), then promotion piece Q, R, B, N.
 - **No reply is chosen, scored or played.**
 
+**3C in detail — the loop (v1.6).** `loop N` (N from 1 to 6, chosen by the user; there is no default and no pruning) visits every legal sequence of 1 to N plies from the current position. `loop N K` also counts pieces that can't move. `trace <moves>` reports one sequence. Neither changes the game.
+
+```
+LOOP BEGIN <S> DEPTH <N> [ZERO <K>]     S = the side to move now
+MATE <ply> <move> ... MATED <side>      every sequence ending in checkmate, in the fixed order
+PLY <p> POSITIONS <n> MATED White <n> Black <n> STALEMATES <n> [ZERO <n>]
+FIRST <m> FORCED                        S forces mate of the other side within N plies with m
+FIRST <m> POSSIBLE <k> OF <r>           not forced; after k of m's r replies a mate is still reachable
+FIRST <m> NOT-FOUND                     no mate of the other side within N plies after m
+        ... each FIRST line ends with MATED White <n> Black <n> (mates below m, either side)
+RESULT <S> FORCED|POSSIBLE|NOT-FOUND    FORCED if some first move is FORCED, else POSSIBLE if some is
+LIMIT <N>                               when RESULT is not FORCED: the search stopped at N plies
+NO MOVES checkmate|stalemate            instead, when S has no legal move
+LOOP END
+```
+
+- `POSITIONS` at ply p counts the legal sequences of exactly p plies (the standard "perft" number).
+- **Forced** and **possible** are the definitions of Section 5b, for a mate of the other side by S. A mate of S itself is listed (`MATE`, the `MATED` counts) but does not make a first move FORCED or POSSIBLE.
+- `ZERO <n>` (with `K`): sequences of that length after which the side to move has at least K pieces with no legal move.
+- Only checkmate and stalemate end a sequence; draw claims (threefold repetition, fifty moves, insufficient material) are not applied inside the loop.
+- Moves are visited in the order of 3B (start square, end square, promotion Q R B N), so the output is the same every time.
+- **Per-node measurements:** the loop does not print the Section 5 measurements for every node (5 plies from the start is 4,865,609 positions). `trace e2e4 e7e5 …` prints the 3A report of each move of one sequence, with the memory carried as if each move were finalized, so the charge-once rule applies along the line (`RESTORED` when a lost pair comes back). `TRACE BEGIN <n>`, then for each move `TRACE PLY <i> <move>` and its report, then `TRACE END`.
+- **Time:** depth 4 from the start takes about a second; depth 5 from 30 seconds to a few minutes; depth 6 much longer. The program says so before a search of 5 or 6 plies.
+
+**Tests with 3C:** perft counts (start; Kiwipete); E6 (the 8 Fool's Mates at 4 plies); E8 (K+Q v K not found in 1 ply, forced in 3; K+R v K; the Scholar corner possible but not forced in 5); E3 cross-checked with 3B for all 33 first moves (`POSSIBLE k OF r` = `LEAVES` + `ALLOWS` of `REPLIES`); forced checked independently; stalemate, `NO MOVES`, `ZERO`; `trace` equal to `R` in a game with the earlier moves finalized; invariants; refused input. Transcripts `tests/golden_v10`.
+
 **Tests with 3B:** E3's 28 replies (8 `STOPS`: d8e7 d8f6 d8g5 d8h4 e8e7 g8h6 d7d5 g7g6; 20 `LEAVES`); E3b (no threat); a reply that `ALLOWS` a mate (1.e4 f6 2.d4 g5); a check with one answer (1.e4 f6 2.Qh5+, only g7g6); checkmate and stalemate (`NO REPLIES`, no `THREAT` line); promotion replies in Q, R, B, N order; counts equal to the `COUNT` lines of `replies <reply>`; `replies g7g6` equal to the `R` report after 3.Qh5 is played; refused input; the invariants. Golden transcripts of version 8 (`tests/golden_v8`) fix the whole output.
 
 ## 8. Worked examples (exact; computed by the programs in `tools/spec_examples/`)
@@ -273,12 +299,13 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 1. ~~Should the 3A report print automatically, or only with `R`?~~ **Decided: only with `R`.** The owner (2026-10-25): "you both agree that's a good idea then I agree."
 2. For goals: one square at a time, or a set of squares (for example the squares around the enemy king)?
 3. In 3E, should piece values be shown at all, or only the exchange sequence?
-4. For the loop, what depth should be the default (4 plies takes under a second, 5 plies about 20 seconds)?
+4. ~~For the loop, what depth should be the default?~~ **Decided in 3C: no default.** The user types the depth (1 to 6); the program warns before 5 or 6 plies.
 
 ## Revision history
 
 | Version | Date | Change |
 |---|---|---|
+| 1.6 | 2026-10-25 | Version 9 approved (review 13). Stage 3C implemented (version 10): `loop N`, `loop N K`, `trace`; their line formats; forced / possible / not found per first move; per-node measurements through `trace`; no default depth. |
 | 1.5 | 2026-10-25 | Stage 3B approved (review 11). Version 9: no `MATE1` lines after a move that ends the game (checkmate or stalemate), as asked in review 11; the version 7 transcript is unchanged; new transcript `tests/golden_v9`. |
 | 1.4 | 2026-10-25 | Stage 3B implemented (version 8): the reply view (`replies`, `replies <move>`), its line format, the labels `STOPS`/`LEAVES`/`NO-THREAT`/`ALLOWS`, `SUMMARY`, `NO REPLIES` without a `THREAT` line, counts with m treated as finalized, and the fixed reply order. |
 | 1.3 | 2026-10-25 | Stage 3A implemented (version 7). Report details made exact from the implementation: `RESTORED` lines and the `RESTORED` count; names by square before the move, with permanent numbers behind them carrying the charge-once memory across finalized moves (ChatGPT review 05, point 2); link-line order; E3's 3...g6 with and without history. |
