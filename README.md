@@ -21,7 +21,7 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 13 | `Version 13` | Calculator stage 3E, captures: `exchange e5 4` lists every order of captures on one square with what each side took (pawn 1, knight 3, bishop 3, rook 5, queen 9, written down only); `order 4` lists your moves with captures first (greatest piece first), then the rest by distance; `risk on` shows the value of a piece arriving on an attacked goal square |
 | 14 | `Version 14` | Calculator stage 3F, comparing moves: `compare 3 d1h5 d1f3 g1f3` lists the facts of each candidate move and compares them pair by pair (which condition is stronger, where your IF chains put them, where the measurements agree or disagree); the Loop 1 and Loop 2 views; nothing is chosen |
 
-The current program is version 14. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
+The current program is version 14. All planned calculator stages (3S, 3A–3F) are complete and approved. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
 
 ## Build and run
 

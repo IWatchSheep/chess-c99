@@ -9,7 +9,8 @@ This is the owner's plan for `chess-c99`, written as steps anyone can follow. Hi
 | 1 | The chess game | **Done** (versions 1–5) |
 | 2 | The calculator: one move at a time ("snapshot") | **Done** (versions 7–9: the report `R`, the reply view) |
 | 3 | The calculator: many moves ahead ("loop"), starting with practice boards of few pieces | **Done** (version 6: practice boards; version 10: the loop) |
-| 4 | Goals: routes to a chosen square, then a second square | **Done** (versions 11–12); next: captures and piece values (stage 3E) |
+| 4 | Goals: routes to a chosen square, then a second square | **Done** (versions 11–12) |
+| 5 | Captures and piece values; comparing candidate moves (stages 3E, 3F) | **Done** (versions 13–14); all planned stages approved (ChatGPT review 41) |
 | Later | Lines drawn on the board, rule explanations | Ideas only |
 
 ## Words used in this plan

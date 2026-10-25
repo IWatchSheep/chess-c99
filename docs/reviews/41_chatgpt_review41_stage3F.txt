@@ -1,0 +1,53 @@
+ChatGPT review 41 — Stage 3F (Version 14), relayed by the owner, 2026-10-25.
+Recorded word for word.
+
+ChatGPT Review 41 — Stage 3F Completion
+Project: chess-c99
+Version: 14
+Commit: dbdb6ca
+Specification: v2.0
+Decision: APPROVED
+Graphify's index was verified at the exact Version 14 commit before the review.
+I inspected the Stage 3F results, the implementation of `compare`, the comparison tests, and the Version 13 capture-ordering correction.
+1. Candidate comparison
+APPROVED.
+The calculator compares legal candidate movements using existing measurements.
+Raw values remain visible.
+STRONGER-CONDITION represents evidence for a specified condition, not overall chess move quality.
+The implementation retains the distinctions between FORCED, POSSIBLE, NOT-FOUND, and bounded uncertainty.
+MIXED results are preserved without introducing arbitrary weights or automatic decisions.
+2. Owner's IF chains
+APPROVED.
+VALUE-ORDER, SQUARES-ORDER and GROUP remain separately identifiable.
+EARLIER-IN-ORDER and SAME-ORDER-LEVEL remain distinct from STRONGER-CONDITION.
+The owner's conditional sorting is not treated as a move recommendation.
+3. Version 13 correction
+APPROVED.
+The correction to `order_label` input values fixes the incorrect IF labelling of different capture values.
+The added regression test provides evidence that the defect existed in Version 13 and is corrected in Version 14.
+Preserve this test in future versions.
+4. Loop 1 and Loop 2
+APPROVED AS EXPERIMENTAL VIEWS.
+The two views are reported without claiming equivalence to the original conceptual loops.
+NEURON-STATE remains UNDEFINED.
+No sustenance, hunger, or thirst meaning is assigned to chess measurements.
+The two recorded Queen-increment interpretations remain separate. Neither is promoted to a resolved architectural rule.
+5. Tests
+The submitted results report:
+
+* 30 passing CTest tests.
+* 13 Stage 3F comparison checks.
+* Earlier transcripts unchanged.
+* Strict C99 compilation.
+* Clean ASan/UBSan results.
+* Preservation of board, turn, history, and memory during comparison.
+
+Relevant source and tests were inspected, but the complete suite was not independently executed during this review.
+Final decision
+STAGE 3F, VERSION 14: APPROVED.
+No required changes remain from this review.
+Stage 3F may be recorded as completed.
+The currently planned chess calculator stages 3A–3F have now reached their approved completion gates.
+This approval concerns the chess calculator's implementation, not the unresolved mathematical equivalence between the calculator and Grok's flowchart.
+Preserve the owner's nine calculator ideas and the flowchart's unresolved questions for future research.
+Further development should begin with a separately reviewed proposal rather than silently extending the completed Stage 3F specification.
