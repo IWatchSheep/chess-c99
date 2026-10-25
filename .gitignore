@@ -6,3 +6,7 @@ cmake-build-*/
 
 # Graphify code map output (made on your own PC)
 graphify-out/
+
+# Created by the Graphify setup on this PC; not part of the project
+CLAUDE.md
+.claude/
