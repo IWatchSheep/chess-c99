@@ -19,8 +19,9 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 11 | `Version 11` | Calculator stage 3D-1, goals: `goal f7 2` marks every move in your lists IF (the goal square can be reached within the limit) or ELSE; `routes` lists how each piece, alone or together, can reach it, with protection on arrival; results are ordered IF / ELSE IF / ELSE from fewest to most moves; `distance on` orders every move by the squares it travels; only your side moves (hypothetical) |
 | 12 | `Version 12` | Calculator stage 3D-2: `routes real 3` tests the goal with the other side answering every move (FORCED or POSSIBLE); `support` lists your next moves that would protect the piece you just previewed; `goal2` measures a second goal from where the first goal's routes end |
 | 13 | `Version 13` | Calculator stage 3E, captures: `exchange e5 4` lists every order of captures on one square with what each side took (pawn 1, knight 3, bishop 3, rook 5, queen 9, written down only); `order 4` lists your moves with captures first (greatest piece first), then the rest by distance; `risk on` shows the value of a piece arriving on an attacked goal square |
+| 14 | `Version 14` | Calculator stage 3F, comparing moves: `compare 3 d1h5 d1f3 g1f3` lists the facts of each candidate move and compares them pair by pair (which condition is stronger, where your IF chains put them, where the measurements agree or disagree); the Loop 1 and Loop 2 views; nothing is chosen |
 
-The current program is version 13. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
+The current program is version 14. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
 
 ## Build and run
 
@@ -35,7 +36,7 @@ gcc -std=c99 -Wall -Wextra -Wpedantic -O2 chess.c -o chess
 
 Widen the console to about 140 columns for the before/after report.
 
-## How to play (version 13)
+## How to play (version 14)
 
 1. Type the square of one of your pieces, for example `e2`, and press Enter. Its legal squares are listed.
 2. Type a destination, for example `e4`. Nothing moves yet: the report shows, for every other piece on both sides, its legal squares BEFORE and AFTER the move, and what it GAINED, LOST and kept.
@@ -75,6 +76,8 @@ The labels are: `STOPS` (the threatened mate is gone), `LEAVES` (a mate in one r
 
 **Captures (version 13).** Type `exchange` and a square with a limit, for example `exchange d5 4`: every order of captures on that square, each side allowed to stop after any capture, with what each side took and its total (pawn 1, knight 3, bishop 3, rook 5, queen 9; written down only, never a score). Each first capture is marked `MATERIAL FORCED NONNEGATIVE` (you come out even or better whatever the other side does), `MATERIAL POSSIBLE NONNEGATIVE` (only in some lines) or `MATERIAL ELSE`; `BOUNDED` means the limit cut a line. `order 4` lists all your moves in one list: captures first (greatest piece first, those that are forced to come out even or better before the others), then the other moves by distance; when there is nothing to capture it says `HEADS DISTANCE`. `risk on` adds `AT-RISK` to the routes. These are measurements, not advice: coming out even in material is not proof a move is good.
 
+**Comparing moves (version 14).** Type `compare`, a depth (1 to 5) and 2 to 6 moves you are considering, for example `compare 3 d1d5 d1b3 e4d5`. For each move you get its facts (pieces that can't move, threats, answers, mates within the depth, the goal if one is set, the capture and its exchange, and its place in your IF chains), and for each pair: `SAME` / `DIFFERENT`, `STRONGER-CONDITION` (for example FORCED against POSSIBLE), `EARLIER-IN-ORDER` (who comes first in your IF chains), and a summary `ALL-AHEAD`, `MIXED` (the measurements point different ways) or `ALL-TIE`. The `LOOP-1` view (squares) and `LOOP-2` view (value and material) are shown side by side; `NEURON-STATE UNDEFINED` stays visible. It never picks a move: a stronger condition is not a better move.
+
 Type `distance on` to see, after selecting a piece and after a preview, every move with the number of squares it travels, from the fewest (`ORDER IF`) to the most (`ORDER ELSE`); `distance off` turns it off.
 
 **The loop (version 10).** Type `loop` and a depth, for example `loop 3`. Every sequence of up to 3 moves (plies) from the current position is looked at, nothing skipped. You get every sequence that ends in checkmate, how many positions each ply has, and for each move you could play now: `FORCED` (you can force mate within the depth whatever the other side does), `POSSIBLE k OF r` (a mate can still happen after k of the other side's r answers) or `NOT-FOUND`. For example, from the start `loop 4` finds exactly the 8 ways of Fool's Mate; after 1.e4 e5 2.Bc4 Nc6, `loop 3` shows `FIRST d1h5 POSSIBLE 20 OF 28` (the same 20 answers the reply view marks `LEAVES`). `loop 3 6` also counts the sequences after which the side to move has at least 6 pieces that can't move. Depth 4 takes about a second, depth 5 up to a few minutes.
@@ -98,7 +101,8 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 - `loop_tests` (`tests/loop_tests.c`): 28 checks of the loop and trace: perft counts from the start and Kiwipete, the 8 Fool's Mates, the practice boards (forced or not), agreement with the reply view for all 33 first moves of the Scholar position, forced versus possible, stalemates, pieces that can't move, trace equal to `R` with the earlier moves played, bad input, and that nothing changes.
 - `goal_tests` (`tests/goal_tests.c`): 34 checks of goals, IF / ELSE and the order: the specification's example E4, IF then ELSE, one piece versus the whole side, sets of squares, protected arrival, blocked and pinned pieces, the king's safety, capture and promotion, the distance order (equal distances, knight, castling, promotion), and that nothing changes.
 - `real_tests` (`tests/real_tests.c`): 16 checks of version 12: real-answer goal tests from the Scholar position checked against an independent count for all 33 first moves, a checkmate that ends the line, support moves after 1.e4, 1.d4 and 3.Qh5, the second goal, labels, and that nothing changes.
-- `exchange_tests` (`tests/exchange_tests.c`): 21 checks of version 13: values, capture orders with both totals, a valuable capture that turns bad and a small capture that ends well, stopping, limits, en passant, an independent check of the forced results, the combined order and how it switches between captures and distance from one position to the next, AT-RISK, and that nothing changes.
+- `exchange_tests` (`tests/exchange_tests.c`): 22 checks of version 13 (one added in version 14): values, capture orders with both totals, a valuable capture that turns bad and a small capture that ends well, stopping, limits, en passant, an independent check of the forced results, the combined order and how it switches between captures and distance from one position to the next, AT-RISK, and that nothing changes.
+- `compare_tests` (`tests/compare_tests.c`): 13 checks of version 14: a valuable capture with a weaker condition, equal levels, MIXED, ALL-AHEAD and ALL-TIE, missing values, a goal, promotion, castling, en passant, bad input, and that nothing changes.
 - `unit_tests` (`tests/chess_tests.c`): 63 checks of the FEN setup (21 refusals with their exact reasons, positions in check accepted, round trips, perft from loaded positions) and of following each piece across a move (castling rooks, captures, en passant, promotion).
 - `golden_01` … `golden_07` (`tests/golden/`): version 5's complete output on seven fixed input scripts (a game with previews, `P`, `N`, `F`; all four castlings; en passant both ways; promotion to each piece; bad inputs; restart and resign; a threefold-repetition claim). Every later version must print **exactly** the same for the same input; this proves the game itself has not changed.
 - `golden_08_report` (`tests/golden_v7/`): version 7's output for a script with ten `R` reports (Scholar's Mate line, the lost / given back / lost again sequence, a promotion, castling, and `R` with nothing to report), so later versions cannot change the report silently.
@@ -108,6 +112,7 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 - `golden_14_goal`, `golden_15_goal_boards`, `golden_16_distance` (`tests/golden_v11/`): version 11's goals, routes, marks and distance order.
 - `golden_17_real`, `golden_18_real_boards` (`tests/golden_v12/`): version 12's real-answer routes, support and second goal.
 - `golden_19_exchange`, `golden_20_exchange_scholar` (`tests/golden_v13/`): version 13's exchanges, order and AT-RISK.
+- `golden_21_compare`, `golden_22_compare_scholar` (`tests/golden_v14/`): version 14's comparisons.
 
 ## Verified (2026-10-25, versions 1–5; version 6 below)
 
@@ -130,6 +135,8 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 **Version 12** adds real-answer goal tests, support moves and the second goal. All sixteen earlier transcripts are reproduced byte for byte; 24 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real checks, eighteen transcripts).
 
 **Version 13** adds captures, values and the combined order. All eighteen earlier transcripts are reproduced byte for byte; 27 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 21 exchange checks, twenty transcripts).
+
+**Version 14** adds `compare` and corrects the capture labels of `order` (version 13 printed `ORDER IF` for every capture of the first group). All twenty earlier transcripts are reproduced byte for byte; 30 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 22 exchange, 13 compare checks, twenty-two transcripts).
 
 ## Code map (optional)
 

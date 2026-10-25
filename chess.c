@@ -20,6 +20,7 @@
  * "support" after a preview, and "goal2" for a second goal.
  * Stage 3E: "exchange <square> N" (captures on one square, values logged),
  * "order N" (captures first, then distance: ideas 7 and 8), "risk on".
+ * Stage 3F: "compare N m1 m2 ..." compares candidate moves fact by fact.
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -4018,7 +4019,7 @@ static void order_report(const Board *b, int limit, TextBuffer *out) {
         int values[256], n = 0;
         for (int i = 0; i < count; ++i) {
             if (e[i].taken && (int)e[i].material == cls) {
-                values[n++] = -e[i].value; /* greatest value = IF */
+                values[n++] = 9 - e[i].value; /* greatest value = IF (order_label skips negative values) */
             }
         }
         for (int v = 9; v >= 1; --v) {
@@ -4029,7 +4030,7 @@ static void order_report(const Board *b, int limit, TextBuffer *out) {
                     }
                     move_text(e[i].move, text);
                     text_add(out, "GROUP 1 CAPTURE %s TAKES %c VALUE %d SQUARES %d %s ORDER %s%s\n", text, e[i].taken,
-                             e[i].value, e[i].squares, material_text(e[i].material), order_label(values, n, -v),
+                             e[i].value, e[i].squares, material_text(e[i].material), order_label(values, n, 9 - v),
                              e[i].bounded ? " BOUNDED" : "");
                 }
             }
@@ -4057,6 +4058,482 @@ static void order_report(const Board *b, int limit, TextBuffer *out) {
         }
     }
     text_add(out, "ORDER END\n");
+}
+
+/* STAGE 3F (spec v2.0): comparing candidate moves.
+ * "compare N m1 m2 [... m6]": 2 to 6 legal moves of the side to move S, one
+ * depth N (1 to 5) for every bounded part, one goal (if active). For each
+ * candidate the facts are taken from the existing reports only (R, replies,
+ * loop, routes real, exchange, the owner's orders), never recomputed by a
+ * second rule. Missing values are printed "-" and never treated as zero.
+ * Pairs are compared fact by fact: SAME / DIFFERENT for raw values;
+ * STRONGER-CONDITION / TIE / NOT-COMPARABLE only for condition strengths an
+ * approved stage defines (loop mate FORCED > POSSIBLE > NOT-FOUND, goal REAL
+ * IF FORCED > IF POSSIBLE > ELSE, MATERIAL FORCED > POSSIBLE); EARLIER-IN-
+ * ORDER / SAME-ORDER-LEVEL / NOT-COMPARABLE for the owner's IF chains.
+ * AGREEMENT uses the condition strengths only. The LOOP-1 view (squares
+ * chain) and the LOOP-2 view (value chain, material, condition) are the
+ * owner's proposed correspondence with the flowchart's two for loops: an
+ * experiment, not an equivalence; NEURON-STATE stays UNDEFINED. No weights;
+ * no move is chosen or played. */
+
+#define COMPARE_MAX 6
+
+typedef struct {
+    Move move;
+    char text[6];
+    char r_white[256], r_black[256], check[256], mate1_white[256], mate1_black[256];
+    int links[4];
+    char threat[256], replies[256];
+    char loop_status[256], loop_mated[256];
+    int loop_level;
+    char goal_text[GOAL_MAX_SQUARES][2][48];
+    int goal_level[GOAL_MAX_SQUARES][2];
+    char taken;
+    int value, squares;
+    int value_rank;   /* index of its value level among S's captures; -1 none */
+    int squares_rank; /* index of its distance level among S's moves */
+    const char *value_label, *squares_label;
+    MaterialResult material;
+    bool material_known, bounded;
+    char stop[3];
+    int group, group_class;
+    const char *group_label;
+} Candidate;
+
+/* The line of `text` that starts with `prefix`, copied without the prefix. */
+static bool line_after(const char *text, const char *prefix, char *out, size_t size) {
+    size_t n = strlen(prefix);
+    for (const char *p = text; p != NULL && *p != '\0';) {
+        const char *end = strchr(p, '\n');
+        size_t len = end ? (size_t)(end - p) : strlen(p);
+        if (len >= n && strncmp(p, prefix, n) == 0) {
+            size_t rest = len - n;
+            if (rest >= size) {
+                rest = size - 1;
+            }
+            memcpy(out, p + n, rest);
+            out[rest] = '\0';
+            return true;
+        }
+        p = end ? end + 1 : NULL;
+    }
+    return false;
+}
+
+static int count_lines(const char *text, const char *prefix) {
+    size_t n = strlen(prefix);
+    int count = 0;
+    for (const char *p = text; p != NULL && *p != '\0';) {
+        if (strncmp(p, prefix, n) == 0) {
+            ++count;
+        }
+        const char *end = strchr(p, '\n');
+        p = end ? end + 1 : NULL;
+    }
+    return count;
+}
+
+/* The index of `value` among the distinct values of `values` (ascending if
+ * up, else descending): the level in the owner's chain. */
+static int chain_level(const int *values, int count, int value, bool up) {
+    int level = 0;
+    bool seen[64] = {false};
+    for (int i = 0; i < count; ++i) {
+        int v = values[i];
+        if (v < 0 || v >= 64 || seen[v]) {
+            continue;
+        }
+        seen[v] = true;
+        if (up ? v < value : v > value) {
+            ++level;
+        }
+    }
+    return level;
+}
+
+static int level_of(const char *status) {
+    if (strstr(status, "FORCED") != NULL) {
+        return 2;
+    }
+    if (strstr(status, "POSSIBLE") != NULL) {
+        return 1;
+    }
+    return 0;
+}
+
+static void collect(Candidate *c, const Board *b, const Tracker *t, int depth, const Goal *g, const char *loop_text,
+                    const char *real_text_all, const char *order_text, const int *squares, int count_squares,
+                    const int *all_values, int n_values, const int *all_distances, int n_distances) {
+    TextBuffer r = {NULL, 0, 0}, rep_view = {NULL, 0, 0};
+    char prefix[64], buf[240];
+    calc_report(b, t, c->move, &r);
+    if (!line_after(r.text, "COUNT White ", c->r_white, sizeof(c->r_white))) {
+        strcpy(c->r_white, "-");
+    }
+    if (!line_after(r.text, "COUNT Black ", c->r_black, sizeof(c->r_black))) {
+        strcpy(c->r_black, "-");
+    }
+    strcpy(c->check, line_after(r.text, "CHECK ", buf, sizeof(buf)) ? buf : "none");
+    if (!line_after(r.text, "MATE1 White ", c->mate1_white, sizeof(c->mate1_white))) {
+        strcpy(c->mate1_white, "none");
+    }
+    if (!line_after(r.text, "MATE1 Black ", c->mate1_black, sizeof(c->mate1_black))) {
+        strcpy(c->mate1_black, "none");
+    }
+    c->links[0] = count_lines(r.text, "PROTECT+ ");
+    c->links[1] = count_lines(r.text, "PROTECT- ");
+    c->links[2] = count_lines(r.text, "ATTACK+ ");
+    c->links[3] = count_lines(r.text, "ATTACK- ");
+    free(r.text);
+
+    replies_report(b, t, c->move, &rep_view);
+    if (line_after(rep_view.text, "NO REPLIES ", buf, sizeof(buf))) {
+        snprintf(c->threat, sizeof(c->threat), "GAME-OVER %s", buf);
+        strcpy(c->replies, "-");
+    } else {
+        if (!line_after(rep_view.text, "THREAT ", c->threat, sizeof(c->threat))) {
+            strcpy(c->threat, "-");
+        }
+        if (!line_after(rep_view.text, "SUMMARY REPLIES ", c->replies, sizeof(c->replies))) {
+            strcpy(c->replies, "-");
+        }
+    }
+    free(rep_view.text);
+
+    snprintf(prefix, sizeof(prefix), "FIRST %s ", c->text);
+    c->loop_level = -1;
+    strcpy(c->loop_status, "-");
+    strcpy(c->loop_mated, "-");
+    if (line_after(loop_text, prefix, buf, sizeof(buf))) {
+        char *mated = strstr(buf, " MATED ");
+        if (mated != NULL) {
+            snprintf(c->loop_mated, sizeof(c->loop_mated), "%s", mated + 1);
+            *mated = '\0';
+        }
+        snprintf(c->loop_status, sizeof(c->loop_status), "%s", buf);
+        c->loop_level = level_of(buf);
+    }
+
+    for (int k = 0; k < count_squares; ++k) {
+        for (int cond = 0; cond < 2; ++cond) {
+            char head[32], sq[3];
+            square_text(squares[k], sq);
+            snprintf(head, sizeof(head), "GOAL %s %s\n", sq, cond == 0 ? "REACH" : "PROTECTED");
+            strcpy(c->goal_text[k][cond], "-");
+            c->goal_level[k][cond] = -1;
+            const char *part = real_text_all ? strstr(real_text_all, head) : NULL;
+            const char *stop = part ? strstr(part, "RESULT ") : NULL;
+            if (part != NULL && stop != NULL) {
+                const char *found = strstr(part, prefix);
+                if (found != NULL && found < stop) {
+                    const char *end = strchr(found, '\n');
+                    size_t len = (size_t)(end - found) - strlen(prefix);
+                    if (len >= sizeof(c->goal_text[k][cond])) {
+                        len = sizeof(c->goal_text[k][cond]) - 1;
+                    }
+                    memcpy(c->goal_text[k][cond], found + strlen(prefix), len);
+                    c->goal_text[k][cond][len] = '\0';
+                    c->goal_level[k][cond] = level_of(c->goal_text[k][cond]) +
+                                             (strstr(c->goal_text[k][cond], "ELSE") ? 0 : 0);
+                }
+            }
+        }
+    }
+    (void)g;
+
+    c->taken = captured_type(b, c->move);
+    c->value = piece_value(c->taken);
+    c->squares = move_distance(c->move);
+    c->squares_rank = chain_level(all_distances, n_distances, c->squares, true);
+    c->squares_label = order_label(all_distances, n_distances, c->squares);
+    if (c->taken) {
+        int neg[256];
+        for (int i = 0; i < n_values; ++i) {
+            neg[i] = 9 - all_values[i]; /* greatest value first */
+        }
+        c->value_rank = chain_level(all_values, n_values, c->value, false);
+        c->value_label = order_label(neg, n_values, 9 - c->value);
+        c->material = first_capture_class(b, c->move, depth, &c->bounded);
+        c->material_known = true;
+    } else {
+        c->value_rank = -1;
+        c->value_label = "none";
+        c->material_known = false;
+        c->bounded = false;
+    }
+    square_text(c->move.er * 8 + c->move.ec, c->stop);
+
+    /* GROUP: the move's line in the combined order of ideas 7 and 8. */
+    c->group = 0;
+    c->group_class = 0;
+    c->group_label = "-";
+    for (const char *p = order_text; p != NULL && *p != '\0';) {
+        char word[8];
+        int grp = 0;
+        if (sscanf(p, "GROUP %d %*s %5s", &grp, word) == 2 && strcmp(word, c->text) == 0) {
+            const char *end = strchr(p, '\n');
+            size_t len = end ? (size_t)(end - p) : strlen(p);
+            char line[200];
+            if (len >= sizeof(line)) {
+                len = sizeof(line) - 1;
+            }
+            memcpy(line, p, len);
+            line[len] = '\0';
+            c->group = grp;
+            c->group_class = strstr(line, "MATERIAL FORCED") ? 2 : strstr(line, "MATERIAL POSSIBLE") ? 1 : 0;
+            char *ord = strstr(line, " ORDER ");
+            c->group_label = ord == NULL ? "-" : strncmp(ord + 7, "ELSE IF", 7) == 0 ? "ELSE IF"
+                                                 : strncmp(ord + 7, "ELSE", 4) == 0  ? "ELSE"
+                                                                                   : "IF";
+            break;
+        }
+        const char *end = strchr(p, '\n');
+        p = end ? end + 1 : NULL;
+    }
+}
+
+static const char *material_word(const Candidate *c) {
+    if (!c->material_known) {
+        return "-";
+    }
+    return c->material == MATERIAL_FORCED ? "FORCED NONNEGATIVE" : c->material == MATERIAL_POSSIBLE ? "POSSIBLE NONNEGATIVE"
+                                                                                                    : "ELSE";
+}
+
+/* One raw fact: SAME / DIFFERENT. */
+static void raw_line(TextBuffer *out, const Candidate *a, const Candidate *b, const char *fact, const char *va,
+                     const char *vb) {
+    text_add(out, "COMPARE %s %s %s %s | %s %s\n", a->text, b->text, fact, va, vb, strcmp(va, vb) == 0 ? "SAME" : "DIFFERENT");
+}
+
+/* One condition strength: STRONGER-CONDITION / TIE / NOT-COMPARABLE.
+ * Returns +1 (a stronger), -1 (b stronger), 0 tie, 2 not comparable. */
+static int strength_line(TextBuffer *out, const Candidate *a, const Candidate *b, const char *fact, const char *va,
+                         const char *vb, int la, int lb) {
+    text_add(out, "COMPARE %s %s %s %s | %s ", a->text, b->text, fact, va, vb);
+    if (la < 0 || lb < 0) {
+        text_add(out, "NOT-COMPARABLE\n");
+        return 2;
+    }
+    if (la == lb) {
+        text_add(out, "TIE\n");
+        return 0;
+    }
+    text_add(out, "STRONGER-CONDITION %s\n", la > lb ? a->text : b->text);
+    return la > lb ? 1 : -1;
+}
+
+/* One owner order: EARLIER-IN-ORDER / SAME-ORDER-LEVEL / NOT-COMPARABLE
+ * (smaller rank = earlier). Returns +1 (a earlier), -1, 0, 2. */
+static int order_line(TextBuffer *out, const Candidate *a, const Candidate *b, const char *fact, const char *va,
+                      const char *vb, int ra, int rb) {
+    text_add(out, "COMPARE %s %s %s %s | %s ", a->text, b->text, fact, va, vb);
+    if (ra < 0 || rb < 0) {
+        text_add(out, "NOT-COMPARABLE\n");
+        return 2;
+    }
+    if (ra == rb) {
+        text_add(out, "SAME-ORDER-LEVEL\n");
+        return 0;
+    }
+    text_add(out, "EARLIER-IN-ORDER %s\n", ra < rb ? a->text : b->text);
+    return ra < rb ? 1 : -1;
+}
+
+static void compare_report(const Board *b, const Tracker *t, const Goal *g, int depth, const Move *moves, int count,
+                           TextBuffer *out) {
+    static Candidate cand[COMPARE_MAX];
+    TextBuffer loop_text = {NULL, 0, 0}, real_all = {NULL, 0, 0}, order_text = {NULL, 0, 0};
+    int squares[GOAL_MAX_SQUARES], count_squares = 0;
+    int all_values[256], n_values = 0, all_distances[256], n_distances = 0;
+    char va[200], vb[200];
+
+    loop_report(b, depth, 0, &loop_text);
+    order_report(b, depth > EXCHANGE_MAX ? EXCHANGE_MAX : depth, &order_text);
+    if (g != NULL && g->active) {
+        count_squares = goal_squares(g, b, b->turn, squares);
+        routes_real_report(b, g, depth, &real_all);
+    }
+    MoveList all = sorted_moves(b);
+    for (size_t i = 0; i < all.count && i < 256; ++i) {
+        all_distances[n_distances++] = move_distance(all.items[i]);
+        if (captured_type(b, all.items[i])) {
+            all_values[n_values++] = piece_value(captured_type(b, all.items[i]));
+        }
+    }
+    free(all.items);
+
+    text_add(out, "COMPARE BEGIN %s DEPTH %d CANDIDATES", color_name(b->turn), depth);
+    for (int i = 0; i < count; ++i) {
+        memset(&cand[i], 0, sizeof(cand[i]));
+        cand[i].move = moves[i];
+        move_text(moves[i], cand[i].text);
+        text_add(out, " %s", cand[i].text);
+    }
+    text_add(out, "\n");
+    text_add(out, "NOTE measurements only: no weights, no move is chosen or played; STRONGER-CONDITION compares the strength of one stated condition, not the quality of a move\n");
+    text_add(out, "NOTE the same side to move, one depth (%d) and one goal for every candidate, so every condition is measured under the same terms\n", depth);
+    if (count_squares > 0) {
+        text_add(out, "GOAL ");
+        goal_text(g, out);
+        text_add(out, " REAL DEPTH %d\n", depth);
+    }
+    for (int i = 0; i < count; ++i) {
+        Candidate *c = &cand[i];
+        collect(c, b, t, depth, g, loop_text.text, real_all.text, order_text.text, squares, count_squares, all_values,
+                n_values, all_distances, n_distances);
+        text_add(out, "CANDIDATE %s\n", c->text);
+        text_add(out, "FACT R-COUNT White %s\n", c->r_white);
+        text_add(out, "FACT R-COUNT Black %s\n", c->r_black);
+        text_add(out, "FACT CHECK %s\n", c->check);
+        text_add(out, "FACT MATE1 White %s\n", c->mate1_white);
+        text_add(out, "FACT MATE1 Black %s\n", c->mate1_black);
+        text_add(out, "FACT LINKS PROTECT+ %d PROTECT- %d ATTACK+ %d ATTACK- %d\n", c->links[0], c->links[1], c->links[2],
+                 c->links[3]);
+        text_add(out, "FACT THREAT %s\n", c->threat);
+        text_add(out, "FACT REPLIES %s\n", c->replies);
+        text_add(out, "FACT LOOP %s %s LIMIT %d\n", c->loop_status, c->loop_mated, depth);
+        for (int k = 0; k < count_squares; ++k) {
+            char sq[3];
+            square_text(squares[k], sq);
+            text_add(out, "FACT GOAL %s REACH %s\n", sq, c->goal_text[k][0]);
+            text_add(out, "FACT GOAL %s PROTECTED %s\n", sq, c->goal_text[k][1]);
+        }
+        if (c->taken) {
+            text_add(out, "FACT CAPTURE %c VALUE %d\n", c->taken, c->value);
+        } else {
+            text_add(out, "FACT CAPTURE none\n");
+        }
+        text_add(out, "FACT MATERIAL %s%s\n", material_word(c), c->bounded ? " BOUNDED" : "");
+        text_add(out, "FACT VALUE-ORDER %s\n", c->value_label);
+        text_add(out, "FACT SQUARES-ORDER %d %s\n", c->squares, c->squares_label);
+        text_add(out, "FACT GROUP %d %s%s %s\n", c->group, c->group == 1 ? "CAPTURE" : "DISTANCE",
+                 c->group != 1 ? "" : c->group_class == 2 ? " FORCED" : " POSSIBLE", c->group_label);
+        text_add(out, "VIEW LOOP-1 SQUARES %d ORDER %s STOP %s %s\n", c->squares, c->squares_label, c->stop,
+                 c->taken ? "CAPTURE" : "EMPTY");
+        if (c->taken) {
+            text_add(out, "VIEW LOOP-2 VALUE %d ORDER %s MATERIAL %s%s\n", c->value, c->value_label, material_word(c),
+                     c->bounded ? " BOUNDED" : "");
+        } else {
+            text_add(out, "VIEW LOOP-2 VALUE none ORDER none MATERIAL -\n");
+        }
+        text_add(out, "NEURON-STATE UNDEFINED\n");
+    }
+
+    for (int i = 0; i < count; ++i) {
+        for (int j = i + 1; j < count; ++j) {
+            const Candidate *a = &cand[i], *c = &cand[j];
+            int ahead_a = 0, ahead_b = 0, ties = 0;
+            text_add(out, "PAIR %s %s\n", a->text, c->text);
+            raw_line(out, a, c, "R-COUNT-White", a->r_white, c->r_white);
+            raw_line(out, a, c, "R-COUNT-Black", a->r_black, c->r_black);
+            raw_line(out, a, c, "CHECK", a->check, c->check);
+            raw_line(out, a, c, "MATE1-White", a->mate1_white, c->mate1_white);
+            raw_line(out, a, c, "MATE1-Black", a->mate1_black, c->mate1_black);
+            snprintf(va, sizeof(va), "%d %d %d %d", a->links[0], a->links[1], a->links[2], a->links[3]);
+            snprintf(vb, sizeof(vb), "%d %d %d %d", c->links[0], c->links[1], c->links[2], c->links[3]);
+            raw_line(out, a, c, "LINKS", va, vb);
+            raw_line(out, a, c, "THREAT", a->threat, c->threat);
+            raw_line(out, a, c, "REPLIES", a->replies, c->replies);
+            raw_line(out, a, c, "LOOP-MATED", a->loop_mated, c->loop_mated);
+            int r = strength_line(out, a, c, "LOOP", a->loop_status, c->loop_status, a->loop_level, c->loop_level);
+            ahead_a += r == 1;
+            ahead_b += r == -1;
+            ties += r == 0;
+            for (int k = 0; k < count_squares; ++k) {
+                for (int cond = 0; cond < 2; ++cond) {
+                    char fact[32], sq[3];
+                    square_text(squares[k], sq);
+                    snprintf(fact, sizeof(fact), "GOAL-%s-%s", sq, cond == 0 ? "REACH" : "PROTECTED");
+                    r = strength_line(out, a, c, fact, a->goal_text[k][cond], c->goal_text[k][cond], a->goal_level[k][cond],
+                                      c->goal_level[k][cond]);
+                    ahead_a += r == 1;
+                    ahead_b += r == -1;
+                    ties += r == 0;
+                }
+            }
+            r = strength_line(out, a, c, "MATERIAL", material_word(a), material_word(c),
+                              a->material_known ? (int)a->material : -1, c->material_known ? (int)c->material : -1);
+            ahead_a += r == 1;
+            ahead_b += r == -1;
+            ties += r == 0;
+            snprintf(va, sizeof(va), "%c %d", a->taken ? a->taken : '-', a->value);
+            snprintf(vb, sizeof(vb), "%c %d", c->taken ? c->taken : '-', c->value);
+            raw_line(out, a, c, "CAPTURE", a->taken ? va : "none", c->taken ? vb : "none");
+            int v_order = order_line(out, a, c, "VALUE-ORDER", a->value_label, c->value_label, a->value_rank, c->value_rank);
+            snprintf(va, sizeof(va), "%d %s", a->squares, a->squares_label);
+            snprintf(vb, sizeof(vb), "%d %s", c->squares, c->squares_label);
+            int s_order = order_line(out, a, c, "SQUARES-ORDER", va, vb, a->squares_rank, c->squares_rank);
+            snprintf(va, sizeof(va), "%d %s", a->group, a->group_label);
+            snprintf(vb, sizeof(vb), "%d %s", c->group, c->group_label);
+            /* Group level: group 1 before group 2; in group 1 FORCED before
+             * POSSIBLE; then the label's level. */
+            int ga = a->group == 1 ? (2 - a->group_class) * 3 : 6, gb = c->group == 1 ? (2 - c->group_class) * 3 : 6;
+            ga += !strcmp(a->group_label, "IF") ? 0 : !strcmp(a->group_label, "ELSE IF") ? 1 : 2;
+            gb += !strcmp(c->group_label, "IF") ? 0 : !strcmp(c->group_label, "ELSE IF") ? 1 : 2;
+            order_line(out, a, c, "GROUP", va, vb, a->group ? ga : -1, c->group ? gb : -1);
+
+            const char *word = "NO-DIRECTED-COMPARISON";
+            if (ahead_a > 0 && ahead_b > 0) {
+                word = "MIXED";
+            } else if (ahead_a > 0 || ahead_b > 0) {
+                word = "ALL-AHEAD";
+            } else if (ties > 0) {
+                word = "ALL-TIE";
+            }
+            text_add(out, "AGREEMENT %s %s %s", a->text, c->text, word);
+            if (!strcmp(word, "ALL-AHEAD")) {
+                text_add(out, " %s", ahead_a > 0 ? a->text : c->text);
+            }
+            text_add(out, "\n");
+
+            /* The two views: which candidate each view puts first. */
+            int l1 = s_order;
+            int l2 = v_order;
+            if (l2 == 0) {
+                l2 = r = (a->material_known && c->material_known) ? (a->material > c->material) - (a->material < c->material) : 2;
+            }
+            text_add(out, "VIEWS %s %s LOOP-1 %s LOOP-2 %s ", a->text, c->text,
+                     l1 == 1 ? a->text : l1 == -1 ? c->text : l1 == 0 ? "SAME-LEVEL" : "NOT-COMPARABLE",
+                     l2 == 1 ? a->text : l2 == -1 ? c->text : l2 == 0 ? "SAME-LEVEL" : "NOT-COMPARABLE");
+            text_add(out, "%s\n", (l1 == 2 || l2 == 2) ? "NOT-COMPARABLE" : l1 == l2 ? "SAME-VIEW" : "DIFFERENT-VIEW");
+        }
+    }
+    text_add(out, "COMPARE END\n");
+    free(loop_text.text);
+    free(real_all.text);
+    free(order_text.text);
+}
+
+/* Reads "N m1 m2 ..." after "compare "; false if not well formed. */
+static bool parse_compare(const Board *b, const char *text, int *depth, Move *moves, int *count) {
+    char word[16];
+    int used = 0, n = 0;
+    if (sscanf(text, "%d%n", &n, &used) != 1 || n < 1 || n > 5) {
+        return false;
+    }
+    text += used;
+    *count = 0;
+    while (sscanf(text, "%15s%n", word, &used) == 1) {
+        Move m;
+        text += used;
+        if (*count == COMPARE_MAX || !parse_move_text(word, &m) || !legal_move(b, m)) {
+            return false;
+        }
+        for (int i = 0; i < *count; ++i) {
+            if (moves[i].sr == m.sr && moves[i].sc == m.sc && moves[i].er == m.er && moves[i].ec == m.ec &&
+                moves[i].promotion == m.promotion) {
+                return false;
+            }
+        }
+        moves[(*count)++] = m;
+    }
+    if (*count < 2) {
+        return false;
+    }
+    *depth = n;
+    return true;
 }
 
 static void clear_selection(int *row, int *col, bool *preview_shown,
@@ -4384,6 +4861,24 @@ int main(void) {
             } else {
                 TextBuffer view = {NULL, 0, 0};
                 order_report(&game, limit, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        /* Stage 3F: "compare N m1 m2 [... m6]". */
+        if (!strcmp(input, "compare") || !strncmp(input, "compare ", 8)) {
+            Move moves[COMPARE_MAX];
+            int depth = 0, count = 0;
+            if (input[7] == '\0' || !parse_compare(&game, input + 8, &depth, moves, &count)) {
+                puts(RED "Type compare, a depth from 1 to 5, then 2 to 6 different legal moves, for example compare 3 d1h5 d1f3 g1f3." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                if (depth >= 5) {
+                    printf("Searching %d plies. This can take minutes.\n", depth);
+                    fflush(stdout);
+                }
+                compare_report(&game, &tracker, &goal, depth, moves, count, &view);
                 fputs(view.text, stdout);
                 free(view.text);
             }

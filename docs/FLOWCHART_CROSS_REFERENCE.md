@@ -24,6 +24,7 @@ Prepared by Claude (2026-10-25) at ChatGPT's request (review 30); approved with 
 | 12 | Counter-motion / a subordinate warning against a larger opportunity (review 30's candidate; "opportunity" stays UNSTATED, the Opportunity IF / ELSE frame UNAPPROVED) | Qxd5 exd5 (3E: MATERIAL POSSIBLE, White 5 / Black 9); 3B STOPS; AT-RISK; PROTECT− in R | **E-B (done, below):** one tempting-capture position through R, `exchange`, `replies`, `loop`; observed "warnings" reported apart from any proposed mechanism | Unfavorable exchange facts are candidate evidence only; they do not establish the flowchart's warning delivery, memory, cancellation or arbitration (review 31, correction C). What "opportunity" is stays the owner's question |
 | 13 | Queen increment relationship: stores other pieces' FALSE increments; "Motion TRUE and motion FALSE do not determine stored values" | The tracker stores every lost (piece, square) pair of all pieces, independent of IF / ELSE (v7) | None: equating lost pairs with FALSE increments would be an invented identity | The relationship |
 | 14 | Greater fan, rotation, the loop handoffs, D1, D2, the four Stage B conditions, R68 / R70, T1–T5, N1 | None | None ("no counterpart" is a valid result) | — |
+| 15 | Loop 1 (chess movement for-loop, §[8]) and Loop 2 (motion decision for-loop: TRUE = sustenance, FALSE = hunger and thirst, §[9]); "The false chess square has motion true or false and a neuron state; their relationship stays undefined" (§[10], LOG-0011). The owner's idea 9 links them to his two IF chains | `compare` (v14): VIEW LOOP-1 (squares travelled, SQUARES-ORDER, stop square EMPTY / CAPTURE) and VIEW LOOP-2 (VALUE-ORDER, MATERIAL class, goal CONDITION); NEURON-STATE UNDEFINED; VIEWS SAME-VIEW / DIFFERENT-VIEW | Look for pairs where the two views order the candidates differently (e.g. Qxd5 vs Qxb3 in `tests/golden_v14/21_compare`) | That the squares chain is Loop 1 or that the value chain is Loop 2; sustenance, hunger and thirst are not attached to any chess fact; the neuron state |
 
 ## Experiment E-A — seeing versus entering (row 1)
 
@@ -54,3 +55,18 @@ Run with `tools/experiments/e_b_tempting_capture.c`, which only calls the existi
 
 - **Result:** these facts are **candidate evidence** that the immediate value of a capture (the rook, 5) does not by itself establish a favorable material outcome, which is what the owner's idea 8 also says.
 - **Limit:** they do not establish the flowchart's warning delivery, memory, cancellation or arbitration, nor what an "opportunity" is (that stays the owner's question). No dependency is closed.
+
+## Row 15 — two versions of "the increment the queen for loop" (for discussion)
+
+The owner's direction: "if you don't know make two versions that you two can look at and talk about to solve new questions." ChatGPT review 39 asks to record the owner's newer wording beside the approved one and to note the possible tension. Both versions are kept; neither is chosen; the flowchart is not edited.
+
+| | Version 1 — the approved statements | Version 2 — the owner's newer wording (idea 9) |
+|---|---|---|
+| Words | "Adding inner conditions (inner Spatial / inner Temporal) ultimately ties back to original Spatial and has an effect that increments the Queen." "This link is a conceptual relation, NOT a timed step, gate, or numbered step in the primary loop flow." (Draft 12 statements, Queen increment relationship) | "the increment the queen for loop is the if else if else conditions counting squares moved therefore the other if else if else must be the for loop dictating hunger and thirst." |
+| The queen increment is | a relation beside the flow path, not a step of Loop 1 or Loop 2 | a for loop: the one that counts squares moved (the owner's squares chain) |
+| Loop 1 in the chess program | the movement itself (where a piece goes and where it stops); the squares chain is only a measurement of it | the squares chain (`SQUARES-ORDER`, LOOP-1 view) |
+| Loop 2 in the chess program | not mapped | the value chain with material and condition (LOOP-2 view) |
+| What `compare` shows | the same facts; the view names are only labels | the same facts |
+| Open questions | How, if at all, the squares chain relates to the queen increment | Whether "for loop" here means the same Loop 1 as §[8], or a third loop; how this fits "NOT a timed step" |
+
+**Questions for the owner (to talk about, not to decide here):** (1) Does Version 2 replace Version 1, sit beside it, or describe a different loop? (2) In Version 2, is "the increment the queen for loop" the same loop as the chess movement for-loop of §[8]? The program does not depend on the answer: `compare` prints the same facts under either version.

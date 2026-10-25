@@ -1,0 +1,179 @@
+Stage 3F design for the owner's and ChatGPT's review, BEFORE any code
+(chess-c99), 2026-10-25
+
+Repository: https://github.com/IWatchSheep/chess-c99 (latest 0f586cf;
+Version 13 = Stage 3E approved in review 29; E-A and E-B approved in
+reviews 35 and 37). Nothing for 3F is built. Spec row 3F: "Only after
+3A-3E: comparing candidate moves, and the Side A / Side B experiment. No
+result is assumed." This design follows your review 37's eleven
+requirements. Part B: at the owner's direction the Side A / Side B
+experiment is replaced by a Loop 1 view and a Loop 2 view, linked to the
+flowchart's two for loops as the owner's own proposed correspondence.
+
+PART A - comparing candidate moves (Version 14)
+
+1. Command: "compare N <m1> <m2> [<m3> ... <m6>]" - 2 to 6 legal moves of
+   the side to move S, written like e2e4 or e7e8q; N = the depth used for
+   the bounded parts (loop plies and exchange captures; 1..5). Nothing is
+   played; the board, turn, history and memory stay unchanged.
+
+2. For each candidate, its raw facts, taken ONLY from existing reports
+   (no new measurement):
+   R (3A)      COUNT both sides: U1 U2 U3 GAINED RESTORED OPENED; CHECK;
+               MATE1 for each side; PROTECT+/- and ATTACK+/- counts.
+   replies (3B) THREAT (mover's mate-in-one moves after m) and SUMMARY
+               REPLIES n STOPS LEAVES NO-THREAT ALLOWS.
+   loop (3C)   the first-move line for m at depth N: FORCED / POSSIBLE k
+               OF r / NOT-FOUND, MATED White n Black n, LIMIT.
+   goal (3D)   only if a goal is active: REAL depth N result for m per goal
+               square (CONDITION IF FORCED / IF POSSIBLE k OF r / ELSE).
+   3E          capture: TAKES type VALUE v, SQUARES d, MATERIAL FORCED /
+               POSSIBLE NONNEGATIVE / -, BOUNDED; the ORDER group (1 or 2).
+   Printed as:
+     CANDIDATE <m>
+     FACT <name> <value>          one line per fact, fixed order and names
+   Example names: R-COUNT-WHITE, R-COUNT-BLACK, CHECK, MATE1-White,
+   REPLIES, LOOP, GOAL-f7-REACH, CAPTURE, MATERIAL, SQUARES, GROUP.
+
+3. Comparison of each pair of candidates, fact by fact:
+     COMPARE <fact> <m1> <value1> <m2> <value2> SAME | DIFFERENT
+   and, only for facts where an earlier approved stage already defines a
+   direction for S (no new direction is introduced):
+     loop result      FORCED > POSSIBLE > NOT-FOUND (mate of the other side)
+     goal REAL result IF FORCED > IF POSSIBLE > ELSE
+     MATERIAL class   FORCED > POSSIBLE > none
+     threat           stops / leaves as in 3B (for the mover: a mate-in-one
+                      threat present vs none)
+   the line adds AHEAD <m> or TIE. For counts (U1, U2, ...) no direction is
+   assigned: only SAME / DIFFERENT and the two numbers ("more pieces that
+   can't move" is not called better or worse for either side).
+
+3b. The owner's IF chains (added at the owner's request, 2026-10-25; his
+   words: "you meand the value of the chesspieces if condition and the
+   moved squares if condition?"). Each candidate also shows its place in
+   the owner's orders, all already approved:
+     VALUE-ORDER   the captured piece's value and its label in the value
+                   chain (ideas 5-8; greatest = IF ... smallest = ELSE),
+                   or "none" for a non-capture;
+     SQUARES-ORDER the squares travelled and its label in the distance
+                   chain (idea 4; fewest = IF ... most = ELSE);
+     GROUP         its place in the combined list of idea 7 (group 1
+                   CAPTURE or group 2 DISTANCE, with the label there).
+   The labels are computed exactly as "order N" computes them for the
+   current position (the chains run over all legal moves of S, so the
+   labels are the same as in "order N"). In the pair comparison these
+   lines say SAME / DIFFERENT and EARLIER-IN-ORDER <m> (the candidate that
+   comes first in the owner's list) - never AHEAD and never "better",
+   because an order is a measurement, not a judgement (reviews 17, 27, 29).
+   They take no part in the AGREEMENT rule of step 4.
+   Example (E-B rook position): d1d5 and e4d5 both VALUE-ORDER R 5 IF
+   (SAME); SQUARES-ORDER 4 vs 1 (DIFFERENT, EARLIER-IN-ORDER e4d5);
+   MATERIAL POSSIBLE vs FORCED (AHEAD e4d5).
+
+4. Agreement and disagreement among measurements, per pair:
+     AGREEMENT <m1> <m2> ALL-AHEAD <m> | MIXED | ALL-TIE
+   ALL-AHEAD when every directed fact is AHEAD for the same candidate or
+   TIE; MIXED when directed facts point to different candidates (an
+   incomparable pair - kept, never resolved by weights); ALL-TIE when all
+   directed facts tie. Undirected facts are listed, never counted.
+
+5. Bounded uncertainty: every fact computed with a limit carries it (LIMIT
+   N, BOUNDED); a line "UNCERTAIN <m> <fact> beyond depth N" when the
+   search was cut. FORCED and POSSIBLE are never merged.
+
+6. Output frame and order:
+     COMPARE BEGIN <S> DEPTH <N> CANDIDATES <m1> ... <mk>
+     NOTE measurements only: no weights, no move is chosen or played
+     CANDIDATE blocks in the order typed; then COMPARE lines for each pair
+     (m1-m2, m1-m3, ... in typed order), facts in the fixed order; then
+     AGREEMENT lines; COMPARE END.
+
+7. Tests (as review 37 asks), all with hand-checked expected values:
+   - E3 position: candidates d1h5, d1f3, g1f3 (3B and 3C facts: Qh5 THREAT
+     h5f7, POSSIBLE 20 OF 28 at depth 3; Qf3 POSSIBLE 21 OF 31; Nf3 no
+     threat, NOT-FOUND) - AHEAD lines and MIXED / ALL-AHEAD as computed.
+   - A higher capture value with a less favorable bounded material result:
+     the E-B rook position with an added black pawn, so that one capture
+     takes the rook (5) but is only POSSIBLE and another takes a pawn (1)
+     and is FORCED - MATERIAL AHEAD goes to the lower-value capture, and
+     CAPTURE values are only listed.
+   - Ties (two quiet moves with the same directed facts: ALL-TIE) and an
+     incomparable pair (MIXED).
+   - Determinism, invariants, refused input (fewer than 2 or more than 6
+     candidates, illegal or repeated moves, bad depth), all earlier
+     transcripts unchanged.
+
+PART B - the Loop 1 view and the Loop 2 view (owner's direction; replaces
+the Side A / Side B experiment)
+
+The owner's words (2026-10-25, verbatim, in order):
+"there is a for loop in the flow chart that increments the squares, there
+is a second for loop that increments a motion true or not true that allowed
+for neural states that is different than on and of, or if and else, go
+read the zip I gave you to find that reference I think the question fits
+those two for loops."
+"thats the one that applies to the question. the increment the queen for
+loop is the if else if else conditions counting squares moved therefore the
+other if else if else must be the for loop dictating hunger and thirst."
+
+The flowchart references Claude found (owner-approved STAGE B DRAFT 12
+CONCEPTUAL STATEMENTS, unchanged): Section [8] Loop 1 - chess movement
+for-loop ("the temporal in the incrementer lifts the spatial to the next
+square when the condition makes the for loop stop"); Section [9] Loop 2 -
+motion decision for-loop (TRUE = sustenance, temporal == temporal; FALSE =
+hunger and thirst); Section [10] and LOG-0011 - "The false chess square has
+motion true or false and a neuron state; their relationship stays
+undefined." (N1 neuron states UNDEFINED; at that square the binary is
+motion TRUE / FALSE, not ON / OFF.)
+
+Proposed views (an experiment in how two sets of measurements describe the
+same candidates; the owner's mapping is recorded as HIS proposed
+correspondence, a hypothesis for testing - it does not edit the flowchart,
+close a dependency or define sustenance, hunger, the queen increment or a
+neuron state):
+  LOOP-1 view (the squares chain, "the increment the queen for loop"):
+    SQUARES d and SQUARES-ORDER (idea 4: fewest = IF ... most = ELSE);
+    STOP <square> EMPTY | CAPTURE (where the piece stops and whether a
+    capture ended the slide - existing move facts only).
+  LOOP-2 view (the value chain, "the for loop dictating hunger and
+  thirst"): VALUE-ORDER (ideas 5-8: captured value, greatest = IF ...;
+  "none" for a non-capture), MATERIAL FORCED / POSSIBLE NONNEGATIVE / -
+  with BOUNDED (idea 8), and, if a goal is active, CONDITION IF / ELSE.
+  NEURON-STATE: printed as "UNDEFINED" for every candidate, so the third
+  result the flowchart names stays visible and is not filled in.
+  For each pair: VIEWS <m1> <m2> SAME-VIEW | DIFFERENT-VIEW, DIFFERENT-VIEW
+  when the two views order or class the pair differently (e.g. Qxd5 vs
+  exd5: LOOP-1 EARLIER-IN-ORDER exd5 (1 square vs 4); LOOP-2 same value
+  (R 5, IF) but MATERIAL POSSIBLE vs FORCED).
+  Neither view chooses a move; neither is called better.
+
+Points for review (Claude does not resolve them):
+  - The approved statements place the Queen increment relationship "beside
+    the flow path ... NOT a timed step, gate, or numbered step in the
+    primary loop flow", and Loop 1 is the chess movement for-loop. The
+    owner's new sentence links "the increment the queen for loop" to the
+    squares chain. Is this a new owner statement to record beside the
+    approved ones (Claude's reading), or a tension to put to the owner?
+  - TRUE = sustenance / FALSE = hunger and thirst are Loop 2's words; the
+    LOOP-2 view shows chess facts (value order, material class, condition)
+    and does NOT label any of them sustenance or hunger.
+  - Side A / Side B (plans/STEP_03, 2026-10-24) is not built; it stays in
+    the plan's history.
+
+Questions
+1. (answered by the owner: Part B = the Loop 1 / Loop 2 views.)
+2. ChatGPT: are the directed facts in step 3 acceptable as directions
+   already defined by approved stages (no new direction)?
+3. ChatGPT: is MIXED (incomparable) acceptable as the final word for a
+   pair whose directed facts disagree?
+4. Anything to add or remove before Claude builds Version 14?
+5. Is step 3b acceptable: the owner's IF chains shown per candidate with
+   EARLIER-IN-ORDER (not AHEAD), outside the AGREEMENT rule?
+6. Part B: is the owner's mapping (squares chain = "the increment the queen
+   for loop", value chain = "the for loop dictating hunger and thirst")
+   correctly recorded as his proposed correspondence (a hypothesis), with
+   NEURON-STATE shown as UNDEFINED and no sustenance / hunger labels on
+   chess facts? And the Queen-increment point above: new statement or
+   tension?
+7. Should the owner's two messages be added to docs/OWNER_IDEAS.md as his
+   idea 9 (verbatim, in order)?

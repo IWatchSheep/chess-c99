@@ -3,8 +3,8 @@
  * POSSIBLE NONNEGATIVE / ELSE, the combined order of the owner's ideas 7
  * and 8 ("order N"), and AT-RISK ("risk on"), against hand-checked
  * positions and an independent minimax; stopping, limits, en passant,
- * refused input, and that nothing changes. chess.c is included unchanged.
- * Run by CTest. */
+ * refused input, and that nothing changes; X22 (version 14) checks the
+ * group-1 value labels. chess.c is included unchanged. Run by CTest. */
 #define main chess_main
 #include "../chess.c"
 #undef main
@@ -275,6 +275,17 @@ static void test_transition(void) {
     check(ok, "X21 the list switches: start DISTANCE, after 1.e4 d5 CAPTURE (exd5), after 2.e5 DISTANCE (Black), after 2...f5 CAPTURE again (exf6 e.p.)");
 }
 
+/* Found while building version 14: the value labels of group 1 were always
+ * IF because order_label skips negative numbers. */
+static void test_order_labels(void) {
+    static Board b;
+    char *text = setup(&b, "6k1/8/4p3/3r4/4P3/1pN5/8/3Q2K1 w - - 0 1") ? order_for(&b, 3) : NULL;
+    check(text && has_line(text, "GROUP 1 CAPTURE e4d5 TAKES R VALUE 5 SQUARES 1 MATERIAL FORCED NONNEGATIVE ORDER IF") &&
+              has_line(text, "GROUP 1 CAPTURE d1b3 TAKES P VALUE 1 SQUARES 2 MATERIAL FORCED NONNEGATIVE ORDER ELSE"),
+          "X22 different captured values in one group get different labels (rook IF, pawn ELSE)");
+    free(text);
+}
+
 static void test_risk(void) {
     static Board b;
     Goal g;
@@ -322,6 +333,7 @@ int main(void) {
     test_independent();
     test_order();
     test_transition();
+    test_order_labels();
     test_risk();
     test_input_and_invariants();
     printf("%d checks, %d failures\n", checks, failures);

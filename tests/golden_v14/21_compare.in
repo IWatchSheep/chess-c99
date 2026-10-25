@@ -1,0 +1,12 @@
+compare
+compare 2 e2e4
+compare 0 e2e4 d2d4
+compare 2 e2e4 e2e4
+compare 2 e2e5 d2d4
+compare 2 e2e4 d2d4
+fen 6k1/8/4p3/3r4/4P3/1pN5/8/3Q2K1 w - - 0 1
+compare 3 d1d5 d1b3 e4d5
+order 3
+fen 6k1/5ppp/4p3/3r4/4P3/1pN5/5PPP/3Q2K1 w - - 0 1
+compare 3 e4d5 d1d5
+quit

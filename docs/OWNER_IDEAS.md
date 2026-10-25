@@ -1,7 +1,7 @@
 # The owner's calculator ideas, in his words
 
 This is the owner's own list of his calculator ideas, in the order he wrote
-them, recorded exactly as he gave it on 2026-10-25 (nothing corrected; ideas 7 and 8 added the same day). It is
+them, recorded exactly as he gave it on 2026-10-25 (nothing corrected; ideas 7, 8 and 9 added the same day). It is
 the authority for intent. The interpretations by Claude and ChatGPT are kept
 apart, in `docs/reviews/` and in `docs/CALCULATOR_SPEC.md` (Sections 1 and 7);
 where they built on an idea, the version is noted below the list.
@@ -62,6 +62,13 @@ addition calculator idea 8, new idea.
 what's a good trade?
 I am not aware of the best trade. if you list the trades over multiple loops of the different pieces you can see many trades and one might be a low value trade but ends up a good value trade, its a summation over multiple moves.
 }
+
+addition calculator idea 9 (two messages, 2026-10-25)
+{
+there is a for loop in the flow chart that increments the squares, there is a second for loop that increments a motion true or not true that allowed for neural states that is different than on and of, or if and else, go read the zip I gave you to find that reference I think the question fits those two for loops.
+
+thats the one that applies to the question. the increment the queen for loop is the if else if else conditions counting squares moved therefore the other if else if else must be the for loop dictating hunger and thirst.
+}
 ```
 
 Where each idea went (the interpretations, not the owner's words):
@@ -75,4 +82,7 @@ Where each idea went (the interpretations, not the owner's words):
 | 5 | Version 13 (stage 3E) | the capture-value order (`docs/reviews/24`) |
 | 6 | Version 13 (stage 3E) | without a capture the distance order, with a capture the value order (`docs/reviews/25`) |
 | 7 | Version 13 (stage 3E) | one combined list, captures first, then back to the distance order (`order N`; `docs/reviews/26`, `27`) |
+| 9 | Version 14 (stage 3F), as an experiment | the LOOP-1 view (the squares chain) and the LOOP-2 view (the value chain, material, condition) of `compare`; the owner's proposed correspondence with the flowchart's two for loops, a hypothesis (ChatGPT review 39); NEURON-STATE stays UNDEFINED; the two readings of "the increment the queen for loop" are in `docs/FLOWCHART_CROSS_REFERENCE.md`, row 15 |
 | 8 | Version 13 (stage 3E), in part | a trade judged by the material summed over the capture sequence (`exchange`, MATERIAL FORCED / POSSIBLE NONNEGATIVE); captures on one square only so far; "multiple loops of the different pieces" over other squares is kept for later |
+
+The owner's direction for questions that are not yet known (2026-10-25, verbatim): "if you don't know make two versions that you two can look at and talk about to solve new questions."

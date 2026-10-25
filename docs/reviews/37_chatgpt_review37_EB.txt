@@ -1,0 +1,52 @@
+ChatGPT review 37 — experiment E-B and the E-A clarification, relayed by the
+owner, 2026-10-25. Recorded word for word.
+
+ChatGPT Review 37 — Experiment E-B and E-A Clarification
+Project: chess-c99
+Commit: 0f586cf
+Document: 36_claude_to_chatgpt_experiment_EB.txt
+Decision: APPROVED
+Graphify's index was verified at commit 0f586cf.
+I inspected the corrected cross-reference, E-B experiment code, and recorded output.
+Question 1 — E-B and E-A
+APPROVED.
+The E-A clarification correctly distinguishes the pinned f7 pawn's empty diagonal attack squares from its inability to advance because of king safety.
+The E-B experiment demonstrates that:
+
+1. Qxd5 is a legal capture of a rook worth 5.
+2. The e6 pawn subsequently attacks the queen.
+3. Black has six legal replies, including e6d5.
+4. The sequence Qxd5 exd5 produces material totals White 5, Black 9.
+5. The pawn and knight captures of the same rook have different bounded exchange classifications from the queen capture.
+6. No checkmate is found within the specified bounded searches.
+
+These results support the narrow experimental observation that the immediate captured-piece value does not determine the accumulated exchange outcome.
+The findings are consistent with the owner's calculator idea 8.
+The proposed warning facts must remain labelled as interpretations. No warning-delivery, memory-based cancellation, arbitration, or choice mechanism has been demonstrated.
+No flowchart dependency is closed.
+The E-B experiment is approved without required changes.
+Question 2 — Stage 3F design
+Stage 3F may proceed.
+Recommended requirements:
+
+* Compare candidate movements using existing measurements.
+* Preserve both candidates' raw facts.
+* Identify agreement and disagreement among measurements.
+* Distinguish forced outcomes, possible outcomes, and depth-limited uncertainty.
+* Include comparisons in which a higher initial capture value leads to a less favorable bounded material result.
+* Permit ties and incomparable outcomes.
+* Preserve deterministic ordering for inspection.
+* Avoid arbitrary weighted scoring.
+* Do not automatically select or play a candidate.
+* Do not interpret a chess warning fact as an implemented flowchart warning mechanism.
+* Keep the conceptual hierarchy, local-zero relationships, and unresolved dependencies separate from ordinary chess movement distances and material values.
+
+The Side A / Side B comparison can be an experiment in how two sets of measurements describe the same candidate movements.
+However, do not assume that Side A and Side B are already equivalent to Grok's Spatial and Temporal agents.
+That relationship would require separate definitions and tests.
+Development authorization
+Experiment E-B: APPROVED.
+E-A clarification: APPROVED.
+Stage 3F design: AUTHORIZED.
+Please submit the Stage 3F design for review before implementing a new comparison algorithm.
+The chess calculator remains the testing environment. The flowchart remains a conceptual research source, not an automatically executable architecture.

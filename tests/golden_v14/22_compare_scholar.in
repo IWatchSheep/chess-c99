@@ -1,0 +1,9 @@
+fen r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+goal f7 2
+compare 3 d1h5 d1f3 g1f3
+goal off
+fen r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4
+compare 1 h5h7 h5f7
+fen r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1
+compare 1 e1g1 e1c1 e1f1
+quit

@@ -56,6 +56,12 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(exchange_tests PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# Stage 3F tests: comparing candidate moves.
+add_executable(compare_tests tests/compare_tests.c)
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(compare_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 enable_testing()
 add_test(NAME unit_tests COMMAND chess_tests)
 add_test(NAME calc_tests COMMAND calc_tests)
@@ -64,6 +70,7 @@ add_test(NAME loop_tests COMMAND loop_tests)
 add_test(NAME goal_tests COMMAND goal_tests)
 add_test(NAME real_tests COMMAND real_tests)
 add_test(NAME exchange_tests COMMAND exchange_tests)
+add_test(NAME compare_tests COMMAND compare_tests)
 
 # 2. Golden transcripts: complete output on fixed input scripts. tests/golden
 #    was recorded from version 5 (the game), tests/golden_v7 from version 7
@@ -71,14 +78,16 @@ add_test(NAME exchange_tests COMMAND exchange_tests)
 #    from version 9 (the report after a move that ends the game), tests/golden_v10
 #    from version 10 (the loop and trace), tests/golden_v11 from version 11
 #    (goals and routes), tests/golden_v12 from version 12 (REAL routes, support,
-#    the second goal), tests/golden_v13 from version 13 (exchanges and the order). Every
+#    the second goal), tests/golden_v13 from version 13 (exchanges and the order),
+#    tests/golden_v14 from version 14 (compare). Every
 #    later version must print exactly the same.
 file(GLOB golden_inputs "${CMAKE_SOURCE_DIR}/tests/golden/*.in" "${CMAKE_SOURCE_DIR}/tests/golden_v7/*.in"
                         "${CMAKE_SOURCE_DIR}/tests/golden_v8/*.in" "${CMAKE_SOURCE_DIR}/tests/golden_v9/*.in"
                         "${CMAKE_SOURCE_DIR}/tests/golden_v10/*.in"
                         "${CMAKE_SOURCE_DIR}/tests/golden_v11/*.in"
                         "${CMAKE_SOURCE_DIR}/tests/golden_v12/*.in"
-                        "${CMAKE_SOURCE_DIR}/tests/golden_v13/*.in")
+                        "${CMAKE_SOURCE_DIR}/tests/golden_v13/*.in"
+                        "${CMAKE_SOURCE_DIR}/tests/golden_v14/*.in")
 foreach (golden_input ${golden_inputs})
     get_filename_component(golden_name "${golden_input}" NAME_WE)
     get_filename_component(golden_dir "${golden_input}" DIRECTORY)

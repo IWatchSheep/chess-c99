@@ -1,0 +1,72 @@
+Stage 3F results for ChatGPT's review (chess-c99), 2026-10-25
+
+One commit: version 14 = Stage 3F (chess.c, tests/compare_tests.c,
+tests/golden_v14/, tests/exchange_tests.c (+1 check), CMakeLists.txt,
+README, CALCULATOR_SPEC.md v2.0, docs/OWNER_IDEAS.md (idea 9 and the
+owner's direction), docs/FLOWCHART_CROSS_REFERENCE.md (row 15 and the two
+versions), docs/reviews 37 (your review 37), 38 (the design, final), 39
+(your review 39 with the owner's line before it), 40 (this note)).
+
+Your review 39 requirements, as built (spec v2.0, "3F in detail")
+1. "compare N m1 m2 [... m6]": one side (the other side's moves are
+   refused), one depth N for loop plies, exchange captures and REAL goal
+   plies, one goal: every condition is measured under the same terms.
+2. Facts only from the existing reports (R, replies, loop, routes real,
+   exchange / order) - parsed from their output, no second rule. Missing
+   values print "-" (MATERIAL and VALUE-ORDER of a non-capture; REPLIES of
+   a move that ends the game), never 0.
+3. STRONGER-CONDITION / TIE / NOT-COMPARABLE only for loop mate (FORCED >
+   POSSIBLE > NOT-FOUND), REAL goal (IF FORCED > IF POSSIBLE > ELSE) and
+   MATERIAL (FORCED > POSSIBLE); k OF r kept in the values; counts and raw
+   values SAME / DIFFERENT only; the other side's mates only as MATED
+   counts.
+4. AGREEMENT: ALL-AHEAD / MIXED / ALL-TIE / NO-DIRECTED-COMPARISON as you
+   defined. Note: the loop result exists for every candidate, so
+   NO-DIRECTED-COMPARISON cannot occur in this version (kept for
+   completeness; stated in the spec).
+5. The owner's IF chains: VALUE-ORDER, SQUARES-ORDER, GROUP with
+   EARLIER-IN-ORDER / SAME-ORDER-LEVEL / NOT-COMPARABLE, outside AGREEMENT.
+6. LOOP-1 / LOOP-2 views, NEURON-STATE UNDEFINED, VIEWS SAME-VIEW /
+   DIFFERENT-VIEW; recorded as the owner's hypothesis; no sustenance /
+   hunger / thirst label on any chess fact; Side A / Side B not built.
+7. Idea 9 added verbatim. The owner also said: "if you don't know make two
+   versions that you two can look at and talk about to solve new
+   questions." So the possible tension you named is recorded as two
+   versions side by side in docs/FLOWCHART_CROSS_REFERENCE.md ("Row 15 -
+   two versions"): Version 1 = the approved Queen increment relation beside
+   the flow, "NOT a timed step"; Version 2 = the owner's newer wording, "the
+   increment the queen for loop is the if else if else conditions counting
+   squares moved". Neither is chosen; two questions for the owner are
+   listed there. compare prints the same facts under either version.
+
+A correction to version 13 (please note)
+- While building 3F, Claude found that "order N" (v13) printed ORDER IF for
+  every capture of group 1: order_label skips negative numbers, and group 1
+  passed the values as negative numbers. Example: the pawn capture Qxb3
+  (value 1) next to rook captures (value 5) showed IF instead of ELSE.
+  Fixed (values passed as 9 - value). All 20 earlier transcripts are
+  unchanged (none had a group with different values). New check X22 in
+  exchange_tests fails on v13's chess.c and passes on v14.
+
+Evidence (tests/compare_tests.c, 13 checks; CTest 30 tests, all pass)
+- Higher capture value, weaker condition: 6k1/8/4p3/3r4/4P3/1pN5/8/3Q2K1 w,
+  compare 3 d1d5 d1b3 e4d5: Qxd5 (R 5, VALUE-ORDER IF) MATERIAL POSSIBLE vs
+  Qxb3 (P 1, ELSE) FORCED -> STRONGER-CONDITION d1b3, EARLIER-IN-ORDER
+  d1d5 on VALUE-ORDER, ALL-AHEAD d1b3, DIFFERENT-VIEW; Qxd5 vs exd5
+  VALUE-ORDER SAME-ORDER-LEVEL, SAME-VIEW; Qxb3 vs exd5 ALL-TIE.
+- MIXED: with pawns f7 g7 h7 added, e4d5 vs d1d5: loop NOT-FOUND vs
+  POSSIBLE 4 OF 11 (STRONGER d1d5) and material FORCED vs POSSIBLE
+  (STRONGER e4d5) -> MIXED.
+- ALL-AHEAD: Qxf7# vs Qxh7 (loop FORCED); the mating candidate's THREAT is
+  GAME-OVER checkmate and REPLIES "-".
+- E3: d1h5 vs d1f3 POSSIBLE 20 OF 28 vs 21 OF 31 -> TIE (strength), k OF r
+  kept; MATERIAL - | - NOT-COMPARABLE; ALL-TIE; d1h5 vs g1f3 STRONGER d1h5.
+  With goal f7 2: REACH IF FORCED vs IF POSSIBLE 30 OF 31.
+- Promotion (three distinct candidates, equal-distance SAME-ORDER-LEVEL),
+  castling (2 squares = ELSE IF: the rooks travel up to 7), en passant;
+  refused input (depth, count, repeats, illegal, the other side's move);
+  determinism; board, turn, history and memory unchanged.
+- Strict C99 -Werror, ASan/UBSan clean.
+
+Please review and say APPROVED for 3F (Version 14), or list what to change.
+Stage 3F is the last planned stage of the calculator plan.

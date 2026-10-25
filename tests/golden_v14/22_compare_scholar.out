@@ -1,0 +1,527 @@
+=== Simple 2-Player Chess ===
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): FEN loaded: practice position set up.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): GOAL ACTIVE f7 LIMIT 2 PASS
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): COMPARE BEGIN White DEPTH 3 CANDIDATES d1h5 d1f3 g1f3
+NOTE measurements only: no weights, no move is chosen or played; STRONGER-CONDITION compares the strength of one stated condition, not the quality of a move
+NOTE the same side to move, one depth (3) and one goal for every candidate, so every condition is measured under the same terms
+GOAL f7 REAL DEPTH 3
+CANDIDATE d1h5
+FACT R-COUNT White U1 4 U2 1 U3 1 GAINED 11 RESTORED 0 OPENED 7
+FACT R-COUNT Black U1 5 U2 3 U3 2 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White h5f7
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 1 PROTECT- 4 ATTACK+ 3 ATTACK- 0
+FACT THREAT White h5f7
+FACT REPLIES 28 STOPS 8 LEAVES 20 NO-THREAT 0 ALLOWS 0
+FACT LOOP POSSIBLE 20 OF 28 MATED White 0 Black 22 LIMIT 3
+FACT GOAL f7 REACH CONDITION IF FORCED
+FACT GOAL f7 PROTECTED CONDITION IF POSSIBLE 26 OF 28
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 4 ELSE
+FACT GROUP 2 DISTANCE ELSE
+VIEW LOOP-1 SQUARES 4 ORDER ELSE STOP h5 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+CANDIDATE d1f3
+FACT R-COUNT White U1 5 U2 4 U3 1 GAINED 13 RESTORED 0 OPENED 4
+FACT R-COUNT Black U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White f3f7
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 5 PROTECT- 4 ATTACK+ 1 ATTACK- 0
+FACT THREAT White f3f7
+FACT REPLIES 31 STOPS 10 LEAVES 21 NO-THREAT 0 ALLOWS 0
+FACT LOOP POSSIBLE 21 OF 31 MATED White 0 Black 23 LIMIT 3
+FACT GOAL f7 REACH CONDITION IF FORCED
+FACT GOAL f7 PROTECTED CONDITION IF POSSIBLE 26 OF 31
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 2 DISTANCE ELSE IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP f3 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+CANDIDATE g1f3
+FACT R-COUNT White U1 4 U2 8 U3 3 GAINED 8 RESTORED 0 OPENED 3
+FACT R-COUNT Black U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 4 PROTECT- 1 ATTACK+ 1 ATTACK- 0
+FACT THREAT White none
+FACT REPLIES 31 STOPS 0 LEAVES 0 NO-THREAT 31 ALLOWS 0
+FACT LOOP NOT-FOUND MATED White 0 Black 0 LIMIT 3
+FACT GOAL f7 REACH CONDITION IF POSSIBLE 30 OF 31
+FACT GOAL f7 PROTECTED CONDITION ELSE
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 2 DISTANCE ELSE IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP f3 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+PAIR d1h5 d1f3
+COMPARE d1h5 d1f3 R-COUNT-White U1 4 U2 1 U3 1 GAINED 11 RESTORED 0 OPENED 7 | U1 5 U2 4 U3 1 GAINED 13 RESTORED 0 OPENED 4 DIFFERENT
+COMPARE d1h5 d1f3 R-COUNT-Black U1 5 U2 3 U3 2 GAINED 0 RESTORED 0 OPENED 0 | U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 DIFFERENT
+COMPARE d1h5 d1f3 CHECK none | none SAME
+COMPARE d1h5 d1f3 MATE1-White h5f7 | f3f7 DIFFERENT
+COMPARE d1h5 d1f3 MATE1-Black none | none SAME
+COMPARE d1h5 d1f3 LINKS 1 4 3 0 | 5 4 1 0 DIFFERENT
+COMPARE d1h5 d1f3 THREAT White h5f7 | White f3f7 DIFFERENT
+COMPARE d1h5 d1f3 REPLIES 28 STOPS 8 LEAVES 20 NO-THREAT 0 ALLOWS 0 | 31 STOPS 10 LEAVES 21 NO-THREAT 0 ALLOWS 0 DIFFERENT
+COMPARE d1h5 d1f3 LOOP-MATED MATED White 0 Black 22 | MATED White 0 Black 23 DIFFERENT
+COMPARE d1h5 d1f3 LOOP POSSIBLE 20 OF 28 | POSSIBLE 21 OF 31 TIE
+COMPARE d1h5 d1f3 GOAL-f7-REACH CONDITION IF FORCED | CONDITION IF FORCED TIE
+COMPARE d1h5 d1f3 GOAL-f7-PROTECTED CONDITION IF POSSIBLE 26 OF 28 | CONDITION IF POSSIBLE 26 OF 31 TIE
+COMPARE d1h5 d1f3 MATERIAL - | - NOT-COMPARABLE
+COMPARE d1h5 d1f3 CAPTURE none | none SAME
+COMPARE d1h5 d1f3 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE d1h5 d1f3 SQUARES-ORDER 4 ELSE | 2 ELSE IF EARLIER-IN-ORDER d1f3
+COMPARE d1h5 d1f3 GROUP 2 ELSE | 2 ELSE IF EARLIER-IN-ORDER d1f3
+AGREEMENT d1h5 d1f3 ALL-TIE
+VIEWS d1h5 d1f3 LOOP-1 d1f3 LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+PAIR d1h5 g1f3
+COMPARE d1h5 g1f3 R-COUNT-White U1 4 U2 1 U3 1 GAINED 11 RESTORED 0 OPENED 7 | U1 4 U2 8 U3 3 GAINED 8 RESTORED 0 OPENED 3 DIFFERENT
+COMPARE d1h5 g1f3 R-COUNT-Black U1 5 U2 3 U3 2 GAINED 0 RESTORED 0 OPENED 0 | U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 DIFFERENT
+COMPARE d1h5 g1f3 CHECK none | none SAME
+COMPARE d1h5 g1f3 MATE1-White h5f7 | none DIFFERENT
+COMPARE d1h5 g1f3 MATE1-Black none | none SAME
+COMPARE d1h5 g1f3 LINKS 1 4 3 0 | 4 1 1 0 DIFFERENT
+COMPARE d1h5 g1f3 THREAT White h5f7 | White none DIFFERENT
+COMPARE d1h5 g1f3 REPLIES 28 STOPS 8 LEAVES 20 NO-THREAT 0 ALLOWS 0 | 31 STOPS 0 LEAVES 0 NO-THREAT 31 ALLOWS 0 DIFFERENT
+COMPARE d1h5 g1f3 LOOP-MATED MATED White 0 Black 22 | MATED White 0 Black 0 DIFFERENT
+COMPARE d1h5 g1f3 LOOP POSSIBLE 20 OF 28 | NOT-FOUND STRONGER-CONDITION d1h5
+COMPARE d1h5 g1f3 GOAL-f7-REACH CONDITION IF FORCED | CONDITION IF POSSIBLE 30 OF 31 STRONGER-CONDITION d1h5
+COMPARE d1h5 g1f3 GOAL-f7-PROTECTED CONDITION IF POSSIBLE 26 OF 28 | CONDITION ELSE STRONGER-CONDITION d1h5
+COMPARE d1h5 g1f3 MATERIAL - | - NOT-COMPARABLE
+COMPARE d1h5 g1f3 CAPTURE none | none SAME
+COMPARE d1h5 g1f3 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE d1h5 g1f3 SQUARES-ORDER 4 ELSE | 2 ELSE IF EARLIER-IN-ORDER g1f3
+COMPARE d1h5 g1f3 GROUP 2 ELSE | 2 ELSE IF EARLIER-IN-ORDER g1f3
+AGREEMENT d1h5 g1f3 ALL-AHEAD d1h5
+VIEWS d1h5 g1f3 LOOP-1 g1f3 LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+PAIR d1f3 g1f3
+COMPARE d1f3 g1f3 R-COUNT-White U1 5 U2 4 U3 1 GAINED 13 RESTORED 0 OPENED 4 | U1 4 U2 8 U3 3 GAINED 8 RESTORED 0 OPENED 3 DIFFERENT
+COMPARE d1f3 g1f3 R-COUNT-Black U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 | U1 4 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 SAME
+COMPARE d1f3 g1f3 CHECK none | none SAME
+COMPARE d1f3 g1f3 MATE1-White f3f7 | none DIFFERENT
+COMPARE d1f3 g1f3 MATE1-Black none | none SAME
+COMPARE d1f3 g1f3 LINKS 5 4 1 0 | 4 1 1 0 DIFFERENT
+COMPARE d1f3 g1f3 THREAT White f3f7 | White none DIFFERENT
+COMPARE d1f3 g1f3 REPLIES 31 STOPS 10 LEAVES 21 NO-THREAT 0 ALLOWS 0 | 31 STOPS 0 LEAVES 0 NO-THREAT 31 ALLOWS 0 DIFFERENT
+COMPARE d1f3 g1f3 LOOP-MATED MATED White 0 Black 23 | MATED White 0 Black 0 DIFFERENT
+COMPARE d1f3 g1f3 LOOP POSSIBLE 21 OF 31 | NOT-FOUND STRONGER-CONDITION d1f3
+COMPARE d1f3 g1f3 GOAL-f7-REACH CONDITION IF FORCED | CONDITION IF POSSIBLE 30 OF 31 STRONGER-CONDITION d1f3
+COMPARE d1f3 g1f3 GOAL-f7-PROTECTED CONDITION IF POSSIBLE 26 OF 31 | CONDITION ELSE STRONGER-CONDITION d1f3
+COMPARE d1f3 g1f3 MATERIAL - | - NOT-COMPARABLE
+COMPARE d1f3 g1f3 CAPTURE none | none SAME
+COMPARE d1f3 g1f3 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE d1f3 g1f3 SQUARES-ORDER 2 ELSE IF | 2 ELSE IF SAME-ORDER-LEVEL
+COMPARE d1f3 g1f3 GROUP 2 ELSE IF | 2 ELSE IF SAME-ORDER-LEVEL
+AGREEMENT d1f3 g1f3 ALL-AHEAD d1f3
+VIEWS d1f3 g1f3 LOOP-1 SAME-LEVEL LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+COMPARE END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): Goal cleared.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m Q [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): FEN loaded: practice position set up.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m Q [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): COMPARE BEGIN White DEPTH 1 CANDIDATES h5h7 h5f7
+NOTE measurements only: no weights, no move is chosen or played; STRONGER-CONDITION compares the strength of one stated condition, not the quality of a move
+NOTE the same side to move, one depth (1) and one goal for every candidate, so every condition is measured under the same terms
+CANDIDATE h5h7
+FACT R-COUNT White U1 4 U2 8 U3 3 GAINED 4 RESTORED 0 OPENED 4
+FACT R-COUNT Black U1 4 U2 0 U3 1 GAINED 2 RESTORED 0 OPENED 1
+FACT CHECK none
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 1 PROTECT- 2 ATTACK+ 3 ATTACK- 3
+FACT THREAT White none
+FACT REPLIES 29 STOPS 0 LEAVES 0 NO-THREAT 27 ALLOWS 2
+FACT LOOP NOT-FOUND MATED White 0 Black 0 LIMIT 1
+FACT CAPTURE P VALUE 1
+FACT MATERIAL FORCED NONNEGATIVE BOUNDED
+FACT VALUE-ORDER IF
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 1 CAPTURE FORCED IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP h7 CAPTURE
+VIEW LOOP-2 VALUE 1 ORDER IF MATERIAL FORCED NONNEGATIVE BOUNDED
+NEURON-STATE UNDEFINED
+CANDIDATE h5f7
+FACT R-COUNT White U1 4 U2 13 U3 6 GAINED 9 RESTORED 0 OPENED 7
+FACT R-COUNT Black U1 15 U2 28 U3 19 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK Black
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 2 PROTECT- 2 ATTACK+ 5 ATTACK- 5
+FACT THREAT GAME-OVER checkmate
+FACT REPLIES -
+FACT LOOP FORCED MATED White 0 Black 1 LIMIT 1
+FACT CAPTURE P VALUE 1
+FACT MATERIAL FORCED NONNEGATIVE
+FACT VALUE-ORDER IF
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 1 CAPTURE FORCED IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP f7 CAPTURE
+VIEW LOOP-2 VALUE 1 ORDER IF MATERIAL FORCED NONNEGATIVE
+NEURON-STATE UNDEFINED
+PAIR h5h7 h5f7
+COMPARE h5h7 h5f7 R-COUNT-White U1 4 U2 8 U3 3 GAINED 4 RESTORED 0 OPENED 4 | U1 4 U2 13 U3 6 GAINED 9 RESTORED 0 OPENED 7 DIFFERENT
+COMPARE h5h7 h5f7 R-COUNT-Black U1 4 U2 0 U3 1 GAINED 2 RESTORED 0 OPENED 1 | U1 15 U2 28 U3 19 GAINED 0 RESTORED 0 OPENED 0 DIFFERENT
+COMPARE h5h7 h5f7 CHECK none | Black DIFFERENT
+COMPARE h5h7 h5f7 MATE1-White none | none SAME
+COMPARE h5h7 h5f7 MATE1-Black none | none SAME
+COMPARE h5h7 h5f7 LINKS 1 2 3 3 | 2 2 5 5 DIFFERENT
+COMPARE h5h7 h5f7 THREAT White none | GAME-OVER checkmate DIFFERENT
+COMPARE h5h7 h5f7 REPLIES 29 STOPS 0 LEAVES 0 NO-THREAT 27 ALLOWS 2 | - DIFFERENT
+COMPARE h5h7 h5f7 LOOP-MATED MATED White 0 Black 0 | MATED White 0 Black 1 DIFFERENT
+COMPARE h5h7 h5f7 LOOP NOT-FOUND | FORCED STRONGER-CONDITION h5f7
+COMPARE h5h7 h5f7 MATERIAL FORCED NONNEGATIVE | FORCED NONNEGATIVE TIE
+COMPARE h5h7 h5f7 CAPTURE P 1 | P 1 SAME
+COMPARE h5h7 h5f7 VALUE-ORDER IF | IF SAME-ORDER-LEVEL
+COMPARE h5h7 h5f7 SQUARES-ORDER 2 ELSE IF | 2 ELSE IF SAME-ORDER-LEVEL
+COMPARE h5h7 h5f7 GROUP 1 IF | 1 IF SAME-ORDER-LEVEL
+AGREEMENT h5h7 h5f7 ALL-AHEAD h5f7
+VIEWS h5h7 h5f7 LOOP-1 SAME-LEVEL LOOP-2 SAME-LEVEL SAME-VIEW
+COMPARE END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m b [0m|[48;5;94m[38;5;231m q [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m b [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m p [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m p [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m n [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m n [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m p [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m Q [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m B [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m P [0m|[48;5;180m[38;5;232m P [0m|[48;5;94m[38;5;231m P [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m N [0m|[48;5;94m[38;5;231m B [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m N [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): FEN loaded: practice position set up.
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): COMPARE BEGIN White DEPTH 1 CANDIDATES e1g1 e1c1 e1f1
+NOTE measurements only: no weights, no move is chosen or played; STRONGER-CONDITION compares the strength of one stated condition, not the quality of a move
+NOTE the same side to move, one depth (1) and one goal for every candidate, so every condition is measured under the same terms
+CANDIDATE e1g1
+FACT R-COUNT White U1 0 U2 15 U3 11 GAINED 13 RESTORED 0 OPENED 8
+FACT R-COUNT Black U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 3 PROTECT- 0 ATTACK+ 0 ATTACK- 2
+FACT THREAT White none
+FACT REPLIES 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0
+FACT LOOP NOT-FOUND MATED White 0 Black 0 LIMIT 1
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 2 DISTANCE ELSE IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP g1 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+CANDIDATE e1c1
+FACT R-COUNT White U1 0 U2 16 U3 11 GAINED 14 RESTORED 0 OPENED 9
+FACT R-COUNT Black U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 3 PROTECT- 0 ATTACK+ 0 ATTACK- 2
+FACT THREAT White none
+FACT REPLIES 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0
+FACT LOOP NOT-FOUND MATED White 0 Black 0 LIMIT 1
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 2 ELSE IF
+FACT GROUP 2 DISTANCE ELSE IF
+VIEW LOOP-1 SQUARES 2 ORDER ELSE IF STOP c1 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+CANDIDATE e1f1
+FACT R-COUNT White U1 0 U2 5 U3 2 GAINED 3 RESTORED 0 OPENED 2
+FACT R-COUNT Black U1 0 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0
+FACT CHECK none
+FACT MATE1 White none
+FACT MATE1 Black none
+FACT LINKS PROTECT+ 0 PROTECT- 0 ATTACK+ 0 ATTACK- 0
+FACT THREAT White none
+FACT REPLIES 26 STOPS 0 LEAVES 0 NO-THREAT 26 ALLOWS 0
+FACT LOOP NOT-FOUND MATED White 0 Black 0 LIMIT 1
+FACT CAPTURE none
+FACT MATERIAL -
+FACT VALUE-ORDER none
+FACT SQUARES-ORDER 1 IF
+FACT GROUP 2 DISTANCE IF
+VIEW LOOP-1 SQUARES 1 ORDER IF STOP f1 EMPTY
+VIEW LOOP-2 VALUE none ORDER none MATERIAL -
+NEURON-STATE UNDEFINED
+PAIR e1g1 e1c1
+COMPARE e1g1 e1c1 R-COUNT-White U1 0 U2 15 U3 11 GAINED 13 RESTORED 0 OPENED 8 | U1 0 U2 16 U3 11 GAINED 14 RESTORED 0 OPENED 9 DIFFERENT
+COMPARE e1g1 e1c1 R-COUNT-Black U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0 | U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0 SAME
+COMPARE e1g1 e1c1 CHECK none | none SAME
+COMPARE e1g1 e1c1 MATE1-White none | none SAME
+COMPARE e1g1 e1c1 MATE1-Black none | none SAME
+COMPARE e1g1 e1c1 LINKS 3 0 0 2 | 3 0 0 2 SAME
+COMPARE e1g1 e1c1 THREAT White none | White none SAME
+COMPARE e1g1 e1c1 REPLIES 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0 | 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0 SAME
+COMPARE e1g1 e1c1 LOOP-MATED MATED White 0 Black 0 | MATED White 0 Black 0 SAME
+COMPARE e1g1 e1c1 LOOP NOT-FOUND | NOT-FOUND TIE
+COMPARE e1g1 e1c1 MATERIAL - | - NOT-COMPARABLE
+COMPARE e1g1 e1c1 CAPTURE none | none SAME
+COMPARE e1g1 e1c1 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE e1g1 e1c1 SQUARES-ORDER 2 ELSE IF | 2 ELSE IF SAME-ORDER-LEVEL
+COMPARE e1g1 e1c1 GROUP 2 ELSE IF | 2 ELSE IF SAME-ORDER-LEVEL
+AGREEMENT e1g1 e1c1 ALL-TIE
+VIEWS e1g1 e1c1 LOOP-1 SAME-LEVEL LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+PAIR e1g1 e1f1
+COMPARE e1g1 e1f1 R-COUNT-White U1 0 U2 15 U3 11 GAINED 13 RESTORED 0 OPENED 8 | U1 0 U2 5 U3 2 GAINED 3 RESTORED 0 OPENED 2 DIFFERENT
+COMPARE e1g1 e1f1 R-COUNT-Black U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0 | U1 0 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 DIFFERENT
+COMPARE e1g1 e1f1 CHECK none | none SAME
+COMPARE e1g1 e1f1 MATE1-White none | none SAME
+COMPARE e1g1 e1f1 MATE1-Black none | none SAME
+COMPARE e1g1 e1f1 LINKS 3 0 0 2 | 0 0 0 0 DIFFERENT
+COMPARE e1g1 e1f1 THREAT White none | White none SAME
+COMPARE e1g1 e1f1 REPLIES 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0 | 26 STOPS 0 LEAVES 0 NO-THREAT 26 ALLOWS 0 DIFFERENT
+COMPARE e1g1 e1f1 LOOP-MATED MATED White 0 Black 0 | MATED White 0 Black 0 SAME
+COMPARE e1g1 e1f1 LOOP NOT-FOUND | NOT-FOUND TIE
+COMPARE e1g1 e1f1 MATERIAL - | - NOT-COMPARABLE
+COMPARE e1g1 e1f1 CAPTURE none | none SAME
+COMPARE e1g1 e1f1 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE e1g1 e1f1 SQUARES-ORDER 2 ELSE IF | 1 IF EARLIER-IN-ORDER e1f1
+COMPARE e1g1 e1f1 GROUP 2 ELSE IF | 2 IF EARLIER-IN-ORDER e1f1
+AGREEMENT e1g1 e1f1 ALL-TIE
+VIEWS e1g1 e1f1 LOOP-1 e1f1 LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+PAIR e1c1 e1f1
+COMPARE e1c1 e1f1 R-COUNT-White U1 0 U2 16 U3 11 GAINED 14 RESTORED 0 OPENED 9 | U1 0 U2 5 U3 2 GAINED 3 RESTORED 0 OPENED 2 DIFFERENT
+COMPARE e1c1 e1f1 R-COUNT-Black U1 0 U2 3 U3 1 GAINED 0 RESTORED 0 OPENED 0 | U1 0 U2 0 U3 0 GAINED 0 RESTORED 0 OPENED 0 DIFFERENT
+COMPARE e1c1 e1f1 CHECK none | none SAME
+COMPARE e1c1 e1f1 MATE1-White none | none SAME
+COMPARE e1c1 e1f1 MATE1-Black none | none SAME
+COMPARE e1c1 e1f1 LINKS 3 0 0 2 | 0 0 0 0 DIFFERENT
+COMPARE e1c1 e1f1 THREAT White none | White none SAME
+COMPARE e1c1 e1f1 REPLIES 23 STOPS 0 LEAVES 0 NO-THREAT 23 ALLOWS 0 | 26 STOPS 0 LEAVES 0 NO-THREAT 26 ALLOWS 0 DIFFERENT
+COMPARE e1c1 e1f1 LOOP-MATED MATED White 0 Black 0 | MATED White 0 Black 0 SAME
+COMPARE e1c1 e1f1 LOOP NOT-FOUND | NOT-FOUND TIE
+COMPARE e1c1 e1f1 MATERIAL - | - NOT-COMPARABLE
+COMPARE e1c1 e1f1 CAPTURE none | none SAME
+COMPARE e1c1 e1f1 VALUE-ORDER none | none NOT-COMPARABLE
+COMPARE e1c1 e1f1 SQUARES-ORDER 2 ELSE IF | 1 IF EARLIER-IN-ORDER e1f1
+COMPARE e1c1 e1f1 GROUP 2 ELSE IF | 2 IF EARLIER-IN-ORDER e1f1
+AGREEMENT e1c1 e1f1 ALL-TIE
+VIEWS e1c1 e1f1 LOOP-1 e1f1 LOOP-2 NOT-COMPARABLE NOT-COMPARABLE
+COMPARE END
+
+    a   b   c   d   e   f   g   h
+  +---+---+---+---+---+---+---+---+
+8 |[48;5;180m[38;5;232m r [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m k [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m r [0m| 8
+  +---+---+---+---+---+---+---+---+
+7 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 7
+  +---+---+---+---+---+---+---+---+
+6 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 6
+  +---+---+---+---+---+---+---+---+
+5 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 5
+  +---+---+---+---+---+---+---+---+
+4 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 4
+  +---+---+---+---+---+---+---+---+
+3 |[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m| 3
+  +---+---+---+---+---+---+---+---+
+2 |[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m| 2
+  +---+---+---+---+---+---+---+---+
+1 |[48;5;94m[38;5;231m R [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m K [0m|[48;5;180m[38;5;232m   [0m|[48;5;94m[38;5;231m   [0m|[48;5;180m[38;5;232m R [0m| 1
+  +---+---+---+---+---+---+---+---+
+    a   b   c   d   e   f   g   h
+
+STEP 2: Select, preview, then explicitly finalize a chess move.
+Characters 1-2: enter a piece square (e.g. d2), then Enter.
+Every move requires a preview followed by F + Enter.
+Other commands: restart, quit, claim, resign
+White - enter START square (characters 1-2): 
