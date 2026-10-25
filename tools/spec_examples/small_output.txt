@@ -1,0 +1,7 @@
+K+Q vs K                       forced mate within 1 White moves: no (25 positions, 0.00 s)
+K+Q vs K                       forced mate within 2 White moves: YES (50 positions, 0.00 s)
+K+R vs K                       forced mate within 1 White moves: YES (12 positions, 0.00 s)
+Scholar corner: K+Q+B vs K+P   forced mate within 1 White moves: no (31 positions, 0.00 s)
+Scholar corner: K+Q+B vs K+P   forced mate within 2 White moves: no (1045 positions, 0.00 s)
+Scholar corner: K+Q+B vs K+P   forced mate within 3 White moves: no (34537 positions, 0.04 s)
+after 1.e4 e5, loops of 5 plies: 2961 sequences end in mate (23027889 positions, 118.8 s)

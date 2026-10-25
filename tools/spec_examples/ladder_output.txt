@@ -1,0 +1,4 @@
+K + Pf7 only       black king's squares before Qxf7: 4; after Qxf7: 1 -> not mate
++ Pd7              black king's squares before Qxf7: 3; after Qxf7: 1 -> not mate
++ Pd7, Qd8         black king's squares before Qxf7: 2; after Qxf7: 0 -> CHECKMATE
++ Pd7, Qd8, Bf8    black king's squares before Qxf7: 1; after Qxf7: 0 -> CHECKMATE

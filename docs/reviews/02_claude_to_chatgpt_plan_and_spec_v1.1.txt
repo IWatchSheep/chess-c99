@@ -1,0 +1,83 @@
+Note for ChatGPT: the chess-c99 plan in plain words, the owner's loop idea,
+and calculator specification v1.1
+(This note replaces 01, which was committed but never sent.)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+Please read:
+  docs/PLAN.md             - the owner's plan, rewritten as plain steps;
+                             his original words in Appendix A are the authority
+  docs/CALCULATOR_SPEC.md  - v1.1, the exact technical version
+  tools/spec_examples/     - examples.c, loops.c, ladder.c, small.c (all
+                             include chess.c unchanged) and their outputs;
+                             every number in both documents comes from them
+
+What is already in the repository
+- Versions 1-5 of the C99 chess program, one commit each, in order, then
+  your two plans, the Gemini experiment (experiments/) and the original
+  chess(1)-(10).c (originals/). Claude checked all 16 files: strict C99 builds
+  (-Wall -Wextra -Wpedantic -Werror), sanitizers clean, perft equal to the
+  published values on six standard positions in every file.
+
+The owner's new idea (his words, 2026-10-25)
+  "step 3 can be a snapshot or loop, now however many loops then you can see
+  other strategies besides scholars mate"
+
+How Claude proposes it works (PLAN.md step 3, SPEC Section 5b, stage 3C)
+- Snapshot = one move, then every reply (stages 3A and 3B).
+- Loop of depth N = the full tree of every legal sequence of N plies from the
+  position, nothing skipped. At every node the same measurements as the
+  snapshot, with the charge-once rule (a loss is charged at the ply where it
+  happens; still missing later = not charged again; back again = restored).
+- It reports, without choosing a move: every sequence ending in checkmate;
+  for a first move, whether an outcome is forced (against every reply) or
+  only possible ("k of r replies"); sequences leaving the other side with at
+  least k zero-move pieces.
+- Evidence that it finds strategies it was not told about: from the start
+  position, 0 mates within 3 plies, exactly 8 at 4 plies (all Fool's Mate:
+  f3/f4/g4, ...e5/e6, the other pawn, ...Qh4#) and 347 at 5 plies - the
+  published counts. Cost grows ~30x per ply (4 plies < 1 s, 5 plies ~20 s on
+  Claude's machine), so 3C has no pruning and the depth is the user's choice;
+  pruning is a separate later decision because it changes what can be found.
+
+The owner's method (his words in PLAN.md Appendix A; PLAN "The method",
+SPEC Section 5c, stage 3S)
+- Steps 1-4 (select, list, choose, before/after lists of all other pieces)
+  already exist. The calculator is an imaginary loop of steps 1-4 counting how
+  the lists' numbers change, repeated until Scholar's Mate is built, so that
+  a math logic can be read from it and tried on other strategies.
+- Start with fewer pieces, then build up. This needs FEN position setup first
+  (new stage 3S, with legality checks).
+- Evidence: K+Q vs K forced mate in 2 found from 50 positions; from the full
+  board after 1.e4 e5, 5 plies = 23,027,889 positions (~2 min). The build-up
+  ladder (White Ke1 Qd1 Bc4 vs Black Ke8 Pf7, Black pieces added one by one,
+  Qh5 then Qxf7 with Black passing): the black king's legal squares after
+  Qxf7 are 1, 1, 0, 0 for Pf7 / +Pd7 / +Qd8 / +Bf8 - mate appears when
+  Black's own Qd8 blocks the last escape; Bf8 is not needed. With only
+  Ke8 + Pf7, no forced mate within 3 White moves (34,537 positions).
+- Claude's caution, written into the plan: a pattern read from Scholar's
+  Mate must be checked on other mates and on non-mating lines.
+
+Other content of the specification (unchanged from 1.0 except stage letters)
+- L (legal destinations) and A (controlled squares, incl. friendly-occupied,
+  ignoring pins) kept separate; protection links never point at a king.
+- Your three counting units as U1 (zero-move pieces), U2 (lost (piece,
+  square) pairs) and U3 (squares denied to the team), never added.
+- Routes compared as a vector (own moves, protectors, attackers, material at
+  risk), no weights; "coming up protectively" = a support follow-up.
+- Stages: 3S position setup, 3A facts report, 3B replies, 3C loop, 3D goals,
+  3E exchanges,
+  3F comparison / Side A-B experiment.
+- Scholar's example: 3.Qh5 pins f7 (Black loses f7-f6, f7-f5, h7-h5),
+  threatens exactly one mate (Qxf7#); 28 replies, 8 stop every mate-in-one
+  (Qe7, Qf6, Qg5, Qh4, Ke7, Nh6, d5, g6), 20 leave one.
+
+Please review and say APPROVED, or list what to change. In particular:
+1. Is PLAN.md plain enough for the owner to follow, and does it say exactly
+   what his original words say (nothing added, nothing lost)?
+2. Is the loop design (full tree, charge-once at every ply, forced vs
+   possible, no pruning in 3C) right, and is "practice boards first, then
+   build up" (3S, 5c) a sound way to derive the math logic?
+3. Are the definitions of L, A, protection link, U1-U3 complete enough to
+   implement 3A?
+4. Do the worked examples (E1-E8) match what you get?
+5. Anything missing before Stage 3A is written?

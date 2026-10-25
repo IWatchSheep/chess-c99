@@ -1,10 +1,10 @@
-# Chess calculator — specification v1.0 (for review)
+# Chess calculator — specification v1.1 (for review)
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
-| **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. |
+| **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
 | **Status** | **Draft for review by ChatGPT and the owner.** No code is written until it is agreed. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
@@ -22,9 +22,9 @@ Done: versions 2–5.
 
 ## 2. Principles
 
-1. **Facts first, judgement later.** The first stages only *measure*: exact sets and counts computed from the rules. No stage before 3E chooses a move or adds weights.
+1. **Facts first, judgement later.** The first stages only *measure*: exact sets and counts computed from the rules. No stage before 3F chooses a move or adds weights.
 2. **The rules are version 5's.** Every measurement uses version 5's legal-move code. It is verified: its perft counts match the published values on six standard positions (README).
-3. **Every number is reproducible.** Each worked example in Section 8 was computed by `tools/spec_examples/examples.c`, which includes `chess.c` unchanged; its output is `tools/spec_examples/examples_output.txt`.
+3. **Every number is reproducible.** Each worked example in Section 8 was computed by a program in `tools/spec_examples/` (`examples.c`, `loops.c`, `ladder.c`, `small.c`), each including `chess.c` unchanged; their outputs are the `*_output.txt` files beside them.
 4. **Nothing is summed across different units.** Pieces, (piece, square) pairs and squares are counted separately (Section 4).
 5. **Preview never changes the real game.** The calculator works on copies of the board, as version 5's preview does.
 
@@ -91,6 +91,27 @@ The replies are listed **all**, sorted into "stops every mate-in-one threat" and
 
 **Roles reversed.** "Now count for offensive" is the same report made from the other side's view.
 
+## 5b. The loop (several moves ahead)
+
+The owner (2026-10-25): "step 3 can be a snapshot or loop, now however many loops then you can see other strategies besides scholars mate".
+
+**Snapshot** = Section 5: one move, then every reply. **Loop of depth N** = the same, repeated: the tree of every legal sequence of N plies (half-moves) from position B, with no move skipped.
+
+At every node of the tree the Section 5 measurements are made against the position just before it (charge-once rule of Section 4: a loss is charged at the ply where it happens, a pair still missing later is not charged again, a pair that comes back is reported as restored).
+
+The loop reports, without choosing a move:
+- **every sequence ending in checkmate** within N plies, with the mated side;
+- for a first move m: whether a mate (or another outcome) is **forced** — reached against *every* reply — or only **possible** if the other side errs; reported as "forced within N plies", "possible in k of r replies", or "not found within N plies";
+- sequences after which the other side has at least k zero-move pieces (k given by the user).
+
+**Cost.** The number of nodes grows by about 30 per ply (from the start: 20, 400, 8,902, 197,281, 4,865,609 for N = 1 to 5). Stage 3C has no pruning: depth is the user's choice, and the report says the depth searched. Pruning or move ordering is a separate later decision, because it changes what can be found.
+
+## 5c. Method: practice boards first (owner, 2026-10-25)
+
+The loop is developed and tested on **practice boards** with few pieces before the full board, because the tree is small and every result can be checked by hand; pieces are then added back one at a time ("build-up ladder"). The math logic is read from how the measurements of Sections 4–5 change along a known strategy (Scholar's Mate), then checked on other strategies (Fool's Mate) and on sequences that do not end in mate, before it is trusted.
+
+This needs one new ability before 3A: **position setup from text** (FEN), with its legality checks (exactly one king per side, the side not to move not in check, pawns not on the first or last rank, castling and en passant fields consistent).
+
 ## 6. Routes to a goal, and "width"
 
 **Route length (one piece).** The smallest number of moves of that piece alone to reach goal G, the other side passing and the other pieces staying where they are. Reported per piece. This is the "one long piece" route.
@@ -113,15 +134,17 @@ Each stage is a separate new version of `chess.c`, built only after the stage be
 
 | Stage | Adds | Tests (Section 8) |
 |---|---|---|
+| **3S** | Position setup from a FEN line (practice boards), with the legality checks of Section 5c; the normal start stays the default | FEN round trip of the E1–E8 positions; illegal FENs refused |
 | **3A** | The relation extractor, no scoring: for a previewed move, for both sides, U1/U2/U3 with names, gained/opened, protection and attack links formed and broken, checks, mate-in-one threats. Shown as a text block after the existing preview, every line machine-readable | E1, E2, E3 (move report), E5 |
 | **3B** | The reply view: for the previewed move, every legal reply, sorted into stops / leaves the threat, with the B' → B'' changes and restored pairs | E3 (replies), E3b |
-| **3C** | Goals: route length per piece, arrival support, one-move support follow-ups, G1 then G2 | E4 |
-| **3D** | Exchange sequences on one square, captures in order, with a stated depth limit and conventional piece values *logged only* (P 1, N 3, B 3, R 5, Q 9) | to be written with 3D |
-| **3E** | Only after 3A–3D: comparing candidate moves, and the Side A / Side B experiment. No result is assumed | to be written with 3E |
+| **3C** | The loop of Section 5b: depth N chosen by the user, every sequence, mates found, forced / possible, no pruning; run on practice boards first (5c) | E6, E7, E8, E3 (replies) |
+| **3D** | Goals: route length per piece, arrival support, one-move support follow-ups, G1 then G2 | E4 |
+| **3E** | Exchange sequences on one square, captures in order, with a stated depth limit and conventional piece values *logged only* (P 1, N 3, B 3, R 5, Q 9) | to be written with 3E |
+| **3F** | Only after 3A–3E: comparing candidate moves, and the Side A / Side B experiment. No result is assumed | to be written with 3F |
 
 **3A in detail.** A new command `R` (report) after a preview, or the report printed automatically under the preview (owner's choice). The block starts with a line `CALC <from><to>` and each line starts with a keyword (`ZERO`, `LOST`, `GAINED`, `DENIED`, `OPENED`, `PROTECT+`, `PROTECT-`, `ATTACK+`, `ATTACK-`, `CHECK`, `MATE1`), the side, and square names, so a program can read it without the board drawing. Squares are listed in one fixed order everywhere: rank 8 to 1, file a to h.
 
-## 8. Worked examples (exact; computed by `tools/spec_examples/examples.c`)
+## 8. Worked examples (exact; computed by the programs in `tools/spec_examples/`)
 
 **E1 — the start position.** Each side: 6 zero-move pieces (White a1, c1, d1, e1, f1, h1); 20 legal (piece, square) pairs; team reach 16 squares; 19 protection links; 2 unprotected non-king pieces (the rooks a1, h1).
 
@@ -149,10 +172,16 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 **E5 — protection is not mobility** (to be added to the test set with 3A): a pawn protecting a friendly pawn diagonally, and a rook protecting the piece beside it, while neither can move to that square.
 
+**E6 — the loop finds Fool's Mate** (`tools/spec_examples/loops.c`, output `loops_output.txt`). From the start position, sequences ending in checkmate: 0 within 1, 2 or 3 plies; **exactly 8 at 4 plies**, all Fool's Mate (1.f3 or 1.f4 or 1.g4, then ...e5 or ...e6, the other pawn move, ...Qh4#); **347 at 5 plies**. Both match the published counts for chess. The loop was not told to look for this pattern.
+
+**E7 — the build-up ladder** (`ladder.c`, `ladder_output.txt`). White Ke1, Qd1, Bc4; Black Ke8 and Pf7, then Black's pieces added one at a time; White plays Qh5 and Qxf7 with Black passing. Black king's legal squares before Qxf7 / after Qxf7: Pf7 only 4 / 1 (not mate, escape d8); + Pd7 3 / 1 (not mate); + Qd8 2 / 0 (**checkmate**); + Bf8 1 / 0 (checkmate). Black's own queen on d8 is the blocker that makes the mate; Bf8 is not needed.
+
+**E8 — practice boards** (`small.c`, `small_output.txt`). King and queen vs king (`7k/8/5K2/8/8/8/8/Q7 w`): no mate in 1, forced mate within 2 White moves (50 positions searched). King and rook vs king (`6k/8/6K1/8/8/8/8/R7 w`): mate in 1 (12 positions). The Scholar corner with only Ke1, Qd1, Bc4 vs Ke8, Pf7 (`4k3/5p2/8/8/2B5/8/8/3QK3 w`): **no forced mate within 3 White moves** (34,537 positions). From the full board after 1.e4 e5, 5 plies: 2,961 sequences end in mate (23,027,889 positions, about 2 minutes), Scholar's Mate among them.
+
 ## 9. Answers to ChatGPT's Section 9 questions
 
 1. *Which counting unit does each sentence mean?* Section 4: U1 for "pieces that can't move", U2 (with U3) for "one move makes many pieces unable to move", and the defence test, not a count, for "enough pieces can move to block the queen and bishop". All three are kept.
-2. *What is a "shorter route" when the opponent can reply?* Not one number: the vector of Section 6, compared without weights. The first measurement assumes the opponent passes and says so; 3B and 3D add replies.
+2. *What is a "shorter route" when the opponent can reply?* Not one number: the vector of Section 6, compared without weights. The first route measurement (3D) assumes the opponent passes and says so; replies are added by the reply view (3B), the loop (3C) and the exchange analysis (3E).
 3. *What does "coming up beside or protectively" mean?* A support follow-up: a later move after which another friendly piece protects the moved piece (Section 6). Mere adjacency is not used.
 4. *Does Stage 3A match the owner's purpose without Gemini's weighted score?* Yes: 3A only reports sets and counts; no weights, no ranking, no move choice. The Gemini experiment stays in `experiments/`.
 
@@ -160,10 +189,12 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 1. Should the 3A report print automatically under every preview, or only when asked with `R`?
 2. For goals: one square at a time, or a set of squares (for example the squares around the enemy king)?
-3. In 3D, should piece values be shown at all, or only the exchange sequence?
+3. In 3E, should piece values be shown at all, or only the exchange sequence?
+4. For the loop, what depth should be the default (4 plies takes under a second, 5 plies about 20 seconds)?
 
 ## Revision history
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1 | 2026-10-25 | The owner's loop idea added (Section 5b, stage 3C, example E6); his method of practice boards first and the build-up ladder (Section 5c, stage 3S, examples E7, E8); goals, exchanges and comparison move to 3D, 3E, 3F; `docs/PLAN.md` written as the plain-words version of the plan. |
 | 1.0 | 2026-10-25 | First draft, written by Claude from the owner's words and ChatGPT's plan; worked examples computed against version 5. |
