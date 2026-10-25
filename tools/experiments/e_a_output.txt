@@ -1,0 +1,113 @@
+EXPERIMENT E-A seeing versus entering (A = attacks or protects, L = legal destinations)
+STATEMENT (Draft 12, Section [2], owner-accepted): "Seeing the rock is a dimensional perspective and remains strictly separate from removing the rock."
+
+POSITION E5 protection is not mobility
+  FEN 4k3/8/8/8/8/3P4/2P5/RN2K3 w - - 0 1
+PIECE White P c2
+  A (attacks or protects): b3 d3
+  L (legal destinations): c4 c3
+  A-L b3 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  A-L d3 OWN-PIECE (protected, cannot be entered)
+  L-A c4 PAWN-FORWARD (a pawn moves straight, attacks diagonally)
+  L-A c3 PAWN-FORWARD (a pawn moves straight, attacks diagonally)
+  COUNT A 2 L 2 A-L 2 L-A 2
+PIECE White P d3
+  A (attacks or protects): c4 e4
+  L (legal destinations): d4
+  A-L c4 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  A-L e4 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  L-A d4 PAWN-FORWARD (a pawn moves straight, attacks diagonally)
+  COUNT A 2 L 1 A-L 2 L-A 1
+PIECE White R a1
+  A (attacks or protects): a8 a7 a6 a5 a4 a3 a2 b1
+  L (legal destinations): a8 a7 a6 a5 a4 a3 a2
+  A-L b1 OWN-PIECE (protected, cannot be entered)
+  COUNT A 8 L 7 A-L 1 L-A 0
+PIECE White N b1
+  A (attacks or protects): a3 c3 d2
+  L (legal destinations): a3 c3 d2
+  COUNT A 3 L 3 A-L 0 L-A 0
+
+POSITION E3 after 3.Qh5 (the f7 pawn is pinned)
+  FEN r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3
+PIECE Black P f7
+  A (attacks or protects): e6 g6
+  L (legal destinations): none
+  A-L e6 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  A-L g6 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  COUNT A 2 L 0 A-L 2 L-A 0
+PIECE White Q h5
+  A (attacks or protects): f7 h7 g6 h6 e5 f5 g5 g4 h4 f3 h3 e2 h2 d1
+  L (legal destinations): f7 h7 g6 h6 e5 f5 g5 g4 h4 f3 h3 e2 d1
+  A-L h2 OWN-PIECE (protected, cannot be entered)
+  COUNT A 14 L 13 A-L 1 L-A 0
+PIECE White B c4
+  A (attacks or protects): f7 a6 e6 b5 d5 b3 d3 a2 e2 f1
+  L (legal destinations): f7 a6 e6 b5 d5 b3 d3 e2 f1
+  A-L a2 OWN-PIECE (protected, cannot be entered)
+  COUNT A 10 L 9 A-L 1 L-A 0
+PIECE Black K e8
+  A (attacks or protects): d8 f8 d7 e7 f7
+  L (legal destinations): e7
+  A-L d8 OWN-PIECE (protected, cannot be entered)
+  A-L f8 OWN-PIECE (protected, cannot be entered)
+  A-L d7 OWN-PIECE (protected, cannot be entered)
+  A-L f7 OWN-PIECE (protected, cannot be entered)
+  COUNT A 5 L 1 A-L 4 L-A 0
+
+POSITION start
+  FEN start
+PIECE White N g1
+  A (attacks or protects): f3 h3 e2
+  L (legal destinations): f3 h3
+  A-L e2 OWN-PIECE (protected, cannot be entered)
+  COUNT A 3 L 2 A-L 1 L-A 0
+PIECE White R a1
+  A (attacks or protects): a2 b1
+  L (legal destinations): none
+  A-L a2 OWN-PIECE (protected, cannot be entered)
+  A-L b1 OWN-PIECE (protected, cannot be entered)
+  COUNT A 2 L 0 A-L 2 L-A 0
+PIECE White Q d1
+  A (attacks or protects): c2 d2 e2 c1 e1
+  L (legal destinations): none
+  A-L c2 OWN-PIECE (protected, cannot be entered)
+  A-L d2 OWN-PIECE (protected, cannot be entered)
+  A-L e2 OWN-PIECE (protected, cannot be entered)
+  A-L c1 OWN-PIECE (protected, cannot be entered)
+  A-L e1 OWN-PIECE (protected, cannot be entered)
+  COUNT A 5 L 0 A-L 5 L-A 0
+PIECE White P e2
+  A (attacks or protects): d3 f3
+  L (legal destinations): e4 e3
+  A-L d3 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  A-L f3 PAWN-DIAGONAL-EMPTY (a pawn captures diagonally, moves straight)
+  L-A e4 PAWN-FORWARD (a pawn moves straight, attacks diagonally)
+  L-A e3 PAWN-FORWARD (a pawn moves straight, attacks diagonally)
+  COUNT A 2 L 2 A-L 2 L-A 2
+
+POSITION a pinned knight (the rook on e8 pins it to the king)
+  FEN 4r1k1/8/8/8/8/8/4N3/4K3 w - - 0 1
+PIECE White N e2
+  A (attacks or protects): d4 f4 c3 g3 c1 g1
+  L (legal destinations): none
+  A-L d4 KING-SAFETY (the move would leave the own king in check: pin or check)
+  A-L f4 KING-SAFETY (the move would leave the own king in check: pin or check)
+  A-L c3 KING-SAFETY (the move would leave the own king in check: pin or check)
+  A-L g3 KING-SAFETY (the move would leave the own king in check: pin or check)
+  A-L c1 KING-SAFETY (the move would leave the own king in check: pin or check)
+  A-L g1 KING-SAFETY (the move would leave the own king in check: pin or check)
+  COUNT A 6 L 0 A-L 6 L-A 0
+
+POSITION castling (A and L of the king)
+  FEN r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1
+PIECE White K e1
+  A (attacks or protects): d2 e2 f2 d1 f1
+  L (legal destinations): d2 e2 f2 c1 d1 f1 g1
+  L-A c1 CASTLING
+  L-A g1 CASTLING
+  COUNT A 5 L 7 A-L 0 L-A 2
+
+SUMMARY pieces 14 with A-L non-empty 12 with L-A non-empty 4
+RESULT SUPPORTS for the narrow mapping: the chess program measures what a piece watches (A) and where it may move (L) separately, and the two sets differ in both directions.
+LIMIT this does not show that the flowchart's rock is a chess obstacle, nor that seeing and removing the rock are modelled (Review 31, correction A).

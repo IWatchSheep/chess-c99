@@ -1,0 +1,164 @@
+ChatGPT review 31 — flowchart / chess cross-reference, relayed by the owner,
+2026-10-25. Recorded word for word: ChatGPT's whole reply.
+
+I've reviewed Claude's `30_claude_flowchart_chess_cross_reference.txt`, including all 14 cross-reference rows, the three proposed experiments, and the questions at the bottom.
+
+## ChatGPT Review 31 — Flowchart and Chess Cross-Reference
+
+Decision: APPROVED WITH MINOR CORRECTIONS.
+
+Claude has correctly followed the direction from Review 30: use the existing chess calculator to investigate Grok's flowchart without assuming that similar-looking concepts are mathematically equivalent.
+
+The table is suitable for inclusion in the chess project as a research document, not as an approved implementation specification.
+
+## Answers to Claude's three questions
+
+### 1. Does the table cover the unresolved items correctly?
+
+Yes, substantially. The table covers the main conceptual dependencies, their available chess counterparts, the experiments that might investigate them, and the limits of those experiments.
+
+I particularly agree with these distinctions:
+
+- Seeing a possible movement is different from executing one.
+- A chess ply is not automatically the conceptual loop increment.
+- Equal captured values are not necessarily the same as Grok's `EQUALLY MATCHED` relationship.
+- Standard chess piece values are not the owner's undefined intrinsic or hierarchical values.
+- A warning about an opportunity is not automatically a rule that cancels the opportunity.
+- The chess calculator's move ordering must not become the hive's unknown selection rule.
+
+I recommend three corrections before saving the table.
+
+Correction A — Row 1: The experiment comparing attack squares with legal destination squares is useful. However, `A − L` and `L − A` are chess set differences; they do not establish a literal equivalence between seeing a rock and removing a rock. Describe the result as evidence that observation and legal movement can be separated, not proof of the conceptual mechanism.
+
+Correction B — Row 6: Differences between chess movement distances and the owner's King/Queen hierarchy do not contradict the original hierarchy unless the owner first defines hierarchical closeness as chess movement distance. For now, any mismatch should be classified NOT RESOLVED.
+
+Correction C — Row 12: A tempting capture followed by an unfavorable exchange is useful evidence that immediate capture value does not establish a favorable outcome. It does not prove the flowchart has implemented subordinate warnings, warning delivery, cancellation, or memory-based arbitration.
+
+The historic statuses should remain unchanged: D3 and D5 open, D4 deferred, and the previously undefined loop handoffs unresolved. The table's own source-coverage section also correctly acknowledges that Claude had not completed the entire historical audit.
+
+### 2. Which experiment should run first?
+
+## E-A — Seeing versus entering
+
+Run first
+
+Why: It uses existing chess operations, requires no new formulas, and tests a clear distinction already present in the flowchart.
+
+The experiment can compare the squares a piece attacks or protects with the squares it may legally enter.
+
+E-B — Tempting capture and counter-motion
+
+Run second
+
+This tests a more complex relationship using exchange results, replies, and bounded continuations.
+
+E-C — Distances versus hierarchy
+
+Defer
+
+The hierarchy comparison needs a clearer definition of what its zero-value distance represents before a result can meaningfully support or contradict the concept.
+
+I recommend E-A first, E-B second, and E-C only after the hierarchy-distance relationship is defined more precisely.
+
+### 3. Should the cross-reference be added to GitHub?
+
+Yes. I recommend adding it to the existing chess-c99 repository at:
+
+`docs/FLOWCHART_CROSS_REFERENCE.md`
+
+It should prominently state that the material describes experimental correspondences, not completed equivalences or approved architectural changes.
+
+Keep the original Grok flowchart and its detailed historical records in their existing archive. The chess repository can refer to those materials without duplicating or silently rewriting them.
+
+## Copyable response for Claude
+
+# ChatGPT Review 31 — Flowchart / Chess Cross-Reference
+
+**Project:** chess-c99 and Grok's conceptual flowchart\
+**Document reviewed:** 30_claude_flowchart_chess_cross_reference.txt\
+**Decision: APPROVED WITH MINOR CORRECTIONS**
+
+I reviewed the 14 rows, three proposed experiments, source-coverage notes, and three questions.
+
+## Question 1 — Coverage and accuracy
+
+The table substantially covers the relevant unresolved flowchart questions and correctly distinguishes the existing chess measurements from proposed conceptual correspondences.
+
+APPROVED with these corrections:
+
+1. **Row 1:** Comparing attacked/protected squares with legally reachable squares tests whether the chess system separates those measurements. It does not prove that the flowchart's rock corresponds to a chess obstacle or that seeing and removing have been fully modeled.
+2. **Row 6:** Chess movement distance must not be equated with the owner's hierarchical zero-value relationship without an explicit definition. A disagreement between the two orderings should be recorded as NOT RESOLVED rather than CONTRADICTS.
+3. **Row 12:** Unfavorable exchange consequences are candidate evidence for investigating counter-motion. They do not establish the flowchart's warning, memory, cancellation, or arbitration mechanism.
+
+Preserve the existing dependency statuses. In particular, D3 and D5 remain open, D4 remains deferred, and the undefined conceptual handoffs remain undefined.
+
+Do not treat the cross-reference as a substitute for the incomplete historical source audit.
+
+## Question 2 — Experiment priority
+
+**Run E-A first.**
+
+E-A examines the distinction between squares a piece attacks or protects and squares it can legally enter.
+
+Use the existing E3 and E5 practice positions and approved reporting operations.
+
+Record:
+
+- The exact board position.
+- The identified piece.
+- Its attacked/protected squares.
+- Its legal destination squares.
+- The resulting set differences.
+- The relevant original flowchart statement.
+- Whether the results SUPPORT, CONTRADICT, or DO NOT RESOLVE the proposed correspondence.
+
+For clarity, SUPPORT means support for the narrowly stated experimental mapping, not proof of the full conceptual architecture.
+
+Do not infer that a chess blocker is necessarily the flowchart's rock.
+
+**Run E-B second**, after E-A is documented.
+
+E-B may investigate a tempting capture using reports of protection changes, legal opponent replies, accumulated material, and bounded checkmate consequences.
+
+Report observed warnings separately from any proposed warning-delivery or cancellation mechanism.
+
+**Defer E-C** until the owner specifies whether the flowchart's hierarchical closeness has any relationship to chess movement distance.
+
+Do not invent that relationship merely to make E-C executable.
+
+## Question 3 — Repository location
+
+APPROVED to add the corrected table as:
+
+docs/FLOWCHART_CROSS_REFERENCE.md
+
+Include the status:
+
+RESEARCH CROSS-REFERENCE — HYPOTHESES ONLY
+
+No conceptual dependency is closed by adding this document.
+
+Do not modify the original flowchart or rewrite the owner's statements.
+
+## Stage 3E status
+
+ChatGPT Review 29 has already approved Stage 3E, Version 13, commit 15a4820.
+
+That approval remains valid.
+
+## Authorization
+
+Claude may:
+
+1. Apply the three corrections to the cross-reference.
+2. Add the corrected document to chess-c99.
+3. Run E-A using existing functionality.
+4. Document the results and return them for review.
+
+No new chess algorithm, architectural mechanism, or flowchart rule is authorized by this review.
+
+After E-A is reviewed, proceed to E-B if its experimental conditions remain appropriate.
+
+**Final decision: CROSS-REFERENCE APPROVED WITH MINOR CORRECTIONS. E-A APPROVED AS THE FIRST EXPERIMENT.**
+
+This approach supports what you wanted when bringing Grok's flowchart and the chess program together: use the actual behavior of the chess calculator to investigate unanswered questions, while keeping track of which answers have been demonstrated and which remain hypotheses.

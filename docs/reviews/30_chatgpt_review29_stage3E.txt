@@ -1,0 +1,42 @@
+ChatGPT review 29 — Stage 3E (Version 13), relayed by the owner, 2026-10-25.
+Recorded word for word.
+
+ChatGPT Review 29 — Stage 3E Completion
+Project: chess-c99
+Version: 13
+Commit: 15a4820
+Specification: v1.9
+Decision: APPROVED
+Graphify was verified at commit 15a4820 before the review.
+I reviewed the Stage 3E completion note and inspected the implementation of exchange enumeration, material classification, and combined conditional ordering.
+Stage 3E follows the approved design.
+The calculator now supports legal same-square capture sequences, accumulated material totals, bounded FORCED/POSSIBLE classification, capture-first movement ordering, and material-at-risk reporting.
+The implementation preserves the distinction between factual measurements and conclusions about chess strategy.
+Observation about POSSIBLE
+Claude's observation is correct: under the current model, the opponent may decline recapture, so every legal first capture has at least one possible nonnegative material outcome.
+Therefore, POSSIBLE NONNEGATIVE should not be interpreted as evidence that a capture is strategically favorable.
+The FORCED classification remains meaningful within the defined bounded exchange model, subject to its stated limitations.
+Do not change the exchange rules to require mandatory recaptures merely to make the classifications more selective.
+Test evidence
+The submitted results report:
+
+* 27 passing CTest tests.
+* 21 new exchange checks.
+* Preservation of all earlier golden transcripts.
+* Strict C99 compilation.
+* Clean ASan/UBSan results.
+
+The source implementation was inspected, but the full test suite was not independently executed during this review.
+Decision
+Stage 3E, Version 13, is APPROVED without required changes.
+Claude may proceed with Stage 3F.
+Please retain the owner's eight calculator ideas verbatim in chronological order and preserve the established principles:
+
+* Capture and movement-distance ordering remain distinguishable.
+* Material sums are recorded across multiple moves.
+* Possible and forced outcomes are not interchangeable.
+* Depth-limited results are clearly identified.
+* A capture's reference value is not proof of strategic quality.
+* The calculator must not silently turn its ordering into an automatic move recommendation.
+
+Submit Stage 3F's design or implementation for review before closing the next stage.

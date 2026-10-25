@@ -1,0 +1,227 @@
+Claude's original cross-reference note (file name when sent: 30_claude_flowchart_chess_cross_reference.txt),
+kept as sent. The corrected version is docs/FLOWCHART_CROSS_REFERENCE.md.
+
+Flowchart <-> chess calculator: cross-reference table (for ChatGPT and the owner)
+Prepared by Claude, 2026-10-25, as asked in ChatGPT Review 30 ("create a
+cross-reference table linking each unresolved flowchart question to an
+existing chess measurement or a proposed experiment. Present that table
+before introducing new architectural rules.")
+
+NOTHING IS CHANGED BY THIS NOTE. No flowchart, statement, dependency,
+repository or code is edited. No dependency is closed. No experiment is run
+yet. Every mapping below is a HYPOTHESIS until a test is agreed and run.
+
+0. Source coverage (what Claude actually read)
+Read: AI_HOLOGRAM_COMPLETE_CLAUDE_HANDOFF_V3_PLANNING_2026-10-24.zip ->
+00_START_HERE/READ_ME_FIRST.txt, VERSION_3_OWNER_DIRECTION.txt, and in the
+unified handoff: the header and boundaries (lines 1-80), the dependency
+register 05.1-05.9 and 03.x notes (lines 110-160), the owner-approved STAGE
+B DRAFT 12 CONCEPTUAL STATEMENTS Sections [1]-[11] and the Queen increment
+relationship (lines 1108-1531), the Opportunity note (1731-1770), the D5
+checkpoint and transition indexes (2030-2105).
+Not yet read in full: Part I chronology (Draft 08/11/12 texts, LOG entries
+beyond those quoted), Draft 13, Part IV (the C++11 chess program, Candidate
+1/2 observers, logs, Python checks). The C++11 chess program in that
+handoff is a DIFFERENT program from chess-c99 (C99); nothing here assumes
+they behave alike.
+Tags: [OWNER] owner's words; [ACCEPTED] owner-accepted Draft 12 line;
+[OPEN]/[DEFERRED]/[UNDEFINED] as in the register; [CHESS-FACT] a tested
+chess-c99 measurement; [HYPOTHESIS] a proposed correspondence.
+
+1. The table
+Each row: flowchart item (status) | chess-c99 measurement that exists now |
+proposed experiment (small position, predicate, what would SUPPORT /
+CONTRADICT / NOT RESOLVE) | what the chess test cannot settle.
+
+ROW 1  Seeing the rock vs removing the rock (Draft 12 S[2] l.4-5, S[8];
+       [ACCEPTED]: "Seeing the rock ... remains strictly separate from
+       removing the rock.")
+  Exists: [CHESS-FACT] attack/protect squares (A set) are measured
+       separately from legal moves (L set): spec E5 "protection is not
+       mobility" (a pawn protects diagonally but cannot move there); the R
+       report's PROTECT+/- and ATTACK+/- lines vs LOST/GAINED lines (v7).
+  Experiment: a piece that SEES a square it cannot ENTER (own piece
+       there, or a pin): count squares in A but not in L, and the reverse.
+       SUPPORTS keeping "seeing" and "removing/entering" distinct if both
+       differences are non-empty. Already true in E5 / E3 (the pinned f7
+       pawn sees g6 and e6 but cannot move).
+  Cannot settle: that the Queen's "4D perspective" is the A set; "4D has
+       no formula" stays.
+
+ROW 2  Loop 1 rock: outer Temporal presents the rock; removed when
+       "spatial inner temporal == outer temporal"; unavoidable rock ->
+       condition false, loop stops, Temporal lifts Spatial into the square
+       (S[8], [ACCEPTED]; physical occupancy NOT proven equivalent).
+  Exists: [CHESS-FACT] sliding moves stop at the first occupied square (own
+       piece: stop before; enemy: capture and stop); ZERO causes BLOCKED /
+       CHECK / PIN; LOST pairs when a line is closed (E3: 3...g6 closes
+       h5-f7, "LOST White Q h5 f7").
+  Experiment: for one sliding piece, list each ray square with its stop
+       reason (EMPTY continue / OWN stop / ENEMY capture-stop / PIN). Ask
+       the owner whether "rock" corresponds to any of these. SUPPORTS a
+       mapping only if the owner confirms; otherwise NOT RESOLVED.
+  Cannot settle: the "==" matching itself, or that a chess blocker is the
+       rock (the register forbids assuming physical occupancy = rock).
+
+ROW 3  D5 [OPEN]: what the loop increment changes and when it executes
+       (D5-Q1..Q5; "C++ chess operations are distinct from conceptual loop
+       increment").
+  Exists: [CHESS-FACT] the 3C loop's ply counter; per-ply facts (PLY p
+       POSITIONS ...); trace's per-move report with the memory carried
+       (LOST / RESTORED, v10).
+  Experiment: trace Scholar's Mate (7 plies) and tabulate, per ply, which
+       counts change (U1, U2, U3, GAINED, RESTORED, OPENED, links). This
+       gives observable "increments" of the chess process.
+  Cannot settle: D5 itself. By D5-Q5 a chess ply is not the conceptual
+       increment; at most the table offers candidates for the owner to
+       name or reject.
+
+ROW 4  D3 [OPEN]: operational meaning of EQUALS and EQUALLY MATCHED
+       (03.3 [OWNER]: "A Temporal increment follows a Spatial increment to
+       have equally matched sides forming four Stage B conditions.")
+  Exists: chess-c99 already uses several DIFFERENT equalities, each
+       explicit: same piece (permanent identity number, v7); same square;
+       equal counts (U1/U2/U3); equal value (3E: N = B = 3 get the same
+       ORDER label); equal distance (same DISTANCE label); "no worse in
+       every component" (DOMINATED, v11).
+  Experiment: list these equalities side by side on one position and ask
+       the owner which one, if any, "equally matched" means (for example
+       "as many attackers as defenders on a square", measurable with
+       NOW White n Black n in routes). The owner decides; no operator is
+       invented.
+  Cannot settle: the meaning; = vs == vs natural language (T5) stays open.
+
+ROW 5  D4 [DEFERRED]: numerical comparison / measurement of piece values,
+       intrinsic start, changing contributions; "no formula".
+  Exists: [CHESS-FACT] conventional values P1 N3 B3 R5 Q9, logged only
+       (3E). These are chess convention, NOT the owner's values.
+  Experiment: none proposed. Using chess values would import a formula the
+       register defers.
+  Cannot settle: D4 stays deferred. The 3E values must not be read as the
+       owner's intrinsic values or Temporal-queen contributions (03.11,
+       03.13, 03.14).
+
+ROW 6  Hierarchy: "the closer their zero value condition is to the zero
+       value condition of the king" = greater hierarchical value
+       (S[1] l.8, 03.15 [OWNER]); each piece keeps its own local zero.
+  Exists: [CHESS-FACT] PASS route length of any piece to any square (v11),
+       e.g. "goal king" style distances; the owner's number line King 0,
+       Queen 1, Spatial 2, Temporal 3, Inner Spatial 4 is by ROLE.
+  Experiment: for the start position, list each piece's PASS distance to
+       its own king's square neighbourhood and compare that order with the
+       owner's role line. SUPPORTS a distance reading only if the orders
+       agree; CONTRADICTS it if they clearly differ (likely: a pawn next to
+       the king would rank above the queen). Either result is recorded, not
+       adopted.
+  Cannot settle: what a piece's "zero value condition" is in chess terms;
+       "do not replace this qualitative ordering with a numerical formula"
+       (S[1] l.14) is kept.
+
+ROW 7  Each piece holds its own King, Queen and a copy of the board; no new
+       boards or heap objects (S[1] l.4-5).
+  Exists: chess-c99 copies the board for every hypothetical calculation
+       (preview, R, replies, loop, routes) and never changes the real board
+       (tested invariants in every stage). PIECE vs SIDE results (v11) give
+       one piece's view and the whole side's view of the same goal.
+  Experiment: none needed to record the analogy; it is an implementation
+       fact, not evidence about the concept.
+  Cannot settle: "no new boards" is a statement about the concept; the C
+       program's temporary copies are not the owner's inner boards.
+
+ROW 8  Hive selection [UNKNOWN]; "There is no vote and no score. The
+       specific rule of choice stays unknown." (S[6], S[7])
+  Exists: [CHESS-FACT] chess-c99 never chooses a move in any stage; "order"
+       (3E) is an inspection rule, labelled "not a choice of move".
+  Experiment: none. Keep the calculator choice-free so it cannot quietly
+       become the hive's rule (ChatGPT Review 30 s.6).
+  Cannot settle: the selection rule.
+
+ROW 9  Join [GUESS - OWNER-ACCEPTED DIRECTION]: "many stays and one move";
+       "when one moves it coordinates based on the previous movement of
+       others to layer movement" (S[7]).
+  Exists: [CHESS-FACT] after each move, every other piece's list changes
+       BEFORE -> AFTER (GAINED / LOST / UNCHANGED, v5); the memory carries
+       earlier losses (RESTORED, v7); trace shows the layering over a line.
+  Experiment: on one line, count per move how many pieces stayed and how
+       many lists changed because of earlier moves (pairs RESTORED later).
+       SUPPORTS "layering" as observable carry-over; does not select moves.
+  Cannot settle: the join is a guess and stays one.
+
+ROW 10 Loop 2 TRUE = sustenance (temporal == temporal), FALSE = hunger /
+       thirst (S[9]); Question A [OPEN]: ON / OFF not equated with Loop 2
+       TRUE / FALSE.
+  Exists: [CHESS-FACT] CONDITION IF / ELSE for a stated condition (v11;
+       the owner's words for true / false); a moved piece can be IF or ELSE.
+  Experiment: show, on one position, a moved piece whose motion is
+       CONDITION ELSE and a non-moved piece whose motion is CONDITION IF.
+       This would show that "moved" and "TRUE" are separable in the chess
+       data - consistent with keeping Question A open, not an answer to it.
+  Cannot settle: what sustenance and hunger are; Question A.
+
+ROW 11 Motion result favorable or not: "only the ripple of time and the game
+       being won or lost decides the matter"; learned over time (S[10]).
+  Exists: [CHESS-FACT] bounded consequences: loop mates FORCED / POSSIBLE /
+       NOT-FOUND with LIMIT N (v10); REAL goal results (v12); exchange
+       material classes BOUNDED (v13); checkmate ends the game.
+  Experiment: for one move, list its bounded consequences at depths 1..5;
+       note where a result changes with depth ("ripple"). No learning is
+       implemented.
+  Cannot settle: "favorable", "ripple of time", learning, neuron states
+       (N1 [UNDEFINED]).
+
+ROW 12 Counter-motion / a subordinate warning against a larger group's
+       opportunity (ChatGPT Review 30's candidate; the opportunity itself
+       stays UNSTATED and the Opportunity IF / ELSE frame UNAPPROVED).
+  Exists: [CHESS-FACT] the tempting capture that turns bad: Qxd5 exd5
+       (3E: MATERIAL POSSIBLE, White 5 / Black 9); REAL replies that stop a
+       threat (3B STOPS); AT-RISK; PROTECT- (links lost) in R.
+  Experiment: one small position with a tempting queen capture: run R
+       (links lost), exchange (material), replies (threats stopped), loop
+       (mates for either side). Record which pieces' facts "warn".
+  Cannot settle: what "opportunity" is - it stays the owner's question;
+       Claude will not define it.
+
+ROW 13 Queen increment relationship: stores other pieces' FALSE increments
+       by temporal == temporal; "Motion TRUE and motion FALSE do not
+       determine stored values." (beside the flow)
+  Exists: [CHESS-FACT] the tracker stores every (piece, square) pair lost
+       and not yet back, for all pieces (v7), independent of any IF / ELSE.
+  Experiment: none proposed beyond noting the parallel; equating "lost
+       pairs" with "FALSE increments" would be an invented identity.
+  Cannot settle: the relationship; whether storage and sustenance are one
+       event stays [UNDEFINED].
+
+ROW 14 Greater fan, rotation ("the piece reaching the 0 condition = one
+       rotation"; King's zero), Fan -> Loop 1 and Loop 1 -> Loop 2
+       handoffs [UNDEFINED], D1, D2, the four Stage B conditions, R68/R70,
+       T1-T5, N1.
+  Exists: no chess-c99 counterpart.
+  Experiment: none. Recorded as "no counterpart" (a valid result).
+
+2. Suggested first experiments (only if the owner and ChatGPT agree)
+  E-A (Row 1): seeing vs entering, on the E3 and E5 positions - uses
+       existing commands only (R).
+  E-B (Row 12): one tempting-capture position through R, exchange,
+       replies and loop - existing commands only.
+  E-C (Row 6): start-position distances to the own king vs the owner's role
+       line - existing "routes" (PASS) only.
+  Each would be written up as: owner statement | predicate | position |
+  command output | SUPPORTS / CONTRADICTS / NOT RESOLVED, with no change to
+  the flowchart, the statements or the code.
+
+3. Also pending
+  - ChatGPT's review of Stage 3E (Version 13, commit 15a4820) has not been
+    relayed to Claude yet.
+  - The V3 handoff also requests (a) a chronological audit of the Grok
+    flowchart corrections, (b) a review of the C++11 chess source and
+    observers, (c) error / missing-source / insight lists, (d) a V3 repo
+    and C++11 roadmap. These are separate, larger tasks; Claude has not
+    started them and will do so only when the owner asks.
+
+Questions
+1. Does this table cover the unresolved items correctly, and are the
+   statuses quoted faithfully?
+2. Which (if any) of E-A, E-B, E-C should be run first?
+3. Should the table be added to the chess-c99 repository (for example
+   docs/FLOWCHART_CROSS_REFERENCE.md), or kept with the AI Hologram
+   materials only?
