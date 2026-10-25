@@ -1,0 +1,74 @@
+Stage 3E results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 13 = Stage 3E (chess.c, tests/exchange_tests.c,
+tests/golden_v13/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.9,
+docs/OWNER_IDEAS.md with the owner's ideas 7 and 8 added verbatim, and
+docs/reviews 26 (Claude's note on ideas 7 and 8), 27 (your review 28, word
+for word), 28 (this note), 29 (your review 27 on idea 7, word for word,
+relayed after review 28)).
+
+What 3E adds (spec v1.9, Section 7, "3E in detail")
+1. Values P1 N3 B3 R5 Q9 (king none), logged only; every report carries a
+   NOTE that a nonnegative material result is not proof of a good move.
+2. "exchange <square> N" (N = 1..8): every legal same-square capture
+   sequence, S first, sides alternating, every prefix listed (the side to
+   move may stop), with WHITE-TOOK / BLACK-TOOK piece types and both raw
+   totals (MATERIAL White x Black y), LIMIT on lines cut by the limit;
+   NO CAPTURES when there is none (never a zero-capture "trade").
+3. Per first capture: MATERIAL FORCED NONNEGATIVE / POSSIBLE NONNEGATIVE /
+   ELSE in the bounded exchange model, 3C structure: the side to move
+   chooses between stopping and each capture (S at S's turns, the other
+   side at its turns); BOUNDED when the limit cut a line; plus the owner's
+   value ORDER (greatest taken = IF).
+4. "order N": the owner's ideas 7 and 8 - one combined list, rebuilt in
+   every position: HEADS CAPTURE | DISTANCE; group 1 = captures MATERIAL
+   FORCED (first) then POSSIBLE NONNEGATIVE, each by value taken (greatest
+   = IF), ties by fewer squares; group 2 = all other moves by squares
+   (fewest = IF), lines labelled GROUP 2 DISTANCE (review 27), any ELSE
+   capture marked. Value, squares and class on every line; never called
+   best. As no first capture is ELSE in this model, group 1 = every legal
+   capture, which satisfies review 27 point 3 and review 28 point 5 at
+   once; no capture is called a good trade.
+5. "risk on": AT-RISK <arriving piece's value> on ROUTE lines when the goal
+   square is attacked on arrival (attacked material, not a loss); off by
+   default, so the version 11 report and all transcripts are unchanged.
+6. Scope: same-square exchanges only (your point 6); the owner's broader
+   "multiple loops of the different pieces" is recorded as later work.
+
+A fact to note
+- In this model the other side may always decline to recapture, so every
+  first capture is at least MATERIAL POSSIBLE NONNEGATIVE; MATERIAL ELSE
+  cannot occur for a first capture (it would need the other side to be
+  forced to capture). This is stated in the spec and tested (X11). The
+  meaningful split for group 1 is therefore FORCED versus POSSIBLE; group 2
+  holds the non-captures. Please say whether you want a different model
+  (for example "the other side must recapture when it can") in a later
+  stage.
+
+Evidence (tests/exchange_tests.c, 21 checks, CTest "exchange_tests")
+- Rook on d5 protected by e6; White Qd1, Nc3, Pe4: 12 sequences listed;
+  exd5 and Nxd5 FORCED; Qxd5 only POSSIBLE (Qxd5 exd5: White 5, Black 9)
+  - a valuable first capture that turns bad. exd5 is FORCED because White
+  may stop after ...exd5 (5 - 1); the other side's stop is never assumed.
+- Limit 1: Qxd5 FORCED but BOUNDED, LIMIT 1 (depth-limited uncertainty).
+- Pawn on d5 protected by the queen: exd5 Qxd5 Nxd5 ends White 10, Black 1
+  - a low first capture with a high summed result (idea 8), FORCED.
+- Bxf7+ Kxf7 in the E3 position: a bishop for a pawn, POSSIBLE.
+- En passant counted; NO CAPTURES; FORCED equals an independent minimax
+  (stop allowed for the side to move) for every capture of five positions
+  including Kiwipete.
+- order: captures first (FORCED before POSSIBLE, equal value -> fewer
+  squares), then the rest by distance; every legal move once; HEADS
+  DISTANCE at the start; NO MOVES when mated; review 27's transition test:
+  start DISTANCE, after 1.e4 d5 CAPTURE (exd5), after 2.e5 DISTANCE
+  (Black to move), after 2...f5 CAPTURE again (exf6 en passant).
+- AT-RISK on: Bc4-f7 AT-RISK 3, Qh5-f7 AT-RISK 9 (the king attacks f7);
+  off: unchanged. Parsing, determinism, invariants.
+- tests/golden_v13: 19_exchange, 20_exchange_scholar.
+- CTest: 27 tests, all pass (unit 63, report 31, replies 22, loop 28, goal
+  34, real 16, exchange 21, 20 transcripts). All 18 earlier transcripts
+  unchanged. Strict C99 -Werror; ASan/UBSan clean.
+
+Please review and say APPROVED for 3E (Version 13), or list what to
+change, before 3F.

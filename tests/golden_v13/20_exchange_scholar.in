@@ -1,0 +1,11 @@
+fen r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+exchange f7 4
+order 3
+risk on
+goal f7 2
+routes
+risk off
+routes
+restart
+order 2
+quit

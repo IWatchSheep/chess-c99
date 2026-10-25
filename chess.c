@@ -18,6 +18,8 @@
  * ORDER chain IF / ELSE IF / ELSE ("distance on" shows move distances).
  * Stage 3D-2: "routes real N" (the other side answers: FORCED / POSSIBLE),
  * "support" after a preview, and "goal2" for a second goal.
+ * Stage 3E: "exchange <square> N" (captures on one square, values logged),
+ * "order N" (captures first, then distance: ideas 7 and 8), "risk on".
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -2954,6 +2956,9 @@ typedef struct {
 
 #define GOAL_MAX_ROUTES 512
 
+static bool goal_show_risk = false; /* Stage 3E: "risk on" adds AT-RISK to ROUTE lines */
+static int piece_value(char type);
+
 typedef struct {
     TextBuffer *out;
     Color side;
@@ -2984,6 +2989,10 @@ static void route_line(RouteState *s, const Board *end, const char *kind, int le
         text_add(s->out, " %s", text);
     }
     text_add(s->out, " OWN %d PROTECTORS %d ATTACKERS %d", v->own, v->protectors, v->attackers);
+    if (goal_show_risk) {
+        int value = v->attackers > 0 ? piece_value(end->board[s->sq / 8][s->sq % 8].type) : 0;
+        text_add(s->out, " AT-RISK %d", value);
+    }
     v->line_end = s->out->length;
     text_add(s->out, "\n");
 }
@@ -3742,6 +3751,314 @@ static void second_goal_report(const Board *b, const Goal *second, const int *fi
     text_add(out, "SECOND END\n");
 }
 
+/* STAGE 3E (spec v1.9): captures, piece values and exchanges.
+ * Values are the conventional P 1, N 3, B 3, R 5, Q 9 (a king is never
+ * captured), logged only: no weighted score, no move chosen.
+ * "exchange <square> N": every sequence of legal captures on one square, the
+ * side to move first, sides alternating, up to N captures (1 to 8). After
+ * each capture the side to move may stop, so every prefix is a sequence.
+ * For each first capture, the material of the side to move S, M = value S
+ * took - value S lost, is classified in the bounded exchange model with the
+ * structure of 3C: the side to move chooses (stop or a capture); MATERIAL
+ * FORCED NONNEGATIVE = S has a choice at each of its turns so that M >= 0
+ * whatever the other side does (stopping or recapturing); MATERIAL POSSIBLE
+ * NONNEGATIVE = M >= 0 at the end of some line, not forced; MATERIAL ELSE =
+ * never. A line cut by the limit is BOUNDED.
+ * "order N": the owner's ideas 7 and 8, one combined list for the side to
+ * move: group 1 = captures that are MATERIAL FORCED or POSSIBLE NONNEGATIVE
+ * (FORCED first), by the value taken (greatest = IF), ties by fewer squares;
+ * group 2 = every other move by the squares travelled (fewest = IF). The
+ * list is rebuilt in every position; HEADS says which group is on top.
+ * "risk on": ROUTE lines get AT-RISK = the arriving piece's value when an
+ * enemy piece attacks the goal square on arrival (attacked, not lost). */
+
+#define EXCHANGE_MAX 8
+
+static int piece_value(char type) {
+    switch (type) {
+        case 'P': return 1;
+        case 'N': return 3;
+        case 'B': return 3;
+        case 'R': return 5;
+        case 'Q': return 9;
+        default: return 0;
+    }
+}
+
+/* The piece a move captures (its type), or 0; en passant included. */
+static char captured_type(const Board *b, Move m) {
+    Piece target = b->board[m.er][m.ec];
+    if (target.color != EMPTY && target.color != b->board[m.sr][m.sc].color) {
+        return target.type;
+    }
+    if (b->board[m.sr][m.sc].type == 'P' && m.sc != m.ec && target.color == EMPTY) {
+        return 'P'; /* en passant */
+    }
+    return 0;
+}
+
+/* Legal captures on square sq for the side to move, in the fixed order. */
+static MoveList captures_on(const Board *b, int sq) {
+    MoveList all = sorted_moves(b);
+    MoveList caps = {NULL, 0, 0};
+    for (size_t i = 0; i < all.count; ++i) {
+        if (all.items[i].er * 8 + all.items[i].ec == sq && captured_type(b, all.items[i])) {
+            append_move(&caps, all.items[i]);
+        }
+    }
+    free(all.items);
+    return caps;
+}
+
+typedef struct {
+    Color mover;     /* S */
+    int sq;
+    int limit;
+    Move line[EXCHANGE_MAX];
+    char taken[EXCHANGE_MAX];
+    Color by[EXCHANGE_MAX];
+    int sequences;
+    bool cut;        /* some line was stopped by the limit */
+    TextBuffer *out;
+} ExchangeState;
+
+static void exchange_line(ExchangeState *x, int length, bool cut) {
+    char text[6];
+    int took[3] = {0, 0, 0};
+    text_add(x->out, "SEQUENCE");
+    for (int i = 0; i < length; ++i) {
+        move_text(x->line[i], text);
+        text_add(x->out, " %s", text);
+    }
+    for (int side = WHITE; side <= BLACK; ++side) {
+        text_add(x->out, " %s-TOOK", side == WHITE ? "WHITE" : "BLACK");
+        bool any = false;
+        for (int i = 0; i < length; ++i) {
+            if (x->by[i] == (Color)side) {
+                text_add(x->out, " %c", x->taken[i]);
+                took[side] += piece_value(x->taken[i]);
+                any = true;
+            }
+        }
+        if (!any) {
+            text_add(x->out, " -");
+        }
+    }
+    text_add(x->out, " MATERIAL White %d Black %d%s\n", took[WHITE], took[BLACK], cut ? " LIMIT" : "");
+    ++x->sequences;
+}
+
+/* Lists every capture sequence below this node (length captures so far). */
+static void exchange_walk(ExchangeState *x, const Board *b, int length) {
+    MoveList caps = captures_on(b, x->sq);
+    bool cut = length == x->limit && caps.count > 0;
+    if (length > 0) {
+        exchange_line(x, length, cut);
+    }
+    if (cut) {
+        x->cut = true;
+    }
+    for (size_t i = 0; length < x->limit && i < caps.count; ++i) {
+        Board next = *b;
+        x->line[length] = caps.items[i];
+        x->taken[length] = captured_type(b, caps.items[i]);
+        x->by[length] = b->turn;
+        make_move(&next, caps.items[i]);
+        exchange_walk(x, &next, length + 1);
+    }
+    free(caps.items);
+}
+
+/* Material classification below a node: M = S's gain - S's loss so far.
+ * *forced: S can keep M >= 0 whatever the other side does;
+ * *possible: some line ends with M >= 0; *bounded: the limit cut a line. */
+static void exchange_value(const Board *b, Color mover, int sq, int m, int left, bool *forced, bool *possible,
+                           bool *bounded) {
+    MoveList caps = left > 0 ? captures_on(b, sq) : (MoveList){NULL, 0, 0};
+    if (left == 0) {
+        MoveList more = captures_on(b, sq);
+        if (more.count > 0) {
+            *bounded = true;
+        }
+        free(more.items);
+    }
+    bool stop_ok = m >= 0; /* the side to move stops here */
+    bool any_forced = false, all_forced = true, any_possible = stop_ok;
+    for (size_t i = 0; i < caps.count; ++i) {
+        Board next = *b;
+        int v = piece_value(captured_type(b, caps.items[i]));
+        int child = b->turn == mover ? m + v : m - v;
+        bool f = false, p = false;
+        make_move(&next, caps.items[i]);
+        exchange_value(&next, mover, sq, child, left - 1, &f, &p, bounded);
+        any_forced = any_forced || f;
+        all_forced = all_forced && f;
+        any_possible = any_possible || p;
+    }
+    if (b->turn == mover) {
+        *forced = stop_ok || any_forced;            /* S chooses */
+    } else {
+        *forced = stop_ok && all_forced;            /* the other side chooses */
+    }
+    *possible = any_possible;
+    free(caps.items);
+}
+
+typedef enum { MATERIAL_ELSE, MATERIAL_POSSIBLE, MATERIAL_FORCED } MaterialResult;
+
+static const char *material_text(MaterialResult r) {
+    return r == MATERIAL_FORCED ? "MATERIAL FORCED NONNEGATIVE" : r == MATERIAL_POSSIBLE ? "MATERIAL POSSIBLE NONNEGATIVE"
+                                                                                          : "MATERIAL ELSE";
+}
+
+/* The class of the first capture c (by S) on its square, limit captures. */
+static MaterialResult first_capture_class(const Board *b, Move c, int limit, bool *bounded) {
+    Board next = *b;
+    bool forced = false, possible = false;
+    int v = piece_value(captured_type(b, c));
+    make_move(&next, c);
+    *bounded = false;
+    exchange_value(&next, b->turn, c.er * 8 + c.ec, v, limit - 1, &forced, &possible, bounded);
+    return forced ? MATERIAL_FORCED : possible ? MATERIAL_POSSIBLE : MATERIAL_ELSE;
+}
+
+static void exchange_report(const Board *b, int sq, int limit, TextBuffer *out) {
+    static ExchangeState x;
+    char at[3], text[6];
+    memset(&x, 0, sizeof(x));
+    x.mover = b->turn;
+    x.sq = sq;
+    x.limit = limit;
+    x.out = out;
+    square_text(sq, at);
+    text_add(out, "EXCHANGE BEGIN %s %s LIMIT %d\n", color_name(b->turn), at, limit);
+    text_add(out, "NOTE values P 1, N 3, B 3, R 5, Q 9 are logged only, not a score; a nonnegative material result is not proof that a move is good\n");
+    MoveList first = captures_on(b, sq);
+    if (first.count == 0) {
+        text_add(out, "NO CAPTURES\n");
+        text_add(out, "EXCHANGE END\n");
+        free(first.items);
+        return;
+    }
+    exchange_walk(&x, b, 0);
+    int values[256];
+    for (size_t i = 0; i < first.count && i < 256; ++i) {
+        values[i] = piece_value(captured_type(b, first.items[i]));
+    }
+    for (size_t i = 0; i < first.count; ++i) {
+        bool bounded = false;
+        MaterialResult r = first_capture_class(b, first.items[i], limit, &bounded);
+        move_text(first.items[i], text);
+        text_add(out, "FIRST %s TAKES %c VALUE %d %s ORDER %s%s\n", text, captured_type(b, first.items[i]), values[i],
+                 material_text(r), order_label(values, (int)first.count, values[i]), bounded ? " BOUNDED" : "");
+    }
+    text_add(out, "SUMMARY SEQUENCES %d\n", x.sequences);
+    if (x.cut) {
+        text_add(out, "LIMIT %d\n", limit);
+    }
+    text_add(out, "EXCHANGE END\n");
+    free(first.items);
+}
+
+/* Reads "<square> N" after "exchange ". */
+static bool parse_exchange(const char *text, int *sq, int *limit) {
+    char square[3];
+    int n = 0, used = 0, r, c;
+    if (sscanf(text, "%2s %d%n", square, &n, &used) != 2 || text[used] != '\0' || strlen(square) != 2 ||
+        text[2] != ' ' || !parse_square(square, &r, &c) || n < 1 || n > EXCHANGE_MAX) {
+        return false;
+    }
+    *sq = r * 8 + c;
+    *limit = n;
+    return true;
+}
+
+typedef struct {
+    Move move;
+    char taken;
+    int value;
+    int squares;
+    MaterialResult material;
+    bool bounded;
+} OrderEntry;
+
+/* The combined order of ideas 7 and 8, for the side to move. */
+static void order_report(const Board *b, int limit, TextBuffer *out) {
+    static OrderEntry e[256];
+    int count = 0;
+    char text[6];
+    MoveList all = sorted_moves(b);
+    for (size_t i = 0; i < all.count && count < 256; ++i) {
+        OrderEntry *o = &e[count++];
+        o->move = all.items[i];
+        o->taken = captured_type(b, all.items[i]);
+        o->value = piece_value(o->taken);
+        o->squares = move_distance(all.items[i]);
+        o->bounded = false;
+        o->material = o->taken ? first_capture_class(b, all.items[i], limit, &o->bounded) : MATERIAL_ELSE;
+    }
+    free(all.items);
+    text_add(out, "ORDER BEGIN %s EXCHANGE LIMIT %d\n", color_name(b->turn), limit);
+    text_add(out, "NOTE an order of listed facts (ideas 7 and 8), rebuilt in every position; not a choice of move\n");
+    if (count == 0) {
+        text_add(out, "NO MOVES %s\n", is_in_check(b, b->turn) ? "checkmate" : "stalemate");
+        text_add(out, "ORDER END\n");
+        return;
+    }
+    bool group1 = false;
+    for (int i = 0; i < count; ++i) {
+        if (e[i].taken && e[i].material != MATERIAL_ELSE) {
+            group1 = true;
+        }
+    }
+    text_add(out, "HEADS %s\n", group1 ? "CAPTURE" : "DISTANCE");
+    /* Group 1: FORCED, then POSSIBLE; each by value (greatest first), ties
+     * by fewer squares, then the fixed move order. */
+    for (int cls = MATERIAL_FORCED; cls >= MATERIAL_POSSIBLE; --cls) {
+        int values[256], n = 0;
+        for (int i = 0; i < count; ++i) {
+            if (e[i].taken && (int)e[i].material == cls) {
+                values[n++] = -e[i].value; /* greatest value = IF */
+            }
+        }
+        for (int v = 9; v >= 1; --v) {
+            for (int d = 1; d <= 7; ++d) {
+                for (int i = 0; i < count; ++i) {
+                    if (!e[i].taken || (int)e[i].material != cls || e[i].value != v || e[i].squares != d) {
+                        continue;
+                    }
+                    move_text(e[i].move, text);
+                    text_add(out, "GROUP 1 CAPTURE %s TAKES %c VALUE %d SQUARES %d %s ORDER %s%s\n", text, e[i].taken,
+                             e[i].value, e[i].squares, material_text(e[i].material), order_label(values, n, -v),
+                             e[i].bounded ? " BOUNDED" : "");
+                }
+            }
+        }
+    }
+    /* Group 2: everything else, by squares travelled (fewest = IF). */
+    int distances[256], n = 0;
+    for (int i = 0; i < count; ++i) {
+        if (!(e[i].taken && e[i].material != MATERIAL_ELSE)) {
+            distances[n++] = e[i].squares;
+        }
+    }
+    for (int d = 1; d <= 7; ++d) {
+        for (int i = 0; i < count; ++i) {
+            if ((e[i].taken && e[i].material != MATERIAL_ELSE) || e[i].squares != d) {
+                continue;
+            }
+            move_text(e[i].move, text);
+            text_add(out, "GROUP 2 DISTANCE %s SQUARES %d ORDER %s", text, d, order_label(distances, n, d));
+            if (e[i].taken) {
+                text_add(out, " TAKES %c VALUE %d %s%s", e[i].taken, e[i].value, material_text(e[i].material),
+                         e[i].bounded ? " BOUNDED" : "");
+            }
+            text_add(out, "\n");
+        }
+    }
+    text_add(out, "ORDER END\n");
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -4044,6 +4361,39 @@ int main(void) {
                 fputs(view.text, stdout);
                 free(view.text);
             }
+            continue;
+        }
+        /* Stage 3E: "exchange <square> N", "order N", "risk on/off". */
+        if (!strcmp(input, "exchange") || !strncmp(input, "exchange ", 9)) {
+            int sq = 0, limit = 0;
+            if (input[8] == '\0' || !parse_exchange(input + 9, &sq, &limit)) {
+                puts(RED "Type exchange, a square and a limit of captures from 1 to 8, for example exchange e5 4." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                exchange_report(&game, sq, limit, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        if (!strcmp(input, "order") || !strncmp(input, "order ", 6)) {
+            int limit = 0, used = 0;
+            if (input[5] == '\0' || sscanf(input + 6, "%d%n", &limit, &used) != 1 || input[6 + used] != '\0' ||
+                limit < 1 || limit > EXCHANGE_MAX) {
+                puts(RED "Type order and an exchange limit from 1 to 8, for example order 4." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                order_report(&game, limit, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        if (!strcmp(input, "risk") || !strcmp(input, "risk on") || !strcmp(input, "risk off")) {
+            if (input[4] == ' ') {
+                goal_show_risk = input[6] == 'n';
+            }
+            printf("AT-RISK %s\n", goal_show_risk ? "ON" : "OFF");
             continue;
         }
         if (!strcmp(input, "support")) {

@@ -1,7 +1,7 @@
 # The owner's calculator ideas, in his words
 
 This is the owner's own list of his calculator ideas, in the order he wrote
-them, recorded exactly as he gave it on 2026-10-25 (nothing corrected). It is
+them, recorded exactly as he gave it on 2026-10-25 (nothing corrected; ideas 7 and 8 added the same day). It is
 the authority for intent. The interpretations by Claude and ChatGPT are kept
 apart, in `docs/reviews/` and in `docs/CALCULATOR_SPEC.md` (Sections 1 and 7);
 where they built on an idea, the version is noted below the list.
@@ -47,6 +47,21 @@ so now to add to the if, else if, else, condition is a new order listing the if,
 {
 it should be that given the list of if, else if, else, that second if, else if, else made up of piece trades with captures of good pieces worth more than captures of bad pieces. then together the if, else if, have to have some sorting to show without a capture then use this if and with a capture use this if. does that make sense?
 }
+
+addition calculator idea 7
+{
+if there is a solution using two if, else if, else conditions you can have the ability to have one list true to then transition to the other list make that true then go back to the first list.
+
+the first order is to capture, then capture being true you move in the least amount of squares to greatest.
+
+movement of squares is the if condition that the if condition is the least amount of squares, but this is a lesser value than not doing this order but capturing good trades. but you can't keep capturing good trades so after that you need to go back to using if condition to move the least amount of squares.
+}
+
+addition calculator idea 8, new idea.
+{
+what's a good trade?
+I am not aware of the best trade. if you list the trades over multiple loops of the different pieces you can see many trades and one might be a low value trade but ends up a good value trade, its a summation over multiple moves.
+}
 ```
 
 Where each idea went (the interpretations, not the owner's words):
@@ -57,5 +72,7 @@ Where each idea went (the interpretations, not the owner's words):
 | 2 | Versions 6, 10 (stages 3S, 3C) | practice boards, the loop of steps 1 to 4 |
 | 3 | Version 11 (stage 3D-1) | IF / ELSE marks in the lists |
 | 4 | Version 11 (stage 3D-1) | the distance order IF / ELSE IF / ELSE (ChatGPT review 17) |
-| 5 | Stage 3E, design | the capture-value order (`docs/reviews/24`) |
-| 6 | Stage 3E, design | without a capture use the distance order, with a capture the value order (`docs/reviews/25`); the overall order of the two groups is the owner's to decide |
+| 5 | Version 13 (stage 3E) | the capture-value order (`docs/reviews/24`) |
+| 6 | Version 13 (stage 3E) | without a capture the distance order, with a capture the value order (`docs/reviews/25`) |
+| 7 | Version 13 (stage 3E) | one combined list, captures first, then back to the distance order (`order N`; `docs/reviews/26`, `27`) |
+| 8 | Version 13 (stage 3E), in part | a trade judged by the material summed over the capture sequence (`exchange`, MATERIAL FORCED / POSSIBLE NONNEGATIVE); captures on one square only so far; "multiple loops of the different pieces" over other squares is kept for later |

@@ -1,0 +1,124 @@
+The owner's ideas 7 and 8: one combined order, captures first, then back to
+the distance order; a "good trade" is a summation over several moves - for
+ChatGPT's review before Stage 3E is built (chess-c99)
+
+Context: your reply "ChatGPT Review 26" (repository file
+docs/reviews/25_chatgpt_review_combined_order.txt) asked the owner whether
+captures should come before non-captures, after them, or as two separate
+groups. The owner answered with idea 7. His full list of ideas, in his
+order, is also attached as he wrote it (ideas draft to 8). Idea 8 answers
+the open point of section 3 and is set out in section 6.
+
+1. The owner's words (2026-10-25, verbatim)
+
+"addition calculator idea 7, new idea.
+{
+if there is a solution using two if, else if, else conditions you can have
+the ability to have one list true to then transition to the other list make
+that true then go back to the first list.
+
+the first order is to capture, then capture being true you move in the
+least amount of squares to greatest.
+
+movement of squares is the if condition that the if condition is the least
+amount of squares, but this is a lesser value than not doing this order but
+capturing good trades. but you can't keep capturing good trades so after
+that you need to go back to using if condition to move the least amount of
+squares.
+}"
+
+And: "if idea 7 makes sense to you and chatgpt then we can agree and put that
+into the reporitory with my other statements then you can get back to work"
+
+2. Claude's reading
+a) One combined list for the side to move, two groups, captures first
+   (this answers your question: the owner's option is "captures first"):
+   - Group 1, captures ("good trades"): the capture-value chain (idea 5),
+     greatest captured value = IF, each smaller value ELSE IF, smallest
+     ELSE; between captures of the same value, fewer squares first
+     ("capture being true you move in the least amount of squares to
+     greatest").
+   - Group 2, all other moves: the distance chain (idea 4), fewest
+     squares = IF ... most = ELSE.
+   Both numbers (value, squares) stay printed on every line; the group is
+   named on every line, so the two IF chains cannot be confused.
+b) "Transition ... then go back to the first list": the list is rebuilt
+   in every position. While a good trade exists, group 1 heads the list;
+   when none remains ("you can't keep capturing good trades"), only the
+   distance chain is left - back to the first list; when a capture
+   reappears later, group 1 is on top again. In the loop (3C) and trace,
+   each position would state which list heads it (CAPTURE or DISTANCE).
+c) This is an ORDER of listed facts. It does not choose, play or score a
+   move, and is not called "best".
+
+3. The open point: what is a "good trade"? (asked to the owner too)
+   (a) any capture (idea 6: captures of pieces worth more are "good");
+   (b) a capture where the value taken is at least what can be lost: e.g.
+       the captured value >= the capturing piece's value, or the capture
+       square is not attacked by the other side (no recapture possible).
+       Captures failing this would go to group 2 (by distance), marked
+       CAPTURE-NOT-GOOD, so nothing is hidden.
+   Claude proposes to offer (b) as a stated, testable condition (raw
+   values P1 N3 B3 R5 Q9 logged, no weighted score), but only if the
+   owner chooses it; otherwise (a).
+
+4. Effect on the Stage 3E design (note 24)
+   - The value order of note 24 (A) becomes group 1 of this combined list;
+     "order on / off" would show the combined list after selection and
+     after a preview (the separate distance view stays as it is).
+   - Exchanges (B) and AT-RISK (C) are unchanged and can supply the facts
+     for reading (b).
+
+5. (superseded by section 6: the owner answered the "good trade" question
+   with idea 8.)
+
+6. The owner's idea 8 (verbatim) and Claude's reading
+
+"addition calculator idea 8, new idea.
+{
+what's a good trade?
+I am not aware of the best trade. if you list the trades over multiple
+loops of the different pieces you can see many trades and one might be a
+low value trade but ends up a good value trade, its a summation over
+multiple moves.
+}"
+
+Reading: a trade is not judged by one capture. For each capture c of S,
+the exchange tree that follows on the board is listed over several plies
+(N, the user's limit, as in 3C): every legal sequence of captures and
+recaptures, each side allowed to stop, and at the end of each sequence the
+running material totals of both sides (MATERIAL White <sum> Black <sum>,
+P1 N3 B3 R5 Q9, logged only) = "a summation over multiple moves". Then, in
+the 3C / 3D-2 form, without a single score:
+  GOOD-TRADE FORCED      S's total gain minus its total loss is >= 0 at the
+                         end of every line the other side can choose (S may
+                         stop capturing at any point);
+  GOOD-TRADE POSSIBLE    >= 0 in some lines but not forced;
+  GOOD-TRADE ELSE        < 0 in every line within the limit.
+  LIMIT N when the tree was cut by the limit (it is a bounded summation).
+So a low-value capture can be a good trade (FORCED) and a high-value
+capture a bad one (ELSE), as idea 8 says. Group 1 of the combined order
+(section 2) = captures that are GOOD-TRADE FORCED or POSSIBLE (labelled),
+ordered by the value taken (idea 5), ties by fewer squares; group 2 = all
+other moves by distance, captures that are GOOD-TRADE ELSE marked as such.
+Whether group 1 should hold only FORCED, or FORCED and POSSIBLE, is a
+choice for the owner (Claude proposes both, labelled).
+"Over multiple loops of the different pieces": the tree includes captures
+on other squares too? Claude proposes, for 3E, captures on the same square
+(the exchange), with "exchange <square> N" for one square and the
+per-capture GOOD-TRADE label computed on the capture's square; captures
+elsewhere (in-between moves) belong to the 3C loop.
+
+7. Questions for you
+1. Is the reading in 2 faithful to idea 7, and the reading in 6 to idea 8?
+2. Is the combined order, with GOOD-TRADE FORCED / POSSIBLE / ELSE from the
+   summed material, acceptable as a labelled measurement (not a strategy
+   choice), with the raw totals on every line and no single score?
+3. Group 1: FORCED only, or FORCED and POSSIBLE (labelled)?
+4. Same-square exchanges for 3E (as proposed), or captures anywhere within
+   N plies?
+5. Any change to the Stage 3E design of note 24?
+
+Please say APPROVED (with any changes) or list what to change. If approved,
+ideas 7 and 8 go into docs/OWNER_IDEAS.md with ideas 1-6, and Claude builds
+Stage 3E as Version 13.

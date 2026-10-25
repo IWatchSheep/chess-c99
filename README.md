@@ -18,8 +18,9 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 10 | `Version 10` | Calculator stage 3C, the loop: `loop N` looks at every sequence of up to N moves (plies) from the current position and lists every checkmate, and for each of your possible first moves whether a mate is forced or only possible; `trace` shows the report for each move of one line; nothing is chosen or scored |
 | 11 | `Version 11` | Calculator stage 3D-1, goals: `goal f7 2` marks every move in your lists IF (the goal square can be reached within the limit) or ELSE; `routes` lists how each piece, alone or together, can reach it, with protection on arrival; results are ordered IF / ELSE IF / ELSE from fewest to most moves; `distance on` orders every move by the squares it travels; only your side moves (hypothetical) |
 | 12 | `Version 12` | Calculator stage 3D-2: `routes real 3` tests the goal with the other side answering every move (FORCED or POSSIBLE); `support` lists your next moves that would protect the piece you just previewed; `goal2` measures a second goal from where the first goal's routes end |
+| 13 | `Version 13` | Calculator stage 3E, captures: `exchange e5 4` lists every order of captures on one square with what each side took (pawn 1, knight 3, bishop 3, rook 5, queen 9, written down only); `order 4` lists your moves with captures first (greatest piece first), then the rest by distance; `risk on` shows the value of a piece arriving on an attacked goal square |
 
-The current program is version 12. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`.
+The current program is version 13. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`.
 
 ## Build and run
 
@@ -34,7 +35,7 @@ gcc -std=c99 -Wall -Wextra -Wpedantic -O2 chess.c -o chess
 
 Widen the console to about 140 columns for the before/after report.
 
-## How to play (version 12)
+## How to play (version 13)
 
 1. Type the square of one of your pieces, for example `e2`, and press Enter. Its legal squares are listed.
 2. Type a destination, for example `e4`. Nothing moves yet: the report shows, for every other piece on both sides, its legal squares BEFORE and AFTER the move, and what it GAINED, LOST and kept.
@@ -72,6 +73,8 @@ The labels are: `STOPS` (the threatened mate is gone), `LEAVES` (a mate in one r
 
 **Real answers, support, a second goal (version 12).** With a goal set, `routes real 3` (1 to 6 half-moves) tests it with the other side answering with every legal move: each of your first moves is `CONDITION IF FORCED` (you reach the goal whatever they do), `CONDITION IF POSSIBLE k OF r` (still reachable after k of their r answers) or `CONDITION ELSE`. For example, after 1.e4 e5 2.Bc4 Nc6 with `goal f7 2`, `routes real 3` shows that after 3.Qh5 reaching f7 is forced, but arriving there protected is only possible (26 of 28 answers; ...g6 and ...d5 block). After previewing a move, `support` lists your next moves that would protect the piece you just moved (after 1.e4: d3, f3, Nc3, Qg4, Qf3, Qe2, Bd3). `goal2 c4 2` sets a second goal; `routes` then measures it from the current position and from the end of each route to the first goal.
 
+**Captures (version 13).** Type `exchange` and a square with a limit, for example `exchange d5 4`: every order of captures on that square, each side allowed to stop after any capture, with what each side took and its total (pawn 1, knight 3, bishop 3, rook 5, queen 9; written down only, never a score). Each first capture is marked `MATERIAL FORCED NONNEGATIVE` (you come out even or better whatever the other side does), `MATERIAL POSSIBLE NONNEGATIVE` (only in some lines) or `MATERIAL ELSE`; `BOUNDED` means the limit cut a line. `order 4` lists all your moves in one list: captures first (greatest piece first, those that are forced to come out even or better before the others), then the other moves by distance; when there is nothing to capture it says `HEADS DISTANCE`. `risk on` adds `AT-RISK` to the routes. These are measurements, not advice: coming out even in material is not proof a move is good.
+
 Type `distance on` to see, after selecting a piece and after a preview, every move with the number of squares it travels, from the fewest (`ORDER IF`) to the most (`ORDER ELSE`); `distance off` turns it off.
 
 **The loop (version 10).** Type `loop` and a depth, for example `loop 3`. Every sequence of up to 3 moves (plies) from the current position is looked at, nothing skipped. You get every sequence that ends in checkmate, how many positions each ply has, and for each move you could play now: `FORCED` (you can force mate within the depth whatever the other side does), `POSSIBLE k OF r` (a mate can still happen after k of the other side's r answers) or `NOT-FOUND`. For example, from the start `loop 4` finds exactly the 8 ways of Fool's Mate; after 1.e4 e5 2.Bc4 Nc6, `loop 3` shows `FIRST d1h5 POSSIBLE 20 OF 28` (the same 20 answers the reply view marks `LEAVES`). `loop 3 6` also counts the sequences after which the side to move has at least 6 pieces that can't move. Depth 4 takes about a second, depth 5 up to a few minutes.
@@ -95,6 +98,7 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 - `loop_tests` (`tests/loop_tests.c`): 28 checks of the loop and trace: perft counts from the start and Kiwipete, the 8 Fool's Mates, the practice boards (forced or not), agreement with the reply view for all 33 first moves of the Scholar position, forced versus possible, stalemates, pieces that can't move, trace equal to `R` with the earlier moves played, bad input, and that nothing changes.
 - `goal_tests` (`tests/goal_tests.c`): 34 checks of goals, IF / ELSE and the order: the specification's example E4, IF then ELSE, one piece versus the whole side, sets of squares, protected arrival, blocked and pinned pieces, the king's safety, capture and promotion, the distance order (equal distances, knight, castling, promotion), and that nothing changes.
 - `real_tests` (`tests/real_tests.c`): 16 checks of version 12: real-answer goal tests from the Scholar position checked against an independent count for all 33 first moves, a checkmate that ends the line, support moves after 1.e4, 1.d4 and 3.Qh5, the second goal, labels, and that nothing changes.
+- `exchange_tests` (`tests/exchange_tests.c`): 21 checks of version 13: values, capture orders with both totals, a valuable capture that turns bad and a small capture that ends well, stopping, limits, en passant, an independent check of the forced results, the combined order and how it switches between captures and distance from one position to the next, AT-RISK, and that nothing changes.
 - `unit_tests` (`tests/chess_tests.c`): 63 checks of the FEN setup (21 refusals with their exact reasons, positions in check accepted, round trips, perft from loaded positions) and of following each piece across a move (castling rooks, captures, en passant, promotion).
 - `golden_01` … `golden_07` (`tests/golden/`): version 5's complete output on seven fixed input scripts (a game with previews, `P`, `N`, `F`; all four castlings; en passant both ways; promotion to each piece; bad inputs; restart and resign; a threefold-repetition claim). Every later version must print **exactly** the same for the same input; this proves the game itself has not changed.
 - `golden_08_report` (`tests/golden_v7/`): version 7's output for a script with ten `R` reports (Scholar's Mate line, the lost / given back / lost again sequence, a promotion, castling, and `R` with nothing to report), so later versions cannot change the report silently.
@@ -103,6 +107,7 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 - `golden_12_loop`, `golden_13_loop_boards` (`tests/golden_v10/`): version 10's loop and trace output.
 - `golden_14_goal`, `golden_15_goal_boards`, `golden_16_distance` (`tests/golden_v11/`): version 11's goals, routes, marks and distance order.
 - `golden_17_real`, `golden_18_real_boards` (`tests/golden_v12/`): version 12's real-answer routes, support and second goal.
+- `golden_19_exchange`, `golden_20_exchange_scholar` (`tests/golden_v13/`): version 13's exchanges, order and AT-RISK.
 
 ## Verified (2026-10-25, versions 1–5; version 6 below)
 
@@ -123,6 +128,8 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 **Version 11** adds goals and the distance order. All thirteen earlier transcripts are reproduced byte for byte; 21 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal checks, sixteen transcripts). The route lengths equal the specification's example E4.
 
 **Version 12** adds real-answer goal tests, support moves and the second goal. All sixteen earlier transcripts are reproduced byte for byte; 24 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real checks, eighteen transcripts).
+
+**Version 13** adds captures, values and the combined order. All eighteen earlier transcripts are reproduced byte for byte; 27 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 21 exchange checks, twenty transcripts).
 
 ## Code map (optional)
 

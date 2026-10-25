@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.8
+# Chess calculator — specification v1.9
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). Stage 3C was implemented as version 10 and approved (review 15: "Stage 3C is APPROVED without required changes."). The 3D design was approved with clarifications and split into 3D-1 and 3D-2 (review 16); the owner's IF / ELSE IF / ELSE order was approved as two views (review 17). Stage 3D-1 was implemented as version 11 and approved (review 21: "Stage 3D-1 is APPROVED without required changes."). **Stage 3D-2 is implemented as version 12** and awaits review before 3E. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). Stage 3C was implemented as version 10 and approved (review 15: "Stage 3C is APPROVED without required changes."). The 3D design was approved with clarifications and split into 3D-1 and 3D-2 (review 16); the owner's IF / ELSE IF / ELSE order was approved as two views (review 17). Stage 3D-1 was implemented as version 11 and approved (review 21: "Stage 3D-1 is APPROVED without required changes."). Stage 3D-2 was implemented as version 12 and approved (review 23: "Stage 3D-2 is APPROVED without required changes."). The 3E design, with the owner's ideas 5–8, was approved with changes (reviews 25, 27 and 29 in `docs/reviews/`). **Stage 3E is implemented as version 13** and awaits review before 3F. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -35,6 +35,8 @@ Done: versions 2–5.
 > "the number of moves must make it greater. the less it moves compared to the more it moves, one square = if, 2 squares = else if, 3 squared = else if 4 squares = else."
 
 > "go ask chatgpt write up the idea that after the list is written with how possible moves changed the number of moves possible is listed in order with a value given to every move with the least number of squares moved = if condition, the increment the number of squares moved = else if condition, to the maximum number of squares moved = else."
+
+The owner's later ideas 5 to 8 (the capture-value order, the combined order, captures first, a trade as a summation over several moves) are recorded word for word, with his whole list in his order, in `docs/OWNER_IDEAS.md`.
 
 The interpretations (Claude's design in `docs/reviews/16` and `18`, ChatGPT's reviews 16 and 17 in `docs/reviews/17` and `19`) are kept apart from these words; Section 7 ("3D-1 in detail") is the result.
 
@@ -243,6 +245,30 @@ REPLIES END
 - **Order:** replies sorted by start square, then end square (rank 8 to 1, file a to h), then promotion piece Q, R, B, N.
 - **No reply is chosen, scored or played.**
 
+**3E in detail — values, exchanges, the combined order (v1.9).** Values are the conventional P 1, N 3, B 3, R 5, Q 9 (a king is never captured), **logged only**: no weighted score, no move chosen. A nonnegative material result is not proof that a move is good (ChatGPT review 28). An en passant capture counts as a capture on the square the pawn moves to.
+
+- **`exchange <square> N`** (N = 1 to 8 captures): every sequence of legal captures on one square, the side to move (S) first, sides alternating; after each capture the side to move may stop, so every prefix is a sequence. A line without a capture is never a trade (`NO CAPTURES`).
+
+```
+EXCHANGE BEGIN <S> <square> LIMIT <N>
+NOTE values P 1, N 3, B 3, R 5, Q 9 are logged only, not a score; ...
+SEQUENCE <captures> WHITE-TOOK <types|-> BLACK-TOOK <types|-> MATERIAL White <sum> Black <sum> [LIMIT]
+FIRST <capture> TAKES <type> VALUE <v> MATERIAL FORCED NONNEGATIVE | MATERIAL POSSIBLE NONNEGATIVE | MATERIAL ELSE ORDER IF|ELSE IF|ELSE [BOUNDED]
+SUMMARY SEQUENCES <n>
+LIMIT <N>                        when some line was cut by the limit
+EXCHANGE END
+```
+
+- **The material classes** (idea 8: "a summation over multiple moves"), for each first capture c of S, with M = value S took − value S lost along the line, in the bounded same-square exchange model, with the existential / universal structure of 3C: the side to move chooses between stopping and each legal capture. `MATERIAL FORCED NONNEGATIVE`: S can keep M ≥ 0 at every turn of its own whatever the other side does (the other side may stop or recapture; S may stop). `MATERIAL POSSIBLE NONNEGATIVE`: M ≥ 0 at the end of some line, not forced. `MATERIAL ELSE`: never. `BOUNDED`: the limit cut a line below c, so the class says nothing beyond the limit. In this model the other side may always decline to recapture, so a first capture is at least POSSIBLE; `MATERIAL ELSE` cannot occur for a first capture here (stated, and tested).
+- **`order N`** (ideas 7 and 8; N = the exchange limit, 1 to 8): one combined list of every legal move of the side to move, rebuilt in every position. `HEADS CAPTURE` when group 1 is not empty, else `HEADS DISTANCE` (back to the distance list).
+  - **Group 1:** captures that are MATERIAL FORCED NONNEGATIVE (listed first), then POSSIBLE NONNEGATIVE. Since a first capture is never MATERIAL ELSE in this model, group 1 holds every legal capture, as review 27 asks ("use all legal captures as the capture group"); the class shows which are forced, and no capture is called a good trade. Each subgroup is ordered by the value taken, greatest first (`ORDER IF`, then `ELSE IF`, smallest `ELSE`), then by fewer squares, then the fixed move order: `GROUP 1 CAPTURE <move> TAKES <type> VALUE <v> SQUARES <d> <class> ORDER <label> [BOUNDED]`.
+  - **Group 2:** every other move (and any capture of class ELSE, marked), ordered by squares travelled (fewest = `IF`): `GROUP 2 DISTANCE <move> SQUARES <d> ORDER <label> [TAKES …]`.
+  - It is an order of listed facts, never "the best move".
+- **`risk on` / `risk off` / `risk`**: with it on, every `ROUTE` line of `routes` ends with `AT-RISK <v>` = the arriving piece's value when at least one enemy piece attacks the goal square on arrival (attacked material, not a guaranteed loss), else `AT-RISK 0`. Off (the default), the version 11 report is unchanged.
+- **Scope:** captures and recaptures on one square only. The owner's broader "multiple loops of the different pieces" (trades over several squares and moves) is kept for later stages.
+
+**Tests with 3E:** values; every capture order on a square with both totals; a valuable first capture turning bad (Qxd5 exd5: POSSIBLE) and a low first capture ending 10 to 1 (FORCED); the side to move's choice to stop; the limit (BOUNDED, LIMIT); no captures; en passant; Bxf7+ Kxf7; FORCED checked against an independent minimax for every capture of five positions; no first capture ELSE; the combined order (captures first, FORCED before POSSIBLE, equal values by fewer squares; every legal move once; HEADS DISTANCE without captures; captures disappearing and reappearing over successive positions; NO MOVES); AT-RISK on and off; refused input; invariants. Transcripts `tests/golden_v13`.
+
 **3D-2 in detail — REAL goals, support, the second goal (v1.8).** Every report says PASS (hypothetical: only S moves) or REAL (the other side answers with every legal move); the two are never mixed.
 
 - **`routes real N`** (N = 1 to 6 plies, the user's choice; a goal must be set): for each goal square and each condition (REACH, PROTECTED), every first move m of S gets `CONDITION IF FORCED` (m itself satisfies the condition — `MOVES 1` — or N ≥ 3 and after every legal reply the condition is forced within N − 2 plies, S choosing a possibly different continuation after each reply), `CONDITION IF POSSIBLE k OF r` (not forced, but after k of the r replies the condition can still be satisfied within the depth), or `CONDITION ELSE`. The condition is tested right after each S move. A sequence ends at checkmate or stalemate (a move that mates on another square is ELSE: the game is over). Counting is never proof of forcing.
@@ -370,13 +396,14 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 1. ~~Should the 3A report print automatically, or only with `R`?~~ **Decided: only with `R`.** The owner (2026-10-25): "you both agree that's a good idea then I agree."
 2. For goals: one square at a time, or a set of squares (for example the squares around the enemy king)?
-3. In 3E, should piece values be shown at all, or only the exchange sequence?
+3. ~~In 3E, should piece values be shown at all, or only the exchange sequence?~~ **Decided (owner's ideas 5–8): shown, logged only, with the capture-value order.**
 4. ~~For the loop, what depth should be the default?~~ **Decided in 3C: no default.** The user types the depth (1 to 6); the program warns before 5 or 6 plies.
 
 ## Revision history
 
 | Version | Date | Change |
 |---|---|---|
+| 1.9 | 2026-10-25 | Stage 3D-2 approved (review 23). The owner's ideas 5–8 (`docs/OWNER_IDEAS.md`). Stage 3E implemented (version 13): values logged only, `exchange <square> N` with MATERIAL FORCED / POSSIBLE NONNEGATIVE / ELSE and BOUNDED, `order N` (captures first, then the distance list), `risk on` (AT-RISK). |
 | 1.8 | 2026-10-25 | Stage 3D-1 approved (review 21). Stage 3D-2 implemented (version 12): `routes real N` (FORCED / POSSIBLE / ELSE per first move, both conditions), `support` (new protection links after a preview), `goal2` (the second goal from the start and from the end of each non-dominated route). |
 | 1.7 | 2026-10-25 | Stage 3C approved (review 15). The owner's TRUE/FALSE motion and IF / ELSE IF / ELSE words recorded (Section 1). Stage 3D split (review 16); 3D-1 implemented as version 11: goals and ordered sets, CONDITION IF / ELSE, PIECE and SIDE, PASS routes, arrival vector and DOMINATED, marks in the lists, the ORDER chain by moves and the distance order by squares (review 17). |
 | 1.6 | 2026-10-25 | Version 9 approved (review 13). Stage 3C implemented (version 10): `loop N`, `loop N K`, `trace`; their line formats; forced / possible / not found per first move; per-node measurements through `trace`; no default depth. |

@@ -1,0 +1,14 @@
+exchange
+exchange e5 9
+order
+order 0
+risk
+fen 6k1/8/4p3/3r4/4P3/2N5/8/3Q2K1 w - - 0 1
+exchange d5 4
+exchange d5 1
+order 4
+exchange a1 3
+fen 3q2k1/8/8/3p4/4P3/2N5/8/6K1 w - - 0 1
+exchange d5 4
+order 4
+quit

@@ -1,0 +1,47 @@
+ChatGPT review 27 — the owner's idea 7 (combined conditional ordering),
+relayed by the owner, 2026-10-25, after review 28 (file 27). Recorded word
+for word.
+
+ChatGPT Review 27 — Owner's Idea 7, Combined Conditional Ordering
+Project: chess-c99
+Stage: 3E design, before Version 13 implementation
+Decision: APPROVED WITH CLARIFICATIONS
+I have reviewed the owner's seven calculator ideas, including the new statement in idea 7, and Claude's interpretation in note 26.
+1. Interpretation of idea 7
+Claude's interpretation is substantially faithful.
+The owner wants the calculator to combine two existing IF / ELSE IF / ELSE ordering systems into one ordered display.
+The primary branch is capture availability.
+If captures exist, the capture group is placed first. Captures are ordered by the reference value of the captured piece, greatest to least.
+For captures of equal value, shorter movement distance comes first.
+Non-captures follow in the distance group, ordered from shortest to longest movement.
+Both groups remain visible.
+2. Recalculate after each movement
+The combined ordering is rebuilt from the legal moves of each new position.
+A capture may be available at one position and unavailable at the next.
+When captures disappear, the distance group becomes the first available group.
+If captures reappear after another movement, the capture group returns to the front.
+This represents the owner's transition between the two conditional systems.
+3. Good trade
+For Version 13, use all legal captures as the capture group.
+Do not assume every capture is a good trade.
+Report the captured piece's reference value and the movement distance.
+Reserve the classification of a good or unfavorable trade for later evaluation using the exchange facts.
+Do not silently interpret the owner's phrase "good trades" as meaning every legal capture is advantageous.
+4. Output requirements
+The combined display should:
+
+* Identify each line as CAPTURE or DISTANCE.
+* Preserve the corresponding IF / ELSE IF / ELSE label.
+* Show the raw captured value and movement distance.
+* Keep equal-value and equal-distance results grouped consistently.
+* Preserve all legal moves, including non-captures.
+* Never equate ordering with a recommended move.
+
+The display should be deterministic and remain separate from the earlier CONDITION calculations.
+5. Stage 3E
+The exchange-sequence enumeration and AT-RISK definitions approved in Review 25 remain in effect.
+The combined ordering replaces the previously proposed isolated capture-value display as the primary new ordering view. The older distance-order view remains accessible.
+Add tests where captures disappear and reappear across successive positions, so the transition between the two ordering systems is demonstrated.
+Preserve the owner's original seven statements verbatim and in chronological order in `docs/OWNER_IDEAS.md`, separately from the assistant interpretations.
+The combined-order design is APPROVED.
+Claude may implement Stage 3E as Version 13, including this clarified combined ordering, and return the results for final implementation review before Stage 3F.
