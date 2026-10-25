@@ -16,8 +16,9 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 8 | `Version 8` | Calculator stage 3B, the reply view: after a preview, `replies` lists every answer the other side has, and whether it stops a mate-in-one threat, with its counts; `replies <move>` shows the full report of one answer; nothing is chosen or scored |
 | 9 | `Version 9` | A correction: after a move that ends the game (checkmate or stalemate), `R` no longer lists mate-in-one threats, because there is no next turn |
 | 10 | `Version 10` | Calculator stage 3C, the loop: `loop N` looks at every sequence of up to N moves (plies) from the current position and lists every checkmate, and for each of your possible first moves whether a mate is forced or only possible; `trace` shows the report for each move of one line; nothing is chosen or scored |
+| 11 | `Version 11` | Calculator stage 3D-1, goals: `goal f7 2` marks every move in your lists IF (the goal square can be reached within the limit) or ELSE; `routes` lists how each piece, alone or together, can reach it, with protection on arrival; results are ordered IF / ELSE IF / ELSE from fewest to most moves; `distance on` orders every move by the squares it travels; only your side moves (hypothetical) |
 
-The current program is version 10. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact).
+The current program is version 11. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact).
 
 ## Build and run
 
@@ -32,7 +33,7 @@ gcc -std=c99 -Wall -Wextra -Wpedantic -O2 chess.c -o chess
 
 Widen the console to about 140 columns for the before/after report.
 
-## How to play (version 10)
+## How to play (version 11)
 
 1. Type the square of one of your pieces, for example `e2`, and press Enter. Its legal squares are listed.
 2. Type a destination, for example `e4`. Nothing moves yet: the report shows, for every other piece on both sides, its legal squares BEFORE and AFTER the move, and what it GAINED, LOST and kept.
@@ -66,6 +67,10 @@ REPLIES END
 
 The labels are: `STOPS` (the threatened mate is gone), `LEAVES` (a mate in one remains), `NO-THREAT` (there was no threat and the answer gives none) and `ALLOWS` (there was no threat, but after this answer the mover has a mate in one). If the move ends the game the view says `NO REPLIES checkmate` or `NO REPLIES stalemate`. Type `replies g7g6` to see the full report of one answer. Nothing is played; press `F` as usual to play your move.
 
+**Goals (version 11).** Type `goal`, a square and a limit of your own moves, for example `goal f7 2` (or several squares, `goal f7 g7 h7 3`, or `goal king 2` for the squares next to the enemy king). While a goal is set, selecting a piece marks each of its moves, and previewing marks every move of your pieces afterwards: `CONDITION IF` (the goal can be reached within the limit, by this piece = `PIECE`, or by any of your pieces = `SIDE`) or `CONDITION ELSE`. Type `routes` for the full list: for each of your pieces the fewest moves to the goal, every shortest route with how many of your pieces protect the square on arrival and how many enemy pieces attack it, and the routes where pieces work together to arrive protected. Results are ordered by moves: the fewest `ORDER IF`, then `ORDER ELSE IF`, the most `ORDER ELSE`; not reached is `NONE`. For example, after 1.e4 e5 2.Bc4 Nc6, `goal f7 4` then `routes` shows Bc4 1 move (unprotected), Qd1 2 moves (via h5 or f3, protected by the bishop), Ng1 3, Nb1 4. Only your side moves here (the other side "passes"), so these are distances, not real games. `goal off` clears the goal.
+
+Type `distance on` to see, after selecting a piece and after a preview, every move with the number of squares it travels, from the fewest (`ORDER IF`) to the most (`ORDER ELSE`); `distance off` turns it off.
+
 **The loop (version 10).** Type `loop` and a depth, for example `loop 3`. Every sequence of up to 3 moves (plies) from the current position is looked at, nothing skipped. You get every sequence that ends in checkmate, how many positions each ply has, and for each move you could play now: `FORCED` (you can force mate within the depth whatever the other side does), `POSSIBLE k OF r` (a mate can still happen after k of the other side's r answers) or `NOT-FOUND`. For example, from the start `loop 4` finds exactly the 8 ways of Fool's Mate; after 1.e4 e5 2.Bc4 Nc6, `loop 3` shows `FIRST d1h5 POSSIBLE 20 OF 28` (the same 20 answers the reply view marks `LEAVES`). `loop 3 6` also counts the sequences after which the side to move has at least 6 pieces that can't move. Depth 4 takes about a second, depth 5 up to a few minutes.
 
 Type `trace` and a list of moves, for example `trace e2e4 e7e5 f1c4 b8c6 d1h5 g7g6`, to see the `R` report of every move in that line, as if each were played: moves lost earlier and given back show as `RESTORED`. Nothing is played.
@@ -85,12 +90,14 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 - `calc_tests` (`tests/calc_tests.c`): 31 checks of the report against the worked examples of the specification (the whole 1.e4 report line by line; 3.Qh5 with the pin and the one mate threat; 3...g6 with and without the game's history; 3.Nf3), protection versus mobility, capture (with squares denied by the capture), en passant, castling, promotion, each reason a piece can't move, the count-once rule over a lost / given back / lost again sequence, that `R` changes nothing, and (version 9) that a move ending the game has no mate-in-one lines.
 - `replies_tests` (`tests/replies_tests.c`): 22 checks of the reply view: Scholar's Mate (28 answers, exactly the 8 that stop the mate), 3.Nf3 (no threat), an answer that allows a mate, a check with one answer, checkmate and stalemate, promotion answers in Q, R, B, N order, the fixed order, counts that agree with the full report, bad input refused, and that nothing changes.
 - `loop_tests` (`tests/loop_tests.c`): 28 checks of the loop and trace: perft counts from the start and Kiwipete, the 8 Fool's Mates, the practice boards (forced or not), agreement with the reply view for all 33 first moves of the Scholar position, forced versus possible, stalemates, pieces that can't move, trace equal to `R` with the earlier moves played, bad input, and that nothing changes.
+- `goal_tests` (`tests/goal_tests.c`): 34 checks of goals, IF / ELSE and the order: the specification's example E4, IF then ELSE, one piece versus the whole side, sets of squares, protected arrival, blocked and pinned pieces, the king's safety, capture and promotion, the distance order (equal distances, knight, castling, promotion), and that nothing changes.
 - `unit_tests` (`tests/chess_tests.c`): 63 checks of the FEN setup (21 refusals with their exact reasons, positions in check accepted, round trips, perft from loaded positions) and of following each piece across a move (castling rooks, captures, en passant, promotion).
 - `golden_01` … `golden_07` (`tests/golden/`): version 5's complete output on seven fixed input scripts (a game with previews, `P`, `N`, `F`; all four castlings; en passant both ways; promotion to each piece; bad inputs; restart and resign; a threefold-repetition claim). Every later version must print **exactly** the same for the same input; this proves the game itself has not changed.
 - `golden_08_report` (`tests/golden_v7/`): version 7's output for a script with ten `R` reports (Scholar's Mate line, the lost / given back / lost again sequence, a promotion, castling, and `R` with nothing to report), so later versions cannot change the report silently.
 - `golden_09_replies`, `golden_10_replies_endings` (`tests/golden_v8/`): version 8's output for the reply view (Scholar's Mate, 3.Nf3, one answer in detail, bad input, checkmate, stalemate).
 - `golden_11_report_endings` (`tests/golden_v9/`): version 9's `R` report after a stalemate and two checkmates.
 - `golden_12_loop`, `golden_13_loop_boards` (`tests/golden_v10/`): version 10's loop and trace output.
+- `golden_14_goal`, `golden_15_goal_boards`, `golden_16_distance` (`tests/golden_v11/`): version 11's goals, routes, marks and distance order.
 
 ## Verified (2026-10-25, versions 1–5; version 6 below)
 
@@ -107,6 +114,8 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 **Version 9** changes only the `R` report after a move that ends the game. All ten earlier transcripts, including version 7's report transcript, are reproduced byte for byte; 14 CTest tests pass (63 unit, 31 report, 22 reply checks, eleven transcripts).
 
 **Version 10** adds the loop and trace. All eleven earlier transcripts are reproduced byte for byte; 17 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop checks, thirteen transcripts). The loop's position counts equal the published perft numbers, including 4,865,609 at 5 plies from the start, where it finds 347 mates; after 1.e4 e5 it finds 2,961 mates at 5 plies, as in the specification's example E8.
+
+**Version 11** adds goals and the distance order. All thirteen earlier transcripts are reproduced byte for byte; 21 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal checks, sixteen transcripts). The route lengths equal the specification's example E4.
 
 ## Code map (optional)
 

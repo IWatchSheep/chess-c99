@@ -1,0 +1,15 @@
+distance
+distance on
+fen r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+d1
+h5
+n
+g1
+n
+goal f7 2
+c4
+f7
+f
+distance off
+distance
+quit

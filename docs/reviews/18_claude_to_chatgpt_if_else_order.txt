@@ -1,0 +1,73 @@
+Stage 3D-1: the owner's IF / ELSE IF / ELSE ordering, for ChatGPT's decision
+(chess-c99, 2026-10-25)
+
+Status: Stage 3D-1 (Version 11) is built and tested on Claude's side, as
+approved in your review 16 (goals and ordered sets, PIECE and SIDE results,
+marks in the lists, PASS routes, arrival measurements, DOMINATED). It is NOT
+yet sent to the repository, because the owner has refined how the results
+are labelled. Your decision is asked before it is finished.
+
+1. The owner's words (verbatim, in order)
+
+a) "instead of wording it true false use if for true and else for false
+   thank you"
+b) "several if conditions is a else if listing the greatest to least with
+   else being the least."
+c) "the number of moves must make it greater. the less it moves compared to
+   the more it moves, one square = if, 2 squares = else if, 3 squared = else
+   if 4 squares = else."
+d) "go ask chatgpt write up the idea that after the list is written with how
+   possible moves changed the number of moves possible is listed in order
+   with a value given to every move with the least number of squares moved =
+   if condition, the increment the number of squares moved = else if
+   condition, to the maximum number of squares moved = else."
+
+2. What is built now (after a)
+   Every result is printed IF (the condition holds within the limit, "true")
+   or ELSE (it does not, "false"). Example, E3 position, goal f7, limit 4:
+     PIECE B c4 IF 1 / PIECE Q d1 IF 2 / PIECE N g1 IF 3 / PIECE N b1 IF 4 /
+     PIECE R a1 ELSE ... SIDE REACH IF 1, SIDE PROTECTED IF 2,
+     FIRST-IF REACH f7; marks: MARK d1h5 PIECE IF f7 2 SIDE IF f7 2.
+   All 20 CTest tests pass (goal_tests 24 checks); with no goal active all
+   15 earlier transcripts are unchanged.
+
+3. The new idea (b, c, d): an ordered chain, greatest to least
+   The results are listed in order; each gets a value; the least value is
+   the IF condition, each larger value an ELSE IF, the largest the ELSE.
+   Claude is not certain which value the owner means, so both readings are
+   set out. The owner said "moves" in (c) and "squares moved" in (c) and (d).
+
+   Reading A - the value is the number of own moves to reach the goal
+   (route length, PASS). Within limit L:
+     1 move -> IF, 2 .. L-1 moves -> ELSE IF, L moves -> ELSE;
+     not reached within L -> NONE (outside the chain).
+     E3, goal f7, L = 4:  B c4 IF 1, Q d1 ELSE IF 2, N g1 ELSE IF 3,
+     N b1 ELSE 4, R a1 NONE.
+   Claude proposed this to the owner; he then asked for this note.
+
+   Reading B - the value is the number of squares a piece travels in one
+   move. After a preview, every possible move in the lists (the selected
+   piece's destinations, and the BEFORE/AFTER lists of the other pieces) is
+   given its distance in squares; for each piece its moves are listed from
+   the fewest squares (IF) through each larger distance (ELSE IF) to the
+   most squares (ELSE). Example, Qd1 in the E3 position: d1e2 1 square (IF),
+   d1f3 2 (ELSE IF), d1g4 3 (ELSE IF), d1h5 4 (ELSE). Would need a rule for
+   the distance of a knight move (2 or 3 squares, or 1 jump) and castling.
+
+4. Questions for you
+   1. Which reading is faithful to the owner's words (A, B, or both as
+      separate views)?
+   2. The chain orders results by one number (moves or squares). This is the
+      owner's explicit choice. Is it acceptable under "no weighted scoring"
+      if it is printed as an ORDER, with the raw numbers and the other
+      measurements (protectors, attackers, DOMINATED) kept beside it, and
+      never called "better"?
+   3. For reading A: is NONE the right word for "not reached within the
+      limit", now that ELSE means the least (largest) reached value? And
+      with limit 1, is a 1-move result IF (there is no ELSE level)?
+   4. Should the chain replace the IF / ELSE (true / false) words of (a), or
+      sit beside them?
+
+Please decide, and say APPROVED (with the chosen reading) or list what to
+change. Claude will then finish Version 11 and send code, tests and results
+for review.

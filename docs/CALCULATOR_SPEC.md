@@ -1,11 +1,11 @@
-# Chess calculator — specification v1.6
+# Chess calculator — specification v1.7
 
 | | |
 |---|---|
 | **Project** | `chess-c99` |
 | **Builds on** | Version 5 (`chess.c`, commit `f685113`): selection, preview, BEFORE/AFTER lists, GAINED/LOST/UNCHANGED, F to finalize |
 | **Starting plan** | `plans/CHESS9_NEW_CALCULATOR_PLAN.txt` (ChatGPT, 2026-10-24). This document answers its Section 9 questions and makes its Sections 3–7 exact. The same plan in plain words, with the owner's original text, is `docs/PLAN.md`. |
-| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). **Stage 3C is implemented as version 10** and awaits review before 3D. |
+| **Status** | v1.1 **approved in principle by ChatGPT** (review 03: "Design direction approved. Implementation details above should be incorporated before coding Stage 3A."). v1.2 incorporates those details (Sections 3, 4, 5b, 7, 8). The owner agreed that the report appears only on `R`. ChatGPT approved v1.2 (review 05: "APPROVED — Stage 3S may begin"). Stage 3S was implemented as version 6 and approved (review 07: "Stage 3S is approved. Please proceed with Stage 3A only"). Stage 3A was implemented as version 7 and approved (ChatGPT, review 09: "Claude already has my approval to begin Stage 3B"). Stage 3B was implemented as version 8 and approved (review 11: "Stage 3B is APPROVED. Proceed with Stage 3C."). Version 9 made the MATE1 correction asked for in review 11 and was approved (review 13: "Version 9 is approved with no required changes."). Stage 3C was implemented as version 10 and approved (review 15: "Stage 3C is APPROVED without required changes."). The 3D design was approved with clarifications and split into 3D-1 and 3D-2 (review 16); the owner's IF / ELSE IF / ELSE order was approved as two views (review 17). **Stage 3D-1 is implemented as version 11** and awaits review; 3D-2 is not yet authorized. |
 | **Authority for intent** | The owner's own words, quoted in Section 1. |
 
 ## 1. What the owner asked for (his words)
@@ -19,6 +19,24 @@ Done: versions 2–5.
 > "if there is a step where the sides lists after a move have pieces that can't move, now you balance that can't move list so that multiple versions of many pieces can't move isn't repeated and this goes for counting the other sides pieces that if moved = many pieces can't move [...] here is the calculation for queens scholar which means there is enough pieces can move to block the queen and bishop. Then that counts the way the lists can't move after the enemy moves, that that's defensive, now count for offensive, repeat this but offensively to the enemy."
 
 > "what goal is of course a question [...] if from some square the goal square, then what would be the calculator to another second goal square."
+
+**The TRUE/FALSE motion and the IF / ELSE IF / ELSE order (2026-10-25, verbatim, in order).** Asked whether a goal should be one square or a set of squares:
+
+> "using this is a question of two different logical points, neither solution is false because the solution is neither one it is the function of motion between them with the result of if the motion returned true or false its an if else condition. Because your following my plan so this logical question builds on my plan too so the answer is build them both then use the motion to test true and if false go to false go to if if if falis go to else, you see?"
+
+> "this implies a logic presented to every piece as a result of moving to a square, that movement being a true or false motion. Then the result of having multiple options is every one of those available options has its own true and false motion as well. then you limit this by having a limit to the number of loops you do this so you can capture chess strategies you see?"
+
+> "you know how there was a initial piece and then that being selected presented multiple options. then is there a third list presented to choose from for a true or false and then you select one of those then this changes how the pieces lists move from unchanged because the piece hasn't moved to after the piece moved to a list of true or false options each of the moves available after the pieces moves listed."
+
+> "instead of wording it true false use if for true and else for false thank you"
+
+> "several if conditions is a else if listing the greatest to least with else being the least."
+
+> "the number of moves must make it greater. the less it moves compared to the more it moves, one square = if, 2 squares = else if, 3 squared = else if 4 squares = else."
+
+> "go ask chatgpt write up the idea that after the list is written with how possible moves changed the number of moves possible is listed in order with a value given to every move with the least number of squares moved = if condition, the increment the number of squares moved = else if condition, to the maximum number of squares moved = else."
+
+The interpretations (Claude's design in `docs/reviews/16` and `18`, ChatGPT's reviews 16 and 17 in `docs/reviews/17` and `19`) are kept apart from these words; Section 7 ("3D-1 in detail") is the result.
 
 ## 2. Principles
 
@@ -225,6 +243,38 @@ REPLIES END
 - **Order:** replies sorted by start square, then end square (rank 8 to 1, file a to h), then promotion piece Q, R, B, N.
 - **No reply is chosen, scored or played.**
 
+**3D-1 in detail — goals, IF / ELSE and the order (v1.7).** PASS mode only (the other side passes; hypothetical, never a real sequence of turns). REAL mode, support follow-ups and the second goal are Stage 3D-2, not yet authorized.
+
+- **Goal:** `goal <squares> <L>`: one square or an ordered set (`goal f7 2`, `goal f7 g7 h7 3`), or `goal king <L>` (the squares next to the enemy king, in board order); `L` = own moves, 1 to 4. `goal` shows it, `goal off` clears it. With no goal and no distance view active, every output is exactly as in version 10.
+- **The condition** C on goal square G: REACH = a piece of the side to move (S) stands on G; PROTECTED = REACH and another S piece protects G (Section 3 link). Printed as **CONDITION IF** (holds within the limit) or **CONDITION ELSE** (does not) — the owner's words for true / false. IF never means "good", ELSE never "bad", and IF is not a forced result.
+- **PIECE** = this piece alone (the others stay); **SIDE** = any S pieces. Both are reported, separately.
+- **PASS legality:** every own move is a legal move with S to move: no jumping over pieces, the own king never left in check, captures remove the captured piece, a king is never captured; en passant is cleared after each own move (the other side passed).
+- **The ORDER chain (reading A, route length):** among the move counts present for a goal square, the smallest is `ORDER IF`, each count between is `ORDER ELSE IF`, the largest `ORDER ELSE`; with one distinct count only `IF`; not reached within the limit is `ORDER NONE`. Equal counts get the same label. The order is a measurement, never "better".
+- **The distance order (reading B):** `distance on` / `distance off` / `distance`. After selecting a piece, and after a preview (every piece of both sides in the AFTER position, White first, board order), each legal move is listed with `DISTANCE d` = max(|rows|, |files|) = the squares it travels, ordered from the fewest (`ORDER IF`) through each larger distance (`ORDER ELSE IF`) to the most (`ORDER ELSE`), same labelling rules as above. A knight move is marked `JUMP` (one move, displacement 2). Castling is marked `CASTLE <rook from><rook to>` (the king's 2 squares are its distance). A piece of the side not to move is listed as if it were its turn. A piece with no legal move: `NO-MOVES`.
+
+```
+routes   (with a goal active)
+ROUTES BEGIN <S> GOAL <squares> LIMIT <L> PASS
+NOTE PASS is hypothetical: only <S> moves, <other> passes; not a real sequence of turns
+GOAL <sq> NOW White <n> Black <n>               pieces of each side attacking / protecting sq now
+PIECE <type> <sq> CONDITION IF MOVES <n> ORDER IF|ELSE IF|ELSE      (each S piece, board order)
+PIECE <type> <sq> CONDITION ELSE ORDER NONE
+ROUTE PIECE <type> <sq> <moves> OWN <n> PROTECTORS <n> ATTACKERS <n> [DOMINATED]   every shortest route
+SIDE REACH CONDITION IF MOVES <n> | SIDE REACH CONDITION ELSE
+SIDE PROTECTED CONDITION IF MOVES <n> | SIDE PROTECTED CONDITION ELSE
+ROUTE SIDE PROTECTED <moves> OWN <n> PROTECTORS <n> ATTACKERS <n> [DOMINATED]      every shortest protected route
+... (the block above for each goal square, in order)
+SQUARE <sq> REACH CONDITION IF|ELSE PROTECTED CONDITION IF|ELSE   each square
+FIRST-IF REACH <sq> | FIRST-IF REACH none (ELSE)   the first IF in the owner's if / else if order
+FIRST-IF PROTECTED <sq> | FIRST-IF PROTECTED none (ELSE)
+ROUTES END
+```
+
+- **Arrival vector** (Section 6): (OWN moves, PROTECTORS of G, ATTACKERS of G), measured on arrival. A route is `DOMINATED` when another route to the same square is no worse in every component and better in at least one; otherwise both stand (E4: Bxf7 in 1 unprotected and Qh5–f7 in 2 protected are both kept). "Material at risk" needs exchange analysis and is left to 3E.
+- **Marks in the lists** (the owner's "third list"), with a goal active: after selecting a piece, `GOAL MARKS …` then `MARK <move> PIECE CONDITION IF <sq> MOVES <n> | PIECE CONDITION ELSE  SIDE CONDITION IF <sq> MOVES <n> | SIDE CONDITION ELSE` for each destination (n counts own moves from now, including this one; the first IF square of the set is shown); after a preview, `GOAL MARKS AFTER <move>` with `REACHED <sq> 1` if the previewed move reaches it, and a `MARK <type> <sq> <move> …` line for every move of every S piece in the AFTER position (S moving again); `GOAL MARKS END`.
+
+**Tests with 3D-1:** E4 (route lengths and the ORDER chain), IF and ELSE, ELSE then IF after a later motion, PIECE versus SIDE (Qe2 PIECE ELSE but SIDE IF), single squares and ordered sets with the first IF, goal king, shortest versus protected arrival and DOMINATED, blocked and pinned pieces, the own king, capture and promotion, the distance order (1–4 squares, equal distances, one distance, no moves, knight, pawn, castling, promotion, nothing added or removed), CONDITION and ORDER separate, invariants, refused input. Transcripts `tests/golden_v11`.
+
 **3C in detail — the loop (v1.6).** `loop N` (N from 1 to 6, chosen by the user; there is no default and no pruning) visits every legal sequence of 1 to N plies from the current position. `loop N K` also counts pieces that can't move. `trace <moves>` reports one sequence. Neither changes the game.
 
 ```
@@ -305,6 +355,7 @@ This is the owner's "one piece versus several" in exact terms: **Bc4 reaches f7 
 
 | Version | Date | Change |
 |---|---|---|
+| 1.7 | 2026-10-25 | Stage 3C approved (review 15). The owner's TRUE/FALSE motion and IF / ELSE IF / ELSE words recorded (Section 1). Stage 3D split (review 16); 3D-1 implemented as version 11: goals and ordered sets, CONDITION IF / ELSE, PIECE and SIDE, PASS routes, arrival vector and DOMINATED, marks in the lists, the ORDER chain by moves and the distance order by squares (review 17). |
 | 1.6 | 2026-10-25 | Version 9 approved (review 13). Stage 3C implemented (version 10): `loop N`, `loop N K`, `trace`; their line formats; forced / possible / not found per first move; per-node measurements through `trace`; no default depth. |
 | 1.5 | 2026-10-25 | Stage 3B approved (review 11). Version 9: no `MATE1` lines after a move that ends the game (checkmate or stalemate), as asked in review 11; the version 7 transcript is unchanged; new transcript `tests/golden_v9`. |
 | 1.4 | 2026-10-25 | Stage 3B implemented (version 8): the reply view (`replies`, `replies <move>`), its line format, the labels `STOPS`/`LEAVES`/`NO-THREAT`/`ALLOWS`, `SUMMARY`, `NO REPLIES` without a `THREAT` line, counts with m treated as finalized, and the fixed reply order. |

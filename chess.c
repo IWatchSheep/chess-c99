@@ -10,6 +10,12 @@
  * Version 9: after a move that ends the game, R prints no MATE1 lines.
  * Stage 3C: "loop N" visits every sequence of up to N plies from the current
  * position (mates, forced or possible); "trace <moves>" reports a sequence.
+ * Stage 3D-1: "goal f7 2" (or a set of squares, or "goal king 2") marks
+ * every motion IF (the goal is reached within the limit) or ELSE, in the
+ * lists while selecting and previewing; "routes" reports the routes.
+ * PASS mode only: the other side passes (hypothetical). Results are
+ * CONDITION IF / ELSE; route lengths and move distances get the owner's
+ * ORDER chain IF / ELSE IF / ELSE ("distance on" shows move distances).
  */
 /* Simplified two-player chess in C99.
  * Build: gcc -std=c99 -Wall -Wextra -O2 chess.c -o chess
@@ -2750,6 +2756,660 @@ static bool trace_report(const Board *b, const Tracker *t, const char *moves_tex
     return true;
 }
 
+/* STAGE 3D-1: goals and routes, PASS mode only (spec Section 6, v1.7).
+ * A goal is one square or an ordered set of squares ("goal f7 2",
+ * "goal f7 g7 h7 3", "goal king 2" = the squares next to the enemy king),
+ * with a limit of own moves (1 to 4). The condition C tested is "a piece of
+ * the side to move (S) stands on the goal square" (REACH), and separately
+ * "... and another S piece protects it" (PROTECTED). Every motion gets a
+ * result, printed in the owner's words: IF (the condition holds within the
+ * limit, "true") or ELSE (it does not, "false"); PIECE (this piece alone)
+ * and SIDE (any S pieces).
+ * PASS is hypothetical: only S moves, the other side passes; every own move
+ * is a legal move (no jumping over pieces, the own king never left in
+ * check, captures remove the captured piece), en passant is cleared after
+ * each own move. It is a distance, never a real sequence of turns.
+ * Nothing is chosen, scored or played. */
+
+#define GOAL_MAX_SQUARES 16
+#define GOAL_MAX_LIMIT 4
+
+typedef struct {
+    bool active;
+    bool king;                    /* the squares next to the enemy king */
+    int count;
+    int square[GOAL_MAX_SQUARES]; /* square index, row * 8 + col */
+    int limit;                    /* own moves, PASS */
+} Goal;
+
+typedef enum { COND_REACH, COND_PROTECTED } GoalCondition;
+
+/* Appends `length` characters of text as they are (text_add takes at most
+ * 511 characters per call). */
+static void text_raw(TextBuffer *t, const char *text, size_t length) {
+    char piece[256];
+    while (length > 0) {
+        size_t n = length < sizeof(piece) - 1 ? length : sizeof(piece) - 1;
+        memcpy(piece, text, n);
+        piece[n] = '\0';
+        text_add(t, "%s", piece);
+        text += n;
+        length -= n;
+    }
+}
+
+/* The goal's squares now, in order. For "king": next to the enemy king, in
+ * board order (rank 8 to 1, file a to h). */
+static int goal_squares(const Goal *g, const Board *b, Color side, int squares[GOAL_MAX_SQUARES]) {
+    int count = 0;
+    if (!g->king) {
+        for (int i = 0; i < g->count; ++i) {
+            squares[count++] = g->square[i];
+        }
+        return count;
+    }
+    int kr, kc;
+    if (!find_king(b, side == WHITE ? BLACK : WHITE, &kr, &kc)) {
+        return 0;
+    }
+    for (int r = kr - 1; r <= kr + 1; ++r) {
+        for (int c = kc - 1; c <= kc + 1; ++c) {
+            if (in_bounds(r, c) && (r != kr || c != kc)) {
+                squares[count++] = r * 8 + c;
+            }
+        }
+    }
+    return count;
+}
+
+static void goal_text(const Goal *g, TextBuffer *out) {
+    char sq[3];
+    if (g->king) {
+        text_add(out, "king");
+    } else {
+        for (int i = 0; i < g->count; ++i) {
+            square_text(g->square[i], sq);
+            text_add(out, "%s%s", i ? " " : "", sq);
+        }
+    }
+}
+
+/* Counts the pieces of `side` that attack or protect square sq, leaving out
+ * the piece standing on sq itself. */
+static int pieces_on_square(const Board *b, int sq, Color side) {
+    int count = 0;
+    for (int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            if (r * 8 + c != sq && b->board[r][c].color == side && piece_attacks(b, r, c, sq / 8, sq % 8)) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+static bool goal_holds(const Board *b, Color side, int sq, GoalCondition cond) {
+    if (b->board[sq / 8][sq % 8].color != side) {
+        return false;
+    }
+    return cond == COND_REACH || pieces_on_square(b, sq, side) > 0;
+}
+
+/* PASS: the legal moves of `side` in b, as if it were its turn. */
+static MoveList pass_moves(const Board *b, Color side) {
+    Board view = *b;
+    view.turn = side;
+    return sorted_moves(&view);
+}
+
+/* PASS: play m for `side`; the other side passes. */
+static void pass_play(Board *b, Move m, Color side) {
+    b->turn = side;
+    make_move(b, m);
+    b->turn = side;
+    b->ep_row = -1;
+    b->ep_col = -1;
+}
+
+/* Fewest own moves (0..max) for the piece on (r, c) alone to stand on sq;
+ * -1 if more than max. */
+static int piece_distance(const Board *b, int r, int c, Color side, int sq, int max) {
+    if (r * 8 + c == sq) {
+        return 0;
+    }
+    if (max <= 0) {
+        return -1;
+    }
+    int best = -1;
+    MoveList moves = pass_moves(b, side);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Move m = moves.items[i];
+        if (m.sr != r || m.sc != c) {
+            continue;
+        }
+        if (m.er * 8 + m.ec == sq) {
+            best = 1;
+            break;
+        }
+    }
+    for (size_t i = 0; best != 1 && i < moves.count; ++i) {
+        Move m = moves.items[i];
+        if (m.sr != r || m.sc != c) {
+            continue;
+        }
+        Board next = *b;
+        pass_play(&next, m, side);
+        int d = piece_distance(&next, m.er, m.ec, side, sq, best == -1 ? max - 1 : best - 2);
+        if (d >= 0 && (best == -1 || d + 1 < best)) {
+            best = d + 1;
+        }
+    }
+    free(moves.items);
+    return best;
+}
+
+/* Fewest own moves (0..max) of any S pieces until the condition holds on
+ * sq; -1 if more than max. */
+static bool side_within(const Board *b, Color side, int sq, GoalCondition cond, int depth) {
+    if (goal_holds(b, side, sq, cond)) {
+        return true;
+    }
+    if (depth <= 0) {
+        return false;
+    }
+    bool found = false;
+    MoveList moves = pass_moves(b, side);
+    for (size_t i = 0; i < moves.count && !found; ++i) {
+        Board next = *b;
+        pass_play(&next, moves.items[i], side);
+        found = side_within(&next, side, sq, cond, depth - 1);
+    }
+    free(moves.items);
+    return found;
+}
+
+static int side_distance(const Board *b, Color side, int sq, GoalCondition cond, int max) {
+    for (int d = 0; d <= max; ++d) {
+        if (side_within(b, side, sq, cond, d)) {
+            return d;
+        }
+    }
+    return -1;
+}
+
+/* ---- routes: the automatic report ---- */
+
+typedef struct {
+    int own;
+    int protectors;
+    int attackers;
+    size_t line_start; /* where its ROUTE line starts in the text */
+    size_t line_end;
+} RouteVector;
+
+#define GOAL_MAX_ROUTES 512
+
+typedef struct {
+    TextBuffer *out;
+    Color side;
+    int sq;
+    Move path[GOAL_MAX_LIMIT];
+    RouteVector routes[GOAL_MAX_ROUTES];
+    int route_count;
+    int extra;           /* routes found beyond GOAL_MAX_ROUTES (counted, not listed) */
+} RouteState;
+
+static void route_line(RouteState *s, const Board *end, const char *kind, int length) {
+    char text[6];
+    if (s->route_count == GOAL_MAX_ROUTES) {
+        ++s->extra;
+        return;
+    }
+    RouteVector *v = &s->routes[s->route_count++];
+    Color enemy = s->side == WHITE ? BLACK : WHITE;
+    v->own = length;
+    v->protectors = pieces_on_square(end, s->sq, s->side);
+    v->attackers = pieces_on_square(end, s->sq, enemy);
+    v->line_start = s->out->length;
+    text_add(s->out, "ROUTE %s", kind);
+    for (int i = 0; i < length; ++i) {
+        move_text(s->path[i], text);
+        text_add(s->out, " %s", text);
+    }
+    text_add(s->out, " OWN %d PROTECTORS %d ATTACKERS %d", v->own, v->protectors, v->attackers);
+    v->line_end = s->out->length;
+    text_add(s->out, "\n");
+}
+
+/* Every route of exactly `length` moves of the piece on (r, c) ending on sq. */
+static void piece_routes(RouteState *s, const Board *b, int r, int c, int ply, int length, const char *kind) {
+    if (ply == length) {
+        if (r * 8 + c == s->sq) {
+            route_line(s, b, kind, length);
+        }
+        return;
+    }
+    if (r * 8 + c == s->sq) {
+        return; /* arrived earlier: a shorter route */
+    }
+    MoveList moves = pass_moves(b, s->side);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Move m = moves.items[i];
+        if (m.sr != r || m.sc != c) {
+            continue;
+        }
+        Board next = *b;
+        pass_play(&next, m, s->side);
+        s->path[ply] = m;
+        piece_routes(s, &next, m.er, m.ec, ply + 1, length, kind);
+    }
+    free(moves.items);
+}
+
+/* Every sequence of exactly `length` own moves after which the condition
+ * holds on sq (and not before). */
+static void side_routes(RouteState *s, const Board *b, int ply, int length, GoalCondition cond, const char *kind) {
+    bool holds = goal_holds(b, s->side, s->sq, cond);
+    if (ply == length) {
+        if (holds) {
+            route_line(s, b, kind, length);
+        }
+        return;
+    }
+    if (holds) {
+        return;
+    }
+    MoveList moves = pass_moves(b, s->side);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Board next = *b;
+        pass_play(&next, moves.items[i], s->side);
+        s->path[ply] = moves.items[i];
+        side_routes(s, &next, ply + 1, length, cond, kind);
+    }
+    free(moves.items);
+}
+
+/* Marks a route DOMINATED when another route of the same square is no worse
+ * in every component (fewer or equal own moves, more or equal protectors,
+ * fewer or equal attackers) and better in at least one. */
+static void mark_dominated(RouteState *s) {
+    TextBuffer marked = {NULL, 0, 0};
+    size_t copied = s->routes[0].line_start;
+    text_raw(&marked, s->out->text, copied);
+    for (int i = 0; i < s->route_count; ++i) {
+        const RouteVector *a = &s->routes[i];
+        bool dominated = false;
+        for (int j = 0; j < s->route_count && !dominated; ++j) {
+            const RouteVector *b = &s->routes[j];
+            bool no_worse = b->own <= a->own && b->protectors >= a->protectors && b->attackers <= a->attackers;
+            bool better = b->own < a->own || b->protectors > a->protectors || b->attackers < a->attackers;
+            dominated = no_worse && better;
+        }
+        size_t next = i + 1 < s->route_count ? s->routes[i + 1].line_start : s->out->length;
+        text_raw(&marked, s->out->text + a->line_start, a->line_end - a->line_start);
+        if (dominated) {
+            text_add(&marked, " DOMINATED");
+        }
+        text_raw(&marked, s->out->text + a->line_end, next - a->line_end);
+    }
+    free(s->out->text);
+    *s->out = marked;
+}
+
+/* The owner's ordered chain (review 17): among the distinct values present,
+ * the smallest is IF, each value between is ELSE IF, the largest is ELSE;
+ * with one distinct value only IF. Equal values get the same label. */
+static const char *order_label(const int *values, int count, int value) {
+    int smaller = 0, larger = 0;
+    bool seen_smaller[64] = {false}, seen_larger[64] = {false};
+    for (int i = 0; i < count; ++i) {
+        if (values[i] < 0 || values[i] >= 64) {
+            continue;
+        }
+        if (values[i] < value && !seen_smaller[values[i]]) {
+            seen_smaller[values[i]] = true;
+            ++smaller;
+        } else if (values[i] > value && !seen_larger[values[i]]) {
+            seen_larger[values[i]] = true;
+            ++larger;
+        }
+    }
+    if (smaller == 0) {
+        return "IF";
+    }
+    return larger == 0 ? "ELSE" : "ELSE IF";
+}
+
+static void routes_report(const Board *b, const Goal *g, TextBuffer *out) {
+    static RouteState s;
+    int squares[GOAL_MAX_SQUARES];
+    int count = goal_squares(g, b, b->turn, squares);
+    Color side = b->turn, enemy = side == WHITE ? BLACK : WHITE;
+    int reach[GOAL_MAX_SQUARES], prot[GOAL_MAX_SQUARES];
+    char sq[3];
+
+    text_add(out, "ROUTES BEGIN %s GOAL ", color_name(side));
+    goal_text(g, out);
+    text_add(out, " LIMIT %d PASS\n", g->limit);
+    text_add(out, "NOTE PASS is hypothetical: only %s moves, %s passes; not a real sequence of turns\n",
+             color_name(side), color_name(enemy));
+    for (int k = 0; k < count; ++k) {
+        TextBuffer part = {NULL, 0, 0};
+        memset(&s, 0, sizeof(s));
+        s.out = &part;
+        s.side = side;
+        s.sq = squares[k];
+        square_text(squares[k], sq);
+        text_add(&part, "GOAL %s NOW %s %d %s %d\n", sq, color_name(WHITE), pieces_on_square(b, squares[k], WHITE),
+                 color_name(BLACK), pieces_on_square(b, squares[k], BLACK));
+        /* PIECE: each S piece alone, in board order. */
+        int distance[64];
+        for (int i = 0; i < 64; ++i) {
+            distance[i] = -2;
+            if (b->board[i / 8][i % 8].color != side) {
+                continue;
+            }
+            distance[i] = piece_distance(b, i / 8, i % 8, side, squares[k], g->limit);
+        }
+        for (int i = 0; i < 64; ++i) {
+            char at[3];
+            if (distance[i] == -2) {
+                continue;
+            }
+            square_text(i, at);
+            if (distance[i] >= 0) {
+                text_add(&part, "PIECE %c %s CONDITION IF MOVES %d ORDER %s\n", b->board[i / 8][i % 8].type, at,
+                         distance[i], order_label(distance, 64, distance[i]));
+            } else {
+                text_add(&part, "PIECE %c %s CONDITION ELSE ORDER NONE\n", b->board[i / 8][i % 8].type, at);
+            }
+        }
+        for (int i = 0; i < 64; ++i) {
+            if (distance[i] >= 1) {
+                char kind[16], at[3];
+                square_text(i, at);
+                snprintf(kind, sizeof(kind), "PIECE %c %s", b->board[i / 8][i % 8].type, at);
+                piece_routes(&s, b, i / 8, i % 8, 0, distance[i], kind);
+            }
+        }
+        /* SIDE: any S pieces. */
+        reach[k] = side_distance(b, side, squares[k], COND_REACH, g->limit);
+        prot[k] = side_distance(b, side, squares[k], COND_PROTECTED, g->limit);
+        if (reach[k] >= 0) {
+            text_add(&part, "SIDE REACH CONDITION IF MOVES %d\n", reach[k]);
+        } else {
+            text_add(&part, "SIDE REACH CONDITION ELSE\n");
+        }
+        if (prot[k] >= 0) {
+            text_add(&part, "SIDE PROTECTED CONDITION IF MOVES %d\n", prot[k]);
+            if (prot[k] >= 1) {
+                side_routes(&s, b, 0, prot[k], COND_PROTECTED, "SIDE PROTECTED");
+            }
+        } else {
+            text_add(&part, "SIDE PROTECTED CONDITION ELSE\n");
+        }
+        if (s.route_count > 0) {
+            mark_dominated(&s);
+        }
+        if (s.extra > 0) {
+            text_add(&part, "MORE ROUTES %d not listed\n", s.extra);
+        }
+        text_raw(out, part.text, part.length);
+        free(part.text);
+    }
+    if (count == 0) {
+        text_add(out, "NO SQUARES\n");
+    }
+    for (int k = 0; k < count; ++k) {
+        square_text(squares[k], sq);
+        text_add(out, "SQUARE %s REACH CONDITION %s PROTECTED CONDITION %s\n", sq, reach[k] >= 0 ? "IF" : "ELSE",
+                 prot[k] >= 0 ? "IF" : "ELSE");
+    }
+    /* The owner's if / else if / else order: the first square that is IF. */
+    const char *names[2] = {"REACH", "PROTECTED"};
+    for (int c = 0; c < 2; ++c) {
+        int first = -1;
+        for (int k = 0; k < count && first < 0; ++k) {
+            if ((c == 0 ? reach[k] : prot[k]) >= 0) {
+                first = k;
+            }
+        }
+        if (first >= 0) {
+            square_text(squares[first], sq);
+            text_add(out, "FIRST-IF %s %s\n", names[c], sq);
+        } else {
+            text_add(out, "FIRST-IF %s none (ELSE)\n", names[c]);
+        }
+    }
+    text_add(out, "ROUTES END\n");
+}
+
+/* ---- marks: the IF/ELSE results added to the lists while playing ---- */
+
+/* One mark: after the motions already made (`used` own moves, the last one
+ * ending on (r, c)), the PIECE and SIDE results for the goal's squares in
+ * order (the first square that is IF is shown). */
+static void mark_text(const Board *after, const Goal *g, const int *squares, int count, int r, int c, int used,
+                      TextBuffer *out) {
+    Color side = after->turn;
+    char sq[3];
+    int left = g->limit - used;
+    bool done = false;
+    for (int k = 0; k < count && !done && left >= 0; ++k) {
+        int d = piece_distance(after, r, c, side, squares[k], left);
+        if (d >= 0) {
+            square_text(squares[k], sq);
+            text_add(out, " PIECE CONDITION IF %s MOVES %d", sq, used + d);
+            done = true;
+        }
+    }
+    if (!done) {
+        text_add(out, " PIECE CONDITION ELSE");
+    }
+    done = false;
+    for (int k = 0; k < count && !done && left >= 0; ++k) {
+        int d = side_distance(after, side, squares[k], COND_REACH, left);
+        if (d >= 0) {
+            square_text(squares[k], sq);
+            text_add(out, " SIDE CONDITION IF %s MOVES %d", sq, used + d);
+            done = true;
+        }
+    }
+    if (!done) {
+        text_add(out, " SIDE CONDITION ELSE");
+    }
+    text_add(out, "\n");
+}
+
+/* After selecting the piece on (r, c): a mark for each of its destinations. */
+static void goal_marks_selection(const Board *b, const Goal *g, int r, int c, TextBuffer *out) {
+    int squares[GOAL_MAX_SQUARES];
+    int count = goal_squares(g, b, b->turn, squares);
+    char at[3], text[6];
+    square_text(r * 8 + c, at);
+    text_add(out, "GOAL MARKS %c %s GOAL ", b->board[r][c].type, at);
+    goal_text(g, out);
+    text_add(out, " LIMIT %d PASS\n", g->limit);
+    MoveList moves = sorted_moves(b);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Move m = moves.items[i];
+        if (m.sr != r || m.sc != c) {
+            continue;
+        }
+        Board after = *b;
+        Color side = b->turn;
+        pass_play(&after, m, side);
+        move_text(m, text);
+        text_add(out, "MARK %s", text);
+        mark_text(&after, g, squares, count, m.er, m.ec, 1, out);
+    }
+    free(moves.items);
+    text_add(out, "GOAL MARKS END\n");
+}
+
+/* After previewing m: a mark for each move of each S piece in the AFTER
+ * position (S moving again, PASS). */
+static void goal_marks_after(const Board *b, const Goal *g, Move m, TextBuffer *out) {
+    int squares[GOAL_MAX_SQUARES];
+    Color side = b->turn;
+    Board after = *b;
+    char text[6], at[3];
+    pass_play(&after, m, side);
+    int count = goal_squares(g, &after, side, squares);
+    move_text(m, text);
+    text_add(out, "GOAL MARKS AFTER %s GOAL ", text);
+    goal_text(g, out);
+    text_add(out, " LIMIT %d PASS\n", g->limit);
+    for (int k = 0; k < count; ++k) {
+        if (goal_holds(&after, side, squares[k], COND_REACH)) {
+            square_text(squares[k], at);
+            text_add(out, "REACHED %s 1\n", at);
+        }
+    }
+    MoveList moves = pass_moves(&after, side);
+    for (size_t i = 0; i < moves.count; ++i) {
+        Move n = moves.items[i];
+        Board next = after;
+        pass_play(&next, n, side);
+        square_text(n.sr * 8 + n.sc, at);
+        move_text(n, text);
+        text_add(out, "MARK %c %s %s", after.board[n.sr][n.sc].type, at, text);
+        mark_text(&next, g, squares, count, n.er, n.ec, 2, out);
+    }
+    free(moves.items);
+    text_add(out, "GOAL MARKS END\n");
+}
+
+/* Reads "f7 2", "f7 g7 h7 3" or "king 2". False if not well formed. */
+static bool parse_goal(const char *text, Goal *g) {
+    Goal read;
+    char word[16];
+    int used = 0;
+    memset(&read, 0, sizeof(read));
+    read.limit = -1;
+    while (sscanf(text, "%15s%n", word, &used) == 1) {
+        text += used;
+        int r, c, n;
+        char extra;
+        if (read.limit != -1) {
+            return false; /* nothing after the limit */
+        }
+        if (!strcmp(word, "king") && read.count == 0 && !read.king) {
+            read.king = true;
+        } else if (strlen(word) == 2 && parse_square(word, &r, &c) && !read.king) {
+            if (read.count == GOAL_MAX_SQUARES) {
+                return false;
+            }
+            for (int i = 0; i < read.count; ++i) {
+                if (read.square[i] == r * 8 + c) {
+                    return false;
+                }
+            }
+            read.square[read.count++] = r * 8 + c;
+        } else if (sscanf(word, "%d%c", &n, &extra) == 1 && n >= 1 && n <= GOAL_MAX_LIMIT &&
+                   (read.count > 0 || read.king)) {
+            read.limit = n;
+        } else {
+            return false;
+        }
+    }
+    if (read.limit == -1) {
+        return false;
+    }
+    read.active = true;
+    *g = read;
+    return true;
+}
+
+/* ---- distance order: the owner's fourth idea (review 17, reading B) ----
+ * "distance on" adds, after selecting a piece and after a preview, every
+ * legal move with the number of squares it travels, max(|rows|, |files|),
+ * ordered from the fewest squares (IF) through each larger distance
+ * (ELSE IF) to the most (ELSE). A knight move is marked JUMP (one move,
+ * displacement 2); castling is marked CASTLE with the rook's move (the
+ * king's 2 squares are its distance). The moves of a piece whose side is
+ * not to move are listed as if it were its turn. Nothing else changes. */
+
+static int move_distance(Move m) {
+    int dr = abs(m.er - m.sr), dc = abs(m.ec - m.sc);
+    return dr > dc ? dr : dc;
+}
+
+/* The distance lines of the piece on (r, c) in b. `label` starts each line. */
+static void distance_lines(const Board *b, int r, int c, const char *label, TextBuffer *out) {
+    Board view = *b;
+    int distances[256];
+    Move moves[256];
+    int count = 0;
+    char text[6];
+
+    view.turn = b->board[r][c].color;
+    MoveList all = sorted_moves(&view);
+    for (size_t i = 0; i < all.count && count < 256; ++i) {
+        if (all.items[i].sr == r && all.items[i].sc == c) {
+            moves[count] = all.items[i];
+            distances[count] = move_distance(all.items[i]);
+            ++count;
+        }
+    }
+    free(all.items);
+    if (count == 0) {
+        text_add(out, "NO-MOVES%s\n", label + 4); /* label starts with "MOVE" */
+        return;
+    }
+    for (int d = 1; d <= 7; ++d) {
+        for (int i = 0; i < count; ++i) {
+            if (distances[i] != d) {
+                continue;
+            }
+            move_text(moves[i], text);
+            text_add(out, "%s %s DISTANCE %d ORDER %s", label, text, d, order_label(distances, count, d));
+            char type = b->board[r][c].type;
+            if (type == 'N') {
+                text_add(out, " JUMP");
+            } else if (type == 'K' && d == 2) {
+                bool king_side = moves[i].ec > moves[i].sc;
+                char rook_from[3], rook_to[3];
+                square_text(r * 8 + (king_side ? 7 : 0), rook_from);
+                square_text(r * 8 + (king_side ? 5 : 3), rook_to);
+                text_add(out, " CASTLE %s%s", rook_from, rook_to);
+            }
+            text_add(out, "\n");
+        }
+    }
+}
+
+/* After selecting the piece on (r, c). */
+static void distance_selection(const Board *b, int r, int c, TextBuffer *out) {
+    char at[3];
+    square_text(r * 8 + c, at);
+    text_add(out, "DISTANCE ORDER %c %s\n", b->board[r][c].type, at);
+    distance_lines(b, r, c, "MOVE", out);
+    text_add(out, "DISTANCE ORDER END\n");
+}
+
+/* After previewing m: every piece of both sides in the AFTER position,
+ * White first, each in board order. */
+static void distance_after(const Board *b, Move m, TextBuffer *out) {
+    Board after = *b;
+    char text[6];
+    make_move(&after, m);
+    move_text(m, text);
+    text_add(out, "DISTANCE ORDER AFTER %s\n", text);
+    for (int side = WHITE; side <= BLACK; ++side) {
+        for (int i = 0; i < 64; ++i) {
+            if (after.board[i / 8][i % 8].color != (Color)side) {
+                continue;
+            }
+            char at[3], label[24];
+            square_text(i, at);
+            snprintf(label, sizeof(label), "MOVE %s %c %s", color_name((Color)side), after.board[i / 8][i % 8].type, at);
+            distance_lines(&after, i / 8, i % 8, label, out);
+        }
+    }
+    text_add(out, "DISTANCE ORDER END\n");
+}
+
 static void clear_selection(int *row, int *col, bool *preview_shown,
                             bool *promotion_choice_pending) {
     *row = -1;
@@ -2768,6 +3428,8 @@ int main(void) {
     bool promotion_choice_pending = false;
     Move pending_promotion_move = {0, 0, 0, 0, '\0'};
     static Tracker tracker; /* Stage 3A: piece names and lost moves */
+    static Goal goal;       /* Stage 3D-1: the active goal, if any */
+    bool distance_view = false; /* Stage 3D-1: "distance on" */
 
 #ifdef _WIN32
     /* Only in a real console window. When the input comes from a file (the
@@ -2899,6 +3561,18 @@ int main(void) {
             if (strchr("QRBN", choice) != NULL) {
                 pending_promotion_move.promotion = choice;
                 show_step2_after(&game, pending_promotion_move);
+                if (goal.active) {
+                    TextBuffer marks = {NULL, 0, 0};
+                    goal_marks_after(&game, &goal, pending_promotion_move, &marks);
+                    fputs(marks.text, stdout);
+                    free(marks.text);
+                }
+                if (distance_view) {
+                    TextBuffer view = {NULL, 0, 0};
+                    distance_after(&game, pending_promotion_move, &view);
+                    fputs(view.text, stdout);
+                    free(view.text);
+                }
                 preview_move = pending_promotion_move;
                 preview_shown = true;
                 promotion_choice_pending = false;
@@ -2955,6 +3629,51 @@ int main(void) {
                     fflush(stdout);
                 }
                 loop_report(&game, depth, zero_k, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        /* Stage 3D-1: "goal ...", "goal", "goal off" and "routes". */
+        if (!strcmp(input, "goal") || !strncmp(input, "goal ", 5)) {
+            TextBuffer view = {NULL, 0, 0};
+            if (input[4] == '\0') {
+                if (goal.active) {
+                    text_add(&view, "GOAL ACTIVE ");
+                    goal_text(&goal, &view);
+                    text_add(&view, " LIMIT %d PASS\n", goal.limit);
+                } else {
+                    text_add(&view, "No goal is active. Type goal f7 2 (squares, then a limit of own moves 1 to 4).\n");
+                }
+            } else if (!strcmp(input + 5, "off")) {
+                goal.active = false;
+                text_add(&view, "Goal cleared.\n");
+            } else if (parse_goal(input + 5, &goal)) {
+                text_add(&view, "GOAL ACTIVE ");
+                goal_text(&goal, &view);
+                text_add(&view, " LIMIT %d PASS\n", goal.limit);
+            } else {
+                puts(RED "Type goal, squares and a limit from 1 to 4, for example goal f7 2, goal f7 g7 h7 3 or goal king 2; goal off clears it." RESET);
+            }
+            if (view.text != NULL) {
+                fputs(view.text, stdout);
+                free(view.text);
+            }
+            continue;
+        }
+        if (!strcmp(input, "distance") || !strcmp(input, "distance on") || !strcmp(input, "distance off")) {
+            if (input[8] == ' ') {
+                distance_view = input[10] == 'n';
+            }
+            printf("DISTANCE ORDER %s\n", distance_view ? "ON" : "OFF");
+            continue;
+        }
+        if (!strcmp(input, "routes")) {
+            if (!goal.active) {
+                puts(RED "No goal is active. Type goal f7 2 first, then routes." RESET);
+            } else {
+                TextBuffer view = {NULL, 0, 0};
+                routes_report(&game, &goal, &view);
                 fputs(view.text, stdout);
                 free(view.text);
             }
@@ -3033,6 +3752,18 @@ int main(void) {
                 preview_shown = false;
                 print_selection_near_prompt(&game, row, col);
                 puts("Piece selected. BEFORE/AFTER lists will appear together after the destination.");
+                if (goal.active) {
+                    TextBuffer marks = {NULL, 0, 0};
+                    goal_marks_selection(&game, &goal, row, col, &marks);
+                    fputs(marks.text, stdout);
+                    free(marks.text);
+                }
+                if (distance_view) {
+                    TextBuffer view = {NULL, 0, 0};
+                    distance_selection(&game, row, col, &view);
+                    fputs(view.text, stdout);
+                    free(view.text);
+                }
                 continue;
             }
 
@@ -3050,6 +3781,18 @@ int main(void) {
                 continue;
             }
             show_step2_after(&game, chosen);
+            if (goal.active) {
+                TextBuffer marks = {NULL, 0, 0};
+                goal_marks_after(&game, &goal, chosen, &marks);
+                fputs(marks.text, stdout);
+                free(marks.text);
+            }
+            if (distance_view) {
+                TextBuffer view = {NULL, 0, 0};
+                distance_after(&game, chosen, &view);
+                fputs(view.text, stdout);
+                free(view.text);
+            }
             preview_move = chosen;
             preview_shown = true;
             continue;

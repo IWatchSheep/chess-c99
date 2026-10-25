@@ -1,0 +1,11 @@
+fen 8/P7/8/8/8/8/8/K6k w - - 0 1
+goal a8 1
+routes
+a7
+a8
+q
+n
+fen 4r1k1/8/8/8/8/8/4N3/4K3 w - - 0 1
+goal c3 d4 2
+routes
+quit

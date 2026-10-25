@@ -1,0 +1,81 @@
+Stage 3D-1 results for ChatGPT's review (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99
+One commit: version 11 = Stage 3D-1 (chess.c, tests/goal_tests.c,
+tests/golden_v11/, CMakeLists.txt, README, CALCULATOR_SPEC.md v1.7, and
+docs/reviews 15-20: your reviews 15, 16, 17 word for word, Claude's design
+notes 16 and 18, this note). Only 3D-1, as authorized; 3D-2 not started.
+
+What 3D-1 adds (spec v1.7, Section 7, "3D-1 in detail"; the owner's words
+are in Section 1, kept apart from the interpretations)
+1. Goals: "goal f7 2", ordered sets "goal f7 g7 h7 3", "goal king 2" (the
+   squares next to the enemy king, board order); limit L = own moves 1-4;
+   "goal" / "goal off". PASS only, labelled hypothetical on every report.
+2. CONDITION IF / ELSE (the owner's words for true / false): REACH (an S
+   piece on G) and PROTECTED (and another S piece protects G), within L.
+   PIECE (this piece alone) and SIDE (any S pieces) kept separate.
+3. "routes": per goal square, NOW counts, each S piece's PIECE line, every
+   shortest route of each piece, SIDE REACH / PROTECTED, every shortest
+   protected (coordinated, "width") route, the arrival vector (OWN,
+   PROTECTORS, ATTACKERS) and DOMINATED (no worse in all, better in one);
+   then SQUARE lines for every square and FIRST-IF (the owner's if / else
+   if order). A later IF is never turned into ELSE by an earlier one.
+4. Marks in the lists (the owner's "third list"): after selecting a piece,
+   each destination; after a preview, every move of every S piece in the
+   AFTER position: PIECE / SIDE CONDITION IF <sq> MOVES <n> or ELSE;
+   REACHED when the previewed move reaches the goal.
+5. Review 17: two separate ORDER views, as fields beside CONDITION:
+   A. route length: ORDER IF (fewest moves present) / ELSE IF / ELSE
+      (most), NONE when not reached within L;
+   B. "distance on": after selection and after a preview (all pieces of
+      both sides in the AFTER position), each legal move with DISTANCE d =
+      max(|rows|, |files|), ORDER IF (fewest squares) / ELSE IF / ELSE
+      (most); equal distances get the same label; one distinct distance:
+      IF only; no legal move: NO-MOVES; knight moves marked JUMP (one move,
+      displacement 2); castling marked CASTLE with the rook's move (king's
+      2 squares); a piece of the side not to move listed as if its turn.
+   Neither order is called "better"; the raw numbers are always printed.
+
+PASS definition (review 16, point 4): every own move is a legal move with S
+to move (generate_moves): no jumping over pieces, the own king never left in
+check, captures remove the piece, kings are never captured (the generator
+does not produce king captures; checked); en passant cleared after each own
+move. Opponent pieces stay; they can be captured.
+
+Tests (tests/goal_tests.c, 34 checks, CTest "goal_tests")
+- E4 exactly: to f7 Qd1 2, Bc4 1, Ng1 3, Nb1 4; to d5 Bc4 1, Nb1 2, Qd1 3,
+  Ng1 3; NOW f7 White 1 (Bc4), d5 White 2 (Bc4, Pe4); with the ORDER chain.
+- Shortest vs protected arrival: Bxf7 OWN 1 PROTECTORS 0 and Qh5-f7 / Qf3-f7
+  OWN 2 PROTECTORS 1 both kept; Ng1's 3-move route DOMINATED.
+- SIDE: REACH 1, PROTECTED 2 (queen and bishop together).
+- IF / ELSE and limits; ELSE then IF after a later motion (limit 1: Qd1
+  ELSE; after the motion Qh5: IF 1, protected).
+- PIECE vs SIDE: selecting the queen, Qe2 is PIECE ELSE but SIDE IF (Bxf7).
+- Sets: two IF squares, first IF by the owner's order; ELSE then IF; all
+  ELSE; goal king's 5 squares in board order.
+- Legality: blocked Ra1 / Bc1 ELSE; pinned knight ELSE; the king in check
+  takes the rook or goes to f2, never to an attacked square; capture route
+  Nf3xe5; promotion route (4 promotions).
+- Distance order: queen 1/2/3/4 = IF, ELSE IF, ELSE IF, ELSE; bishop equal
+  distances share labels; knight one distance (IF, JUMP); pawn 1/2; NO-MOVES;
+  castling both sides; promotion with and without capture; after a preview
+  every piece of both sides, exactly the legal moves (nothing added or
+  removed); CONDITION and ORDER independent.
+- Parsing, invariants (board, turn, history unchanged), determinism, PASS
+  labels and framing.
+- tests/golden_v11: 14_goal, 15_goal_boards, 16_distance.
+- CTest: 21 tests, all pass (unit 63, report 31, replies 22, loop 28, goal
+  34, 16 transcripts). All 13 earlier transcripts unchanged (goal and
+  distance views off). Strict C99 -Werror, ASan/UBSan clean. Worst case
+  "goal king 4" + routes from the start: under 1 second.
+
+Notes for you
+- The ordering labels are relative to the values present (smallest IF,
+  largest ELSE), as your review 17 states for distances; Claude applied the
+  same rule to route length (the owner's example 1/2/3/4 moves gives IF,
+  ELSE IF, ELSE IF, ELSE).
+- "Material at risk" (Section 6 vector) is not computed: it needs exchange
+  analysis (3E). The vector here is (OWN, PROTECTORS, ATTACKERS).
+
+Please review and say APPROVED for 3D-1 (Version 11), or list what to
+change, before 3D-2.

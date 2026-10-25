@@ -1,0 +1,123 @@
+Stage 3D design for ChatGPT's review, BEFORE any code (chess-c99)
+
+Repository: https://github.com/IWatchSheep/chess-c99 (latest 7b69e63;
+Version 10 = Stage 3C, approved in your review 15). Nothing is built yet.
+The owner asked for this design to go to you first; he will also paste his
+own description. Spec Section 6 (routes, arrival support, width, vector,
+support follow-ups, G2) is the base; the owner has added the idea below.
+
+1. The owner's words (2026-10-25, verbatim)
+
+Asked whether a goal should be one square or a set of squares:
+"using this is a question of two different logical points, neither solution
+is false because the solution is neither one it is the function of motion
+between them with the result of if the motion returned true or false its an
+if else condition. Because your following my plan so this logical question
+builds on my plan too so the answer is build them both then use the motion
+to test true and if false go to false go to if if if falis go to else, you
+see?"
+
+"this implies a logic presented to every piece as a result of moving to a
+square, that movement being a true or false motion. Then the result of
+having multiple options is every one of those available options has its own
+true and false motion as well. then you limit this by having a limit to the
+number of loops you do this so you can capture chess strategies you see?"
+
+"you know how there was a initial piece and then that being selected
+presented multiple options. then is there a third list presented to choose
+from for a true or false and then you select one of those then this changes
+how the pieces lists move from unchanged because the piece hasn't moved to
+after the piece moved to a list of true or false options each of the moves
+available after the pieces moves listed."
+
+"I think so go ask chatgpt then we will see if they agree because I
+described it to ypu I will also paste that into their chat and then they
+will decide ok?"
+
+2. Claude's reading (the owner said "I think so")
+
+a) Goals: one square or an ordered set of squares, both supported; one
+   square is a set of one. For a set, each square is tested in the order
+   given: if reached -> TRUE, else if the next is reached -> TRUE, ...,
+   else -> FALSE for the whole set. Every square's TRUE/FALSE is reported,
+   and the first TRUE in the owner's order is marked (where his if/else
+   chain stops). Named set proposed: "around the enemy king" (the squares
+   next to it), in board order rank 8 -> 1, file a -> h.
+b) Every move is a "motion" with a TRUE/FALSE result toward the goal;
+   each option branches into its own TRUE/FALSE options; a depth limit
+   stops it. The TRUE branches are the strategies, found without being
+   told what to look for (expected: goal f7 from the E3 position finds
+   Qh5 then Qxf7 arriving protected by Bc4, while Bxf7 alone arrives
+   unprotected; see E4).
+c) The same as 3C's loop, with "goal reached?" tested at each node instead
+   of "checkmate?".
+
+3. Proposed definitions (please confirm or correct)
+
+- GOAL REACHED on square G: a piece of the side S stands on G after S's
+  move (moving there, or capturing there).
+- PROTECTED arrival: on arrival at least one other S piece protects G
+  (spec Section 3 link). Arrival vector (Section 6): (own moves, S
+  protectors of G, enemy attackers of G, arriving piece attacked yes/no).
+  No weights; X better than Y only if no worse in every component and
+  better in one; otherwise both are kept.
+- Two modes, always labelled:
+  PASS ("hypothetical (pass)"): only S moves; distance, not real play.
+  REAL: the other side answers with every legal move; the result is
+  FORCED / POSSIBLE k OF r / NOT-FOUND exactly as in 3C (S chooses, every
+  reply is checked).
+- Limit: own moves L (PASS) or plies N (REAL), chosen by the user, no
+  default, as in 3C; LIMIT is printed when nothing is forced.
+
+4. Proposed commands and output (draft)
+
+A. By hand (the owner's "third list"):
+   goal f7 2         sets the active goal (a set: goal f7 g7 h7 2, or
+                     goal king 2) and the limit L (own moves, PASS mode).
+   goal              shows the active goal;  goal off  clears it.
+   While a goal is active, the existing lists get TRUE/FALSE marks:
+   - list 2 (destinations of the selected piece): each destination marked
+     with whether, from there, the goal is reached within the remaining
+     own moves, and with what arrival vector;
+   - list 3 (the preview's AFTER lists of every other piece): each move
+     marked the same way.
+   With no goal active, every existing output stays byte-for-byte the same
+   (all 13 transcripts unchanged).
+   Open point: is a mark about THIS piece reaching G, or about ANY S piece
+   reaching G after this move? (With "any piece", in the E3 position every
+   queen move is TRUE because Bxf7 is always available; with "this piece"
+   plus the arrival vector, Qh5 -> f7 protected and Bc4 -> f7 unprotected
+   are told apart.) Claude proposes: per piece, with the vector.
+
+B. Automatic:
+   routes 3          from the current position, every sequence of up to 3
+                     own moves (PASS) reaching the goal:
+     ROUTE <moves> ARRIVES <type> <square> OWN <n> PROTECTORS <n>
+           ATTACKERS <n> AT-RISK <yes|no> [DOMINATED]
+     SQUARE <sq> TRUE|FALSE   for each square of the set; FIRST-TRUE <sq>
+   routes 4 real     the same with the other side replying (plies):
+     GOAL-FIRST <m> FORCED | POSSIBLE <k> OF <r> | NOT-FOUND, RESULT, LIMIT
+   (shortest route per piece and per pair of pieces; "width" = arrival
+   protected by another piece.)
+
+C. Support follow-ups (Section 6): "support" after a preview lists every
+   one-move follow-up (q, f) after which q protects the moved piece.
+
+D. Second goal G2: "routes 3 then d5" measures G2 from the end position of
+   each TRUE route to G1 (or from B if G1 is not reached).
+
+5. Questions for you
+
+1. Is the reading in 2 and the definitions in 3 a faithful implementation
+   of the owner's TRUE/FALSE motion idea?
+2. Marks per piece ("this piece reaches G") or for the side ("some piece
+   reaches G after this move")? Or both?
+3. Should 3D be split (3D-1: goal sets, marks by hand, PASS routes, vector;
+   3D-2: REAL mode, support follow-ups, G2) to keep each review small?
+4. Anything to add to the tests: E4 (route lengths Qd1 2, Bc4 1, Ng1 3,
+   Nb1 4 to f7; d5: Qd1 3, Bc4 1, Ng1 3, Nb1 2), Scholar's coordinated
+   route found as TRUE, a set goal with the if/else order, PASS vs REAL
+   labels, all old transcripts unchanged?
+
+Please say APPROVED for the design (with any changes), or list what to
+change, before Claude builds Version 11.

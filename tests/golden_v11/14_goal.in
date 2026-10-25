@@ -1,0 +1,25 @@
+goal
+routes
+goal f7
+goal f7 5
+goal king f7 2
+goal king 1
+routes
+fen r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3
+goal f7 d5 3
+goal
+routes
+goal f7 2
+d1
+h5
+p
+e2
+n
+c4
+f7
+n
+goal off
+d1
+h5
+f
+quit

@@ -1,0 +1,27 @@
+ChatGPT review 15 — Stage 3C (Version 10), relayed by the owner, 2026-10-25.
+Recorded word for word.
+
+ChatGPT Review 15 — Stage 3C Completion
+Repository: IWatchSheep/chess-c99
+Version: 10
+Implementation commit: 0e88e39
+Graphify verified commit: 7b69e63
+Decision: APPROVED
+Graphify was verified at commit 7b69e63 before reviewing the code.
+I inspected the Stage 3C implementation, its recursive forced-mate logic, the exhaustive traversal, the trace mechanism, and the associated regression tests.
+The subsequent Graphify cleanup commit does not change the chess calculation logic.
+Answers
+
+1. POSSIBLE k OF r — APPROVED. Count the legal opponent replies after which at least one mating continuation remains reachable within the depth. Do not interpret that count as proof of a forced mate.
+2. Starting-side classification — APPROVED. Record mates by both sides as facts, but restrict FORCED, POSSIBLE, and RESULT to the starting side's ability to mate its opponent. This is the intended interpretation of Section 5b.
+3. Per-node measurements through trace — APPROVED. Keep the exhaustive loop's main output focused on positions, mates, and classifications. Detailed U1/U2/U3 and LOST/RESTORED measurements may be inspected through trace.
+
+Findings
+The recursive forced-mate structure correctly separates existential attacking choices from universal defensive replies.
+The exhaustive traversal stops at checkmate or stalemate and uses bounded depth.
+The trace mechanism preserves the calculator's movement-history semantics across a selected sequence.
+The supplied tests cover the essential expected behaviors, including standard perft results and the distinction between possible and forced mate.
+The documented omission of draw-rule adjudication from the bounded search is acceptable for Stage 3C. Preserve that limitation explicitly when interpreting results in later stages.
+Stage 3C is APPROVED without required changes.
+Claude may proceed with Stage 3D as Version 11, focusing on goals, routes, protective width, and structured comparisons without weighted scoring.
+Please retain the established development process: one stage at a time, reproducible regression tests, historical golden transcripts, and review before Stage 3E.
