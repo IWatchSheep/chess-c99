@@ -20,10 +20,11 @@ The program is `chess.c`. Its history in this repository is the order it was bui
 | 12 | `Version 12` | Calculator stage 3D-2: `routes real 3` tests the goal with the other side answering every move (FORCED or POSSIBLE); `support` lists your next moves that would protect the piece you just previewed; `goal2` measures a second goal from where the first goal's routes end |
 | 13 | `Version 13` | Calculator stage 3E, captures: `exchange e5 4` lists every order of captures on one square with what each side took (pawn 1, knight 3, bishop 3, rook 5, queen 9, written down only); `order 4` lists your moves with captures first (greatest piece first), then the rest by distance; `risk on` shows the value of a piece arriving on an attacked goal square |
 | 14 | `Version 14` | Calculator stage 3F, comparing moves: `compare 3 d1h5 d1f3 g1f3` lists the facts of each candidate move and compares them pair by pair (which condition is stronger, where your IF chains put them, where the measurements agree or disagree); the Loop 1 and Loop 2 views; nothing is chosen |
+| 15 | `Version 15` | The same program rewritten to be easy for beginners to read (sections, comments, `BOARD_SIZE` instead of 8, one step per line) and protected against buffer overflow, made by the owner with the CLion AI assistant and ChatGPT and reviewed by Google's AI, Grok and Claude. **Nothing the program does or prints changes**: all 30 version 14 tests pass unchanged |
 
-The current program is version 14. All planned calculator stages (3S, 3A–3F) are complete and approved.
+The current program is version 15. All planned calculator stages (3S, 3A–3F) are complete and approved; version 15 changes how the code reads, not what it does.
 
-**This repository is closed (archived, read-only).** The owner planned chess only as far as the calculator. Its final state is tag `calculator-complete-v14`. Version 14 is the completed calculator reference for the next project, AI Hologram Version 3 (C++11), which will run it as a separate program and compare its output with the transcripts kept here (ChatGPT review 43, `docs/reviews/43_…`). The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
+**This repository was closed (archived) after version 14 and reopened by the owner only for version 15.** The owner planned chess only as far as the calculator. Version 14 stays tagged `calculator-complete-v14`. Version 15 is the beginner-readable calculator for the next project, AI Hologram Version 3, which the owner has decided will also be written in beginner-readable C99 (his words: "I didn't agree the new repository would be written in c++ I intended to write it all in c99 that a beginner could read."; `docs/reviews/44_…`). The record of version 15 is `docs/reviews/44_…` to `46_…`. The calculator is planned in `docs/PLAN.md` (plain words) and `docs/CALCULATOR_SPEC.md` (exact); the owner's ideas, in his own words and order, are in `docs/OWNER_IDEAS.md`. `docs/FLOWCHART_CROSS_REFERENCE.md` compares the AI Hologram flowchart with this calculator's measurements (research hypotheses only), and `tools/experiments/` holds the experiments run for it.
 
 ## Build and run
 
@@ -38,7 +39,7 @@ gcc -std=c99 -Wall -Wextra -Wpedantic -O2 chess.c -o chess
 
 Widen the console to about 140 columns for the before/after report.
 
-## How to play (version 14)
+## How to play (version 15; the same as version 14)
 
 1. Type the square of one of your pieces, for example `e2`, and press Enter. Its legal squares are listed.
 2. Type a destination, for example `e4`. Nothing moves yet: the report shows, for every other piece on both sides, its legal squares BEFORE and AFTER the move, and what it GAINED, LOST and kept.
@@ -139,6 +140,8 @@ In CLion: **Run → All CTests** (or `ctest` in the build folder). They are:
 **Version 13** adds captures, values and the combined order. All eighteen earlier transcripts are reproduced byte for byte; 27 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 21 exchange checks, twenty transcripts).
 
 **Version 14** adds `compare` and corrects the capture labels of `order` (version 13 printed `ORDER IF` for every capture of the first group). All twenty earlier transcripts are reproduced byte for byte; 30 CTest tests pass (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 22 exchange, 13 compare checks, twenty-two transcripts).
+
+**Version 15** (2026-10-26) replaces `chess.c` with the owner's beginner-readable rewrite (6,900 lines, 21 numbered sections with comments). One function, `exchange_report`, had changed its output wording in the rewrite; at the owner's choice ("a is good") the version 14 wording was put back (4 lines), keeping the rewrite's bound on the `values` array. Checked by Claude: builds with `-Werror`; all 30 CTest tests pass unchanged (63 unit, 31 report, 22 reply, 28 loop, 34 goal, 16 real, 22 exchange, 13 compare checks, twenty-two transcripts); all tests and all transcript inputs run clean under AddressSanitizer and UndefinedBehaviorSanitizer (`cmake -DCHESS_SANITIZERS=ON`, Linux); 900 random games replayed in version 14 and version 15 give the same legal moves, checks, mates and draws at every one of about 305,000 positions; Grok's 99 independent checks pass. The `chcp` call was removed in the rewrite; every output character is plain ASCII, so it is not needed. Details: `docs/reviews/45_…`.
 
 ## Code map (optional)
 

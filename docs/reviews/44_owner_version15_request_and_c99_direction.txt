@@ -1,0 +1,19 @@
+44 — THE OWNER'S WORDS FOR VERSION 15 AND VERSION 3 (verbatim)
+Recorded by Claude, 2026-10-26.
+
+1. Language for Version 3 (owner to ChatGPT, 2026-10-25; recorded in the
+   handoff file 001_01_OWNER_FINAL_LANGUAGE_CORRECTION_C99.txt):
+   "I didn't agree the new repository would be written in c++ I intended to write it all in c99 that a beginner could read."
+   This supersedes the C++11 choice in ChatGPT review 43 (docs/reviews/43_...).
+
+2. The request (owner to Claude, 2026-10-26):
+   "I asked chatgpt to give the the c file to run through the clion ai assistant coder and the coder found bugs and fixed them then I asked them to change the code to be user friendly for beginners to read then I asked to protect against buffer overflow. Then I got chatgpt and clion to make some files to show how the new code works in place of the code you made then chatgpt got me to run tests on clion 3 times then they said take it to grok then grok made some files then chatgpt collected all the files and i gave them to you. now the idea is to take the code and update the chess repository then complete the job of making repository 3. if thats ok I will make the chess repository open again."
+
+3. The choice about the exchange wording (owner to Claude, 2026-10-26),
+   answering "Version A or Version B" in docs/reviews/45_...:
+   "a is good"
+
+Source package: CLAUDE_V3_C99_CONSOLIDATED_HANDOFF_WITH_GROK_REVIEW_2026-10-26.zip
+(new chess source 007_chess.c, 236,153 bytes, SHA-256
+549f15c1e6fa46fe47aaa566f05bce30a62d562ac2433f4a0c626c802814fcc6; Google AI
+reviews 1-3; Grok's independent review; the audited research handoff).

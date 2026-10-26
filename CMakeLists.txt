@@ -7,6 +7,15 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# Version 15: optional memory checks (AddressSanitizer and UndefinedBehavior-
+# Sanitizer) for GCC or Clang on Linux or macOS. Off by default; MinGW on
+# Windows does not support them. Use: cmake -DCHESS_SANITIZERS=ON ...
+option(CHESS_SANITIZERS "Build everything with AddressSanitizer and UBSan" OFF)
+if (CHESS_SANITIZERS)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 add_executable(chess chess.c)
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
