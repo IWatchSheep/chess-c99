@@ -1,0 +1,50 @@
+47 — CLAUDE: VERSION 16, WINDOWS BOARD COLOURS
+Date: 2026-10-26
+
+WHAT THE OWNER SAW (twice, running from CLion on Windows; first lines):
+  C:\Users\I_wat\CLionProjects\ai-hologram-v3\cmake-build-debug\chess\chess.exe
+  === Simple 2-Player Chess ===
+  8 |←[48;5;180m←[38;5;232m r ←[0m|←[48;5;94m←[38;5;231m n ←[0m| ...
+  (and the same from chess-c99\cmake-build-debug\chess.exe with the first
+  fix below)
+The colour codes were printed as text ("←" is how the Windows console
+shows the ESC character) instead of colours.
+
+FIRST FIX — DID NOT WORK
+  Version 15 (the beginner rewrite) had removed version 14's lines
+    #ifdef _WIN32
+        if (_isatty(0)) { (void)system("chcp 65001 > nul"); }
+    #endif
+  and Claude's check (docs/reviews/45, Part B item 3) had called them "not
+  needed". Claude first put them back, believing that starting cmd.exe
+  also switches the console to show colours. The owner's run showed the
+  codes as text again. So that belief was wrong (or does not hold on the
+  owner's Windows), and Claude's earlier statement in review 45 is
+  superseded by this record. That first fix was never pushed.
+
+SECOND FIX — VERSION 16 AS PUSHED
+  A new function enable_console_colours(), called in main() before the
+  first output (after the chcp lines):
+    - on Windows: GetStdHandle(STD_OUTPUT_HANDLE), GetConsoleMode, then
+      SetConsoleMode(... | ENABLE_VIRTUAL_TERMINAL_PROCESSING). This is the
+      documented Windows way for a program to have "\033[...m" colour codes
+      shown as colours. If the output is not a console (a file, as in the
+      tests), GetConsoleMode fails and nothing changes.
+    - on other systems: does nothing.
+  windows.h is included on Windows only, with WIN32_LEAN_AND_MEAN.
+  Version 14's chcp lines are kept (UTF-8 code page; harmless; the
+  _isatty check protects redirected input).
+
+CHECKS
+  [OBSERVED, Linux] gcc -std=c99 -Wall -Wextra -Wpedantic -Werror builds;
+  CTest 30 of 30 pass unchanged.
+  [OBSERVED, Linux] The Windows code passes gcc -std=c99 -Wall -Wextra
+  -Wpedantic -Werror -fsyntax-only against the real MinGW-w64 headers
+  (github.com/mingw-w64/mingw-w64, mingw-w64-headers), with _WIN32 set.
+  No Windows compiler or Windows computer was available to Claude.
+  [OWNER, before pushing] the board shows colours in CLion on Windows.
+
+EFFECT ON AI-HOLOGRAM-V3
+  Stage V3-1 copies Version 16 (tag chess-v16), not Version 15. The
+  earlier Stage 1 zip (Version 15) is withdrawn; it will be remade with
+  Version 16's commit and hashes after the push.

@@ -125,7 +125,9 @@
 #include <stdarg.h>   /* Variadic functions: va_list, va_start, va_end */
 
 #ifdef _WIN32
-#include <io.h>       /* Windows low-level I/O utilities */
+#include <io.h>       /* Windows low-level I/O: _isatty, used in main */
+#define WIN32_LEAN_AND_MEAN /* Only the basic parts of windows.h */
+#include <windows.h>  /* Windows console: GetStdHandle, GetConsoleMode, SetConsoleMode */
 #endif
 
 /* ============================================================================
@@ -6331,6 +6333,31 @@ static void clear_selection(int *row, int *col, bool *preview_shown,
  * main
  * Entry point of the chess program. Runs the interactive game loop.
  */
+/*
+ * enable_console_colours (Version 16)
+ * The board is drawn with ANSI colour codes such as "\033[48;5;180m".
+ * Linux, macOS and CLion's own terminal understand them. A Windows console
+ * window shows them as colours only after the program asks for it, by
+ * switching on "virtual terminal processing" for its output. Without this
+ * the codes appear as text, for example "<-[48;5;180m".
+ * If the output is not a console (for example a file, as in the transcript
+ * tests), GetConsoleMode fails and nothing is changed.
+ * On other systems this function does nothing.
+ */
+static void enable_console_colours(void) {
+#ifdef _WIN32
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004 /* older headers lack it */
+#endif
+    HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode = 0;
+
+    if (output != INVALID_HANDLE_VALUE && GetConsoleMode(output, &mode)) {
+        SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
+#endif
+}
+
 int main(void) {
     Board game = {0};
     char input[INPUT_BUFFER_SIZE];
@@ -6344,6 +6371,23 @@ int main(void) {
     Tracker tracker;
     Goal goal = {false, false, 0, {0}, 0};
     Goal second_goal = {false, false, 0, {0}, 0};
+
+#ifdef _WIN32
+    /*
+     * Windows only, and only in a real console window (Version 14's three
+     * lines, put back in Version 16): set the console to UTF-8. The check
+     * _isatty(0) matters: when the input comes from a file (the transcript
+     * tests), the cmd.exe started by system() would use up that input
+     * before the game could read it. The colours are switched on below,
+     * by enable_console_colours().
+     */
+    if (_isatty(0)) {
+        (void)system("chcp 65001 > nul");
+    }
+#endif
+
+    /* Done after chcp, so that nothing started by system() can undo it. */
+    enable_console_colours();
 
     puts("=== Simple 2-Player Chess ===");
     reset_board(&game);
